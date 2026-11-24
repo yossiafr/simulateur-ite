@@ -19,7 +19,7 @@ export const adresseEnvoi = () => process.env.SMTP_FROM || process.env.SMTP_USER
 export { SB_URL, SB_ANON, smtpOk, emailValide, send };
  
 // Vérifie la connexion du commercial avec son jeton Supabase (aucune clé secrète nécessaire).
-async function appelant(req) {
+export async function appelant(req) {
   const token = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
   if (!token) return null;
   const h = { apikey: SB_ANON, Authorization: "Bearer " + token };
