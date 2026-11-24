@@ -28,7 +28,7 @@ export async function appelant(req) {
   const user = await u.json();
   const p = await fetch(SB_URL + "/rest/v1/ite_profiles?select=*&id=eq." + encodeURIComponent(user.id), { headers: h });
   const [profil] = p.ok ? await p.json() : [];
-  return profil && profil.actif ? profil : null;
+  return profil && profil.actif && profil.role !== "telepro" ? profil : null;
 }
  
 export default async function handler(req, res) {
