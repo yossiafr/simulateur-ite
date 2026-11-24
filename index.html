@@ -1592,6 +1592,7 @@ function photoEditorHtml(p,i){
   const tool=(k,l)=>`<button type="button" class="${phTool===k?'on':''}" data-phtool="${k}">${l}</button>`;
   return `<div class="ph-ed"><div class="ph-main">
     <div class="ph-tools seg">${tool('ref','1. Mesure connue')}${tool('mur','2. Façade')}${tool('ouv','3. Fenêtre / porte')}</div>
+    ${CFG.ia?`<button class="btn primary" type="button" data-ph="detect">✨ Détecter façade et ouvrants (IA)</button>`:''}
     <p class="hint ph-help" id="phHelp">${phHelp()}</p>
     <div class="ph-cv"><canvas id="phCv"></canvas></div>
     <div class="ph-bar">${phDraft.length?`<button class="btn small" type="button" data-ph="undo">Annuler le dernier point</button>`:''}${phTool==='mur'&&phDraft.length>=3?`<button class="btn small primary" type="button" data-ph="close">Terminer la façade</button>`:''}
@@ -1670,6 +1671,20 @@ phPane.addEventListener('click',async e=>{
   if(a==='delYes') return deletePhoto(p.id);
   if(a==='crepi'){if(!p.mesures.couleur) p.mesures.couleur='#d9cdb4'; b.disabled=true; b.textContent='Calcul…';
     p.rendu=await renderCrepi(p,p.mesures.couleur); queuePhoto(p,['mesures','rendu']); phView='crepi'; renderPhotos(); return}
+  if(a==='detect'){b.disabled=true; b.textContent='Analyse de la photo (10 à 30 s)…';
+    try{const {data:{session}}=await sb.auth.getSession();
+      const r=await fetch('/api/detect-ia',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(session?session.access_token:'')},body:JSON.stringify({image:p.image})});
+      const j=await r.json().catch(()=>({})); if(!r.ok) throw new Error(j.erreur||('Erreur '+r.status));
+      const img=await loadImg(p.image), W=img.naturalWidth, H=img.naturalHeight, X=v=>v*W/1000, Y=v=>v*H/1000, m=p.mesures;
+      m.murs=(j.facades||[]).map(P=>P.map(([y,x])=>[X(x),Y(y)]));
+      m.ouvs=(j.ouvrants||[]).map(o=>{const [y0,x0,y1,x1]=o.box; return [[X(x0),Y(y0)],[X(x1),Y(y0)],[X(x1),Y(y1)],[X(x0),Y(y1)]]});
+      let refMsg='';
+      if(!(m.ref&&m.ref.b)){const portes=(j.ouvrants||[]).filter(o=>/^porte$|entr/.test(o.type)).sort((a,b)=>(b.box[2]-b.box[0])-(a.box[2]-a.box[0]));
+        if(portes.length){const [y0,x0,y1,x1]=portes[0].box, cx=X((x0+x1)/2); m.ref={a:[cx,Y(y0)],b:[cx,Y(y1)],m:2.15}; refMsg=' Mesure connue placée sur la porte (2,15 m) : ajustez-la si besoin.'}
+        else refMsg=' Placez la mesure connue (étape 1) pour obtenir les surfaces.'}
+      phDraft=[]; queuePhoto(p,['mesures']); renderPhotos();
+      toast(`${m.murs.length} façade(s) et ${m.ouvs.length} ouvrant(s) détectés. Vérifiez et ajustez les points.`+refMsg);
+    }catch(err){toast('Détection impossible : '+err.message); renderPhotos()} return}
   if(a==='ia'){b.disabled=true; b.textContent='Rendu IA en cours (20 à 40 s)…';
     try{const {data:{session}}=await sb.auth.getSession(); const col=p.mesures.couleur||'#d9cdb4';
       const r=await fetch('/api/rendu-ia',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(session?session.access_token:'')},body:JSON.stringify({image:p.image,couleur:col,nom:(CREPIS.find(x=>x[1]===col)||['enduit'])[0]})});
@@ -1723,6 +1738,12 @@ function renderAdmin(){
     <div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="btn primary" id="saveDefaults" type="button">Enregistrer les réglages</button></div>
     <p class="hint">S'appliquent aux nouvelles fiches de tous les commerciaux. Les fiches existantes gardent leurs valeurs.</p>
   </fieldset>
+  <fieldset class="span-all"><legend>Tarifs de base du devis</legend>${(()=>{const e=ent(), tf=(k,l,o)=>fld(l,`data-tarif="${k}"`,e[k],o||{});
+    return `<div class="fields" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
+      ${tf('prixIsolant','Prix isolant TTC',{type:'number',step:'0.01',u:'€/m²'})}${tf('prixMO','Prix main d\'œuvre TTC',{type:'number',step:'0.01',u:'€/m²'})}${tf('tva','TVA',{type:'number',step:'0.1',u:'%'})}
+      ${tf('marque','Marque de l\'isolant')}${tf('reference','Référence')}${tf('epaisseur','Épaisseur',{u:'mm'})}${tf('resistance','Résistance R',{u:'m².K/W'})}${tf('acermi','Certification ACERMI')}</div>
+    <div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="btn primary" id="saveTarifs" type="button">Enregistrer les tarifs</button></div>
+    <p class="hint">Utilisés pour tous les nouveaux devis, par tous les commerciaux. Les devis déjà créés gardent leurs prix (modifiables ligne par ligne).</p>`})()}</fieldset>
   <fieldset class="span-all"><legend>Options du devis</legend>${optAdminHtml()}</fieldset>
   <fieldset class="span-all"><legend>Documents joints au devis</legend>${annexAdminHtml()}</fieldset></div>`;
   fillAnnexAdmin();
@@ -1738,6 +1759,11 @@ document.getElementById('pane-admin').addEventListener('change',async e=>{
 });
 document.getElementById('pane-admin').addEventListener('click',async e=>{
   const t=e.target, tr=t.closest('tr[data-id]');
+  if(t.id==='saveTarifs'){
+    const vals={}; document.querySelectorAll('#pane-admin [data-tarif]').forEach(i=>{vals[i.dataset.tarif]=['prixIsolant','prixMO','tva'].includes(i.dataset.tarif)?n(i.value):i.value.trim()});
+    if(await saveCfg(d=>Object.assign(d,{entreprise:Object.assign({},d.entreprise||{},vals)}))) toast('Tarifs enregistrés : ils s\'appliquent aux nouveaux devis');
+    return;
+  }
   if(t.id==='saveDefaults'){
     const vals={}; document.querySelectorAll('[data-def]').forEach(i=>{vals[i.dataset.def]=n(i.value)});
     if(await saveCfg(d=>Object.assign(d,vals))) toast('Réglages enregistrés');
@@ -1886,7 +1912,7 @@ async function boot(){
   renderFilters(); fillForm(); renderList();
 }
 
-let tt; function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),2200)}
+let tt; function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),Math.max(2200,String(m).length*55))}
 
 boot();
 window.__compute=compute;
