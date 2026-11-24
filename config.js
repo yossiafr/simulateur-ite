@@ -1,4 +1,4 @@
 window.ITE_CONFIG = {
-  url: "https://xxxxxxxx.supabase.co",
-  anonKey: "collez-ici-la-cle-anon"
+  url: "https://ibvivbwbcijdxrksgnop.supabase.co",
+  anonKey: "sb_publishable_4kQ1nATcZV7pUkuJQTsUbw_u7VdsJfY"
 };
