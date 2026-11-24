@@ -318,6 +318,11 @@ label small{font-weight:400}
 .sw input[type=color]{width:36px;height:32px;border:0;background:none;padding:0;cursor:pointer}
 .ph-tot{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 16px;display:flex;flex-direction:column;gap:10px}
 .ph-nums{display:flex;flex-wrap:wrap;gap:8px 28px;font-size:13px}.ph-nums b{font-size:17px;margin-left:6px}
+
+.ac{position:absolute;left:0;right:0;top:100%;z-index:30;margin:4px 0 0;padding:4px;list-style:none;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:260px;overflow:auto}
+.ac li{color:var(--fg);font-weight:500;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13.5px}.ac li:hover,.ac li.on{background:var(--lime-soft)}
+.map-wrap{display:flex;flex-direction:column;gap:10px}
+.map{width:100%;height:min(70vh,640px);border:1px solid var(--line);border-radius:var(--r);background:var(--surface-2)}
 #printRoot{display:none}
 @media print{
   body.print-devis .wrap, body.print-devis .toast{display:none!important}
@@ -390,6 +395,7 @@ body.pm .sheet-head h2{font-size:30px} body.pm .ribbon{font-size:22px} body.pm .
         <button role="tab" id="tab-form" aria-selected="true" aria-controls="pane-form" type="button">Fiche client</button>
         <button role="tab" id="tab-sheet" aria-selected="false" aria-controls="pane-sheet" type="button">Synthèse client</button>
         <button role="tab" id="tab-photos" aria-selected="false" aria-controls="pane-photos" type="button">Photos &amp; métrage</button>
+        <button role="tab" id="tab-carte" aria-selected="false" aria-controls="pane-carte" type="button">Carte</button>
         <button role="tab" id="tab-devis" aria-selected="false" aria-controls="pane-devis" type="button">Devis</button>
         <button role="tab" id="tab-admin" aria-selected="false" aria-controls="pane-admin" type="button" hidden>Administration</button>
       </div>
@@ -457,6 +463,7 @@ body.pm .sheet-head h2{font-size:30px} body.pm .ribbon{font-size:22px} body.pm .
 
       <section id="pane-sheet" hidden></section>
       <section id="pane-photos" hidden></section>
+      <section id="pane-carte" hidden></section>
       <section id="pane-devis" hidden></section>
       <section id="pane-admin" hidden></section>
     </main>
@@ -525,7 +532,7 @@ function sample(){return Object.assign({},DEFAULTS,{id:uid(),created:Date.now(),
   annee:1978,surface:110,surfaceMurs:140,dpe:'F',energie:'Gaz',factureAn:2400,tauxEco:25,
   coutTravaux:22000,mensForce:'',taux:6,duree:120,differe:6,cee:4500,aideRegion:1000,valeurBien:220000,tauxPV:10,hausse:0,
   notes:'Fiche d\'exemple : remplacez par les données de votre client.'})}
-function migrate(c){if('mensualite' in c){delete c.mensualite} if(c.taux==null)c.taux=6;if(c.mensForce==null)c.mensForce='';if(c.aideRegion==null){c.aideRegion=c.autresAides||'';delete c.autresAides}return c}
+function migrate(c){if(c.tel)c.tel=fmtTel(c.tel);if('mensualite' in c){delete c.mensualite} if(c.taux==null)c.taux=6;if(c.mensForce==null)c.mensForce='';if(c.aideRegion==null){c.aideRegion=c.autresAides||'';delete c.autresAides}return c}
 function load(){try{const r=JSON.parse(localStorage.getItem(KEY)||'[]');if(!Array.isArray(r))return[];r.forEach(migrate);return r}catch(e){return[]}}
 /* Enregistrement : navigateur (mode local) ou base Supabase (mode en ligne) */
 function persist(c){
@@ -713,17 +720,19 @@ function ico(k){
 }
 
 /* ===== Navigation ===== */
-function select(id){currentId=id; fillForm(); renderList(); if(!document.getElementById('pane-sheet').hidden) renderSheet(); if(!document.getElementById('pane-devis').hidden) renderDevis(); phSel=null; phDraft=[]; phView='photo'; if(!document.getElementById('pane-photos').hidden) renderPhotos(); resetDel();}
+function select(id){currentId=id; fillForm(); renderList(); if(!document.getElementById('pane-sheet').hidden) renderSheet(); if(!document.getElementById('pane-devis').hidden) renderDevis(); phSel=null; phDraft=[]; phView='photo'; if(!document.getElementById('pane-photos').hidden) renderPhotos(); if(!document.getElementById('pane-carte').hidden) renderCarte(); resetDel();}
 function setTab(t){
-  ['form','sheet','photos','devis','admin'].forEach(k=>{document.getElementById('tab-'+k).setAttribute('aria-selected',k===t);document.getElementById('pane-'+k).hidden=k!==t});
+  ['form','sheet','photos','carte','devis','admin'].forEach(k=>{document.getElementById('tab-'+k).setAttribute('aria-selected',k===t);document.getElementById('pane-'+k).hidden=k!==t});
   if(t==='sheet') renderSheet();
   if(t==='admin') renderAdmin();
   if(t==='devis') renderDevis();
   if(t==='photos') renderPhotos();
+  if(t==='carte') renderCarte();
   if(t==='form') fillForm();
 }
 document.getElementById('tab-devis').onclick=()=>setTab('devis');
 document.getElementById('tab-photos').onclick=()=>setTab('photos');
+document.getElementById('tab-carte').onclick=()=>setTab('carte');
 document.getElementById('tab-admin').onclick=()=>setTab('admin');
 document.getElementById('tab-form').onclick=()=>setTab('form');
 document.getElementById('tab-sheet').onclick=()=>setTab('sheet');
@@ -1708,6 +1717,50 @@ phPane.addEventListener('change',async e=>{const p=ph();
   renderPhotos();
 });
 window.addEventListener('resize',()=>{if(!phPane.hidden) drawPhoto()});
+
+/* ===== Téléphone, adresse et carte ===== */
+function fmtTel(v){
+  let s=String(v||'').trim(); if(!s) return '';
+  const plus=s.startsWith('+'), d=s.replace(/\D/g,'');
+  if(plus&&d.startsWith('33')){const r=d.slice(2).replace(/^0/,''); return ('+33 '+(r.slice(0,1)+' '+(r.slice(1).match(/.{1,2}/g)||[]).join(' '))).trim()}
+  if(plus) return '+'+d;
+  return (d.match(/.{1,2}/g)||[]).join(' ');
+}
+const telInput=document.getElementById('tel');
+telInput.addEventListener('input',e=>{const end=telInput.selectionStart===telInput.value.length, f=fmtTel(telInput.value); if(e.inputType&&e.inputType.startsWith('delete')&&!end) return; if(f!==telInput.value){telInput.value=f; const c=cur(); if(c){c.tel=f; persist(c)}}},true);
+/* Saisie d'adresse : base nationale des adresses (gratuite) */
+const adrIn=document.getElementById('adresse'); let adrT=null, adrRes=[], adrI=-1;
+const adrBox=document.createElement('ul'); adrBox.className='ac'; adrBox.id='adrList'; adrBox.setAttribute('role','listbox'); adrBox.hidden=true; adrIn.parentElement.appendChild(adrBox);
+adrIn.setAttribute('autocomplete','off'); adrIn.setAttribute('aria-autocomplete','list'); adrIn.setAttribute('aria-controls','adrList');
+async function adrSearch(q){
+  const cp=(document.getElementById('cp').value||'').trim(), extra=/^\d{5}$/.test(cp)?'&postcode='+cp:'';
+  const urls=[`https://data.geopf.fr/geocodage/search?index=address&autocomplete=1&limit=6&q=${encodeURIComponent(q)}${extra}`,`https://api-adresse.data.gouv.fr/search/?autocomplete=1&limit=6&q=${encodeURIComponent(q)}${extra}`];
+  for(const u of urls){try{const r=await fetch(u); if(!r.ok) continue; const j=await r.json(); return (j.features||[]).map(f=>({label:f.properties.label,name:f.properties.name,cp:f.properties.postcode,ville:f.properties.city,lon:f.geometry&&f.geometry.coordinates[0],lat:f.geometry&&f.geometry.coordinates[1]}))}catch(e){}}
+  return [];
+}
+function adrShow(){adrBox.innerHTML=adrRes.map((a,i)=>`<li role="option" data-i="${i}" class="${i===adrI?'on':''}">${esc(a.label)}</li>`).join(''); adrBox.hidden=!adrRes.length}
+function adrPick(i){const a=adrRes[i], c=cur(); if(!a||!c) return; Object.assign(c,{adresse:a.name,cp:a.cp,ville:a.ville,lat:a.lat,lon:a.lon,updated:Date.now()}); adrRes=[]; adrShow(); persist(c); fillForm(); renderList(); if(!document.getElementById('pane-sheet').hidden) renderSheet()}
+adrIn.addEventListener('input',()=>{const c=cur(); if(c){delete c.lat; delete c.lon} clearTimeout(adrT); const q=adrIn.value.trim(); if(q.length<4){adrRes=[]; adrShow(); return}
+  adrT=setTimeout(async()=>{const r=await adrSearch(q); if(adrIn.value.trim()!==q) return; adrRes=r; adrI=-1; adrShow()},250)});
+adrIn.addEventListener('keydown',e=>{if(adrBox.hidden) return;
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault(); adrI=(adrI+(e.key==='ArrowDown'?1:-1)+adrRes.length)%adrRes.length; adrShow()}
+  else if(e.key==='Enter'&&adrI>=0){e.preventDefault(); adrPick(adrI)} else if(e.key==='Escape'){adrRes=[]; adrShow()}});
+adrBox.addEventListener('mousedown',e=>{const li=e.target.closest('li'); if(li){e.preventDefault(); adrPick(+li.dataset.i)}});
+adrIn.addEventListener('blur',()=>setTimeout(()=>{adrRes=[]; adrShow()},150));
+/* Onglet carte (Google Maps, sans clé) */
+let mapType='k';
+function renderCarte(){
+  const pane=document.getElementById('pane-carte'), c=cur(); if(!c) return;
+  const addr=[c.adresse,[c.cp,c.ville].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+  if(!addr){pane.innerHTML=`<div class="dv-empty"><h2 style="font-size:18px">Pas encore d'adresse</h2><p class="hint">Saisissez l'adresse du client dans la fiche pour voir la maison sur la carte.</p></div>`; return}
+  const q=c.lat&&c.lon?`${c.lat},${c.lon}`:addr;
+  pane.innerHTML=`<div class="map-wrap"><div class="ph-bar"><span class="seg">${[['k','Satellite'],['m','Plan']].map(([k,l])=>`<button type="button" class="${mapType===k?'on':''}" data-map="${k}">${l}</button>`).join('')}</span>
+      <a class="btn" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}">Ouvrir dans Google Maps</a>
+      ${c.lat&&c.lon?`<a class="btn" target="_blank" rel="noopener" href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${c.lat},${c.lon}">Street View</a>`:''}
+      <span class="hint" style="margin:0">${esc(addr)}</span></div>
+    <iframe class="map" title="Carte : ${esc(addr)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=${encodeURIComponent(q)}&t=${mapType==='k'?'k':''}&z=19&hl=fr&output=embed"></iframe></div>`;
+}
+document.getElementById('pane-carte').addEventListener('click',e=>{const b=e.target.closest('[data-map]'); if(b){mapType=b.dataset.map; renderCarte()}});
 
 /* ===== Administration ===== */
 function renderAdmin(){
