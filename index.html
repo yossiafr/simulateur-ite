@@ -338,7 +338,7 @@ label small{font-weight:400}
 .ag-late{display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:#fff4e0;border:1px solid #f0d199;border-radius:12px;padding:8px 12px;font-size:13px;color:#7a4b00}
 .ag-chip{border:1px solid var(--line);border-left:4px solid var(--c);background:var(--surface);border-radius:8px;padding:4px 8px;cursor:pointer;font-size:12.5px;color:var(--fg)}
 .ag-week{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:auto}
-.ag-head,.ag-body{display:grid;grid-template-columns:44px repeat(7,minmax(96px,1fr));min-width:720px}
+.ag-head,.ag-body{display:grid;grid-template-columns:40px repeat(5,minmax(62px,1fr))}
 .ag-head span{padding:8px 6px;font-size:12px;color:var(--muted);text-transform:capitalize;border-bottom:1px solid var(--line);text-align:center}.ag-head b{font-size:15px;color:var(--fg);margin-left:2px}
 .ag-head span.today b{background:var(--green);color:var(--on-green);border-radius:999px;padding:1px 7px}
 .ag-body{position:relative}
@@ -348,6 +348,7 @@ label small{font-weight:400}
 .ag-ev{position:absolute;border:0;border-left:4px solid var(--c);background:color-mix(in srgb,var(--c) 14%,var(--surface));border-radius:8px;padding:3px 6px;text-align:left;cursor:pointer;overflow:hidden;display:flex;flex-direction:column;gap:1px;font-size:11.5px;line-height:1.25;color:var(--fg)}
 .ag-ev b{font-size:12px}.ag-ev span{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ag-ev em{font-style:normal;font-weight:700}
 .ag-ev.done{opacity:.8}
+@media (max-width:600px){.ag-ev{padding:2px 4px;font-size:10.5px}.ag-ev b{font-size:10.5px}.ag-ev span{display:none}.ag-head span{font-size:11px;padding:6px 2px}.ag-head b{font-size:13px}}
 .ag-list{display:flex;flex-direction:column;gap:14px}.ag-dayl h3{font-size:14px;text-transform:capitalize;margin:0 0 6px}
 .ag-row{width:100%;display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:10px;align-items:center;text-align:left;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--c);border-radius:12px;padding:10px 12px;margin-bottom:6px;cursor:pointer;color:var(--fg)}
 .ag-row .t{font-family:var(--display);font-weight:800}.ag-row .m{display:flex;flex-direction:column;min-width:0}.ag-row small{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ag-row .st{font-size:12px;font-weight:700}
@@ -1787,7 +1788,7 @@ adrIn.addEventListener('keydown',e=>{if(adrBox.hidden) return;
 adrBox.addEventListener('mousedown',e=>{const li=e.target.closest('li'); if(li){e.preventDefault(); adrPick(+li.dataset.i)}});
 adrIn.addEventListener('blur',()=>setTimeout(()=>{adrRes=[]; adrShow()},150));
 /* Onglet carte (Google Maps, sans clé) */
-let mapType='k';
+let mapType='sv';
 function renderCarte(){
   const pane=document.getElementById('pane-carte'), c=cur(); if(!c) return;
   const addr=[c.adresse,[c.cp,c.ville].filter(Boolean).join(' ')].filter(Boolean).join(', ');
@@ -1809,7 +1810,7 @@ document.getElementById('pane-carte').addEventListener('click',e=>{const b=e.tar
 const RES={a_venir:['À venir','#6b7766'],vendu:['Vendu','#2f8f1f'],devis:['Devis à envoyer','#c58a00'],rappeler:['À rappeler','#1f4aa8'],reporte:['Reporté','#7a5bb5'],absent:['Client absent','#b5541b'],refus:['Pas intéressé','#b3261e']};
 const RES_STATUT={vendu:'signe',devis:'devis',refus:'perdu',rappeler:'rdv',reporte:'rdv',absent:'rdv'};
 const REP_COLORS=['#2f8f1f','#1f4aa8','#c0392b','#8e44ad','#d68910','#16a085','#5d6d7e','#a04000'];
-const RKEY='ite-rdv'; let RDV=null, agView=window.innerWidth<760?'liste':'semaine';
+const RKEY='ite-rdv'; let RDV=null, agView='semaine';
 let agHidden=new Set((()=>{try{return JSON.parse(localStorage.getItem('ite-ag-hidden')||'[]')}catch(e){return[]}})());
 const saveHidden=()=>{try{localStorage.setItem('ite-ag-hidden',JSON.stringify([...agHidden]))}catch(e){}};
 const agShown=()=>team.filter(p=>p.actif&&!agHidden.has(p.id));
@@ -1845,22 +1846,23 @@ const aStatuer=()=>visibleRdv().filter(r=>r.resultat==='a_venir'&&new Date(r.deb
 function renderAgenda(){
   const pane=document.getElementById('pane-agenda');
   if(!RDV){pane.innerHTML='<p class="hint">Chargement de l\'agenda…</p>'; loadRdv().then(renderAgenda); return}
-  const end=addDays(agStart,6), late=aStatuer();
+  const end=addDays(agStart,4), late=aStatuer();
   const title=agStart.getMonth()===end.getMonth()?`${agStart.getDate()} – ${end.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})}`:`${agStart.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})} – ${end.toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'})}`;
   pane.innerHTML=`<div class="ag">
     <div class="ag-bar"><div class="ag-nav"><button class="btn small" type="button" data-ag="prev" aria-label="Semaine précédente">◀</button><button class="btn small" type="button" data-ag="today">Aujourd'hui</button><button class="btn small" type="button" data-ag="next" aria-label="Semaine suivante">▶</button><h2>${title}</h2></div>
       <div class="ag-nav">
         <span class="seg sm">${[['semaine','Semaine'],['liste','Liste']].map(([k,l])=>`<button type="button" class="${agView===k?'on':''}" data-agview="${k}">${l}</button>`).join('')}</span>
         <button class="btn primary" type="button" data-ag="new">+ Nouveau RDV</button></div></div>
-    ${isAdmin()?`<div class="ag-reps"><span class="hint" style="margin:0">Afficher :</span>${team.filter(p=>p.actif).map(p=>`<label class="ag-rep" style="--c:${repColor(p.id)}"><input type="checkbox" data-agrep="${p.id}" ${agHidden.has(p.id)?'':'checked'}><i></i>${esc(p.nom||p.email)}<small>(${(RDV||[]).filter(r=>r.commercial===p.id&&new Date(r.debut)>=agStart&&new Date(r.debut)<addDays(agStart,7)).length})</small></label>`).join('')}
+    ${isAdmin()?`<div class="ag-reps"><span class="hint" style="margin:0">Afficher :</span>${team.filter(p=>p.actif).map(p=>`<label class="ag-rep" style="--c:${repColor(p.id)}"><input type="checkbox" data-agrep="${p.id}" ${agHidden.has(p.id)?'':'checked'}><i></i>${esc(p.nom||p.email)}<small>(${(RDV||[]).filter(r=>r.commercial===p.id&&new Date(r.debut)>=agStart&&new Date(r.debut)<addDays(agStart,5)).length})</small></label>`).join('')}
       <button class="linkbtn" type="button" data-ag="all">Tous</button><button class="linkbtn" type="button" data-ag="none">Aucun</button></div>`:''}
     ${late.length?`<div class="ag-late"><b>${late.length} RDV à statuer</b>${late.slice(0,8).map(r=>`<button type="button" class="ag-chip" data-rdv="${r.id}" style="--c:${repColor(r.commercial)}">${new Date(r.debut).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})} ${hhmm(r.debut)} · ${esc(r.titre||'RDV')}</button>`).join('')}</div>`:''}
     ${agView==='semaine'?weekHtml():listHtml()}
+    ${agView==='semaine'&&visibleRdv().some(r=>{const d=new Date(r.debut);return d>=addDays(agStart,5)&&d<addDays(agStart,7)})?'<p class="hint" style="margin:0">Des RDV sont prévus ce week-end : voir la vue Liste.</p>':''}
 </div>`;
 }
 const H0=7,H1=21,HP=46;
 function weekHtml(){
-  const days=[...Array(7)].map((_,i)=>addDays(agStart,i)), today=dayStart(new Date()).getTime(), R=visibleRdv();
+  const days=[...Array(5)].map((_,i)=>addDays(agStart,i)), today=dayStart(new Date()).getTime(), R=visibleRdv();
   const col=d=>{const ev=R.filter(r=>dayStart(r.debut).getTime()===d.getTime()).map(r=>({r,s:new Date(r.debut),e:new Date(new Date(r.debut).getTime()+(+r.duree||90)*60000)}));
     ev.forEach((x,i)=>{x.lane=0; while(ev.slice(0,i).some(y=>y.lane===x.lane&&y.e>x.s&&y.s<x.e)) x.lane++}); const lanes=Math.max(1,...ev.map(x=>x.lane+1));
     return ev.map(({r,s,lane})=>{const top=Math.max(0,(s.getHours()+s.getMinutes()/60-H0)*HP), h=Math.max(22,(+r.duree||90)/60*HP-2), st=RES[r.resultat]||RES.a_venir;
