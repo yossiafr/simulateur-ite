@@ -1800,6 +1800,7 @@ function renderCarte(){
     :`https://maps.google.com/maps?q=${encodeURIComponent(q)}&t=${mapType==='k'?'k':''}&z=19&hl=fr&output=embed`;
   pane.innerHTML=`<div class="map-wrap"><div class="ph-bar"><span class="seg">${[['k','Satellite'],['sv','Street View'],['m','Plan']].map(([k,l])=>`<button type="button" class="${mapType===k?'on':''}" data-map="${k}">${l}</button>`).join('')}</span>
       <a class="btn" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}">Ouvrir dans Google Maps</a>
+      <a class="btn" target="_blank" rel="noopener" href="https://waze.com/ul?q=${encodeURIComponent(addr)}&navigate=yes">🚗 Y aller avec Waze</a>
       ${c.lat&&c.lon?`<a class="btn" target="_blank" rel="noopener" href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${c.lat},${c.lon}">Street View en grand</a>`:''}
       <span class="hint" style="margin:0">${esc(addr)}</span></div>
     <iframe class="map" title="Carte : ${esc(addr)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="${src}" allowfullscreen></iframe>${mapType==='sv'?'<p class="hint" style="margin:0">Faites glisser l\'image pour tourner vers la maison. Si la vue reste vide, la rue n\'a pas été photographiée par Google à cet endroit.</p>':''}</div>`;
@@ -1909,7 +1910,7 @@ function rdvDetail(r){
   const tel=c&&c.tel, addr=r.adresse||(c?[c.adresse,c.cp,c.ville].filter(Boolean).join(' '):'');
   return `<input type="hidden" id="rvId" value="${r.id}"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start"><div><h2>${esc(r.titre||'Rendez-vous')}</h2>
     <p class="hint" style="margin:4px 0 0;font-size:13px">${dLong(r.debut)} · ${hhmm(r.debut)} – ${hhmm(fin)}${MODE==='cloud'?' · '+esc(repName(r.commercial)):''}</p></div><span class="status" style="background:${st[1]}22;color:${st[1]}">${st[0]}</span></div>
-  <div class="ag-info">${tel?`<a class="btn small" href="tel:${esc(tel.replace(/\s/g,''))}">📞 ${esc(tel)}</a>`:''}${addr?`<a class="btn small" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}">📍 Itinéraire</a><span class="hint" style="margin:0">${esc(addr)}</span>`:''}</div>
+  <div class="ag-info">${tel?`<a class="btn small" href="tel:${esc(tel.replace(/\s/g,''))}">📞 ${esc(tel)}</a>`:''}${addr?`<a class="btn small" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}">📍 Itinéraire</a><a class="btn small" target="_blank" rel="noopener" href="https://waze.com/ul?q=${encodeURIComponent(addr)}&navigate=yes">🚗 Waze</a><span class="hint" style="margin:0">${esc(addr)}</span>`:''}</div>
   ${r.commentaire?`<div class="ag-com"><b>Commentaire</b><p>${esc(r.commentaire).replace(/\n/g,'<br>')}</p></div>`:''}
   <fieldset class="ag-res"><legend>Résultat du RDV</legend><div class="ag-resb">${Object.entries(RES).filter(([k])=>k!=='a_venir').map(([k,[l,col]])=>`<button type="button" class="${r.resultat===k?'on':''}" data-res="${k}" style="--c:${col}">${l}</button>`).join('')}</div>
     <label>Compte rendu<textarea id="rvCr" rows="4" placeholder="Ce qui a été dit, prochaine étape, date de rappel…">${esc(r.compte_rendu||'')}</textarea></label>
