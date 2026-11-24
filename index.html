@@ -326,6 +326,11 @@ label small{font-weight:400}
 .map{width:100%;height:min(70vh,640px);border:1px solid var(--line);border-radius:var(--r);background:var(--surface-2)}
 
 /* Agenda */
+.ag-reps{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center}
+.ag-rep{flex-direction:row!important;align-items:center;gap:6px!important;border:1px solid var(--line);border-radius:999px;padding:5px 10px;background:var(--surface);color:var(--fg)!important;font-weight:600;font-size:13px;cursor:pointer}
+.ag-rep input{accent-color:var(--c);margin:0}.ag-rep i{width:10px;height:10px;border-radius:3px;background:var(--c)}.ag-rep small{color:var(--muted);font-weight:500}
+.ag-rep:has(input:not(:checked)){opacity:.55}
+
 .ag{display:flex;flex-direction:column;gap:12px}
 .ag-bar{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center}
 .ag-nav{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.ag-nav h2{font-size:17px;margin-left:6px;text-transform:capitalize}
@@ -445,7 +450,7 @@ body.pm .sheet-head h2{font-size:30px} body.pm .ribbon{font-size:22px} body.pm .
               <label>Ville<div class="in"><input id="ville" data-k="ville"></div></label>
               <label>Statut<div class="in"><select id="statut" data-k="statut">
                 <option value="prospect">Prospect</option><option value="rdv">RDV fixé</option><option value="devis">Devis envoyé</option><option value="signe">Signé</option><option value="perdu">Perdu</option></select></div></label>
-              <label>Date du RDV<div class="in"><input id="dateRdv" data-k="dateRdv" type="date"></div></label>
+              <label>Date et heure du RDV<div class="in"><input id="dateRdv" data-k="dateRdv" type="datetime-local" step="900"></div><button class="linkbtn" id="btnRdvAg" type="button" style="align-self:flex-start;font-size:12.5px">📅 Planifier dans l'agenda</button></label>
               <label class="full">Notes<textarea id="notes" data-k="notes" rows="2"></textarea></label>
               <label class="full" id="ownerWrap" hidden>Commercial responsable<div class="in"><select id="ownerSel"></select></div></label>
             </div>
@@ -652,7 +657,7 @@ function renderList(){
 /* ===== Formulaire ===== */
 function fillForm(){
   const c=cur(); if(!c) return;
-  document.querySelectorAll('[data-k]').forEach(el=>{el.value=c[el.dataset.k]??''});
+  document.querySelectorAll('[data-k]').forEach(el=>{let v=c[el.dataset.k]??''; if(el.type==='datetime-local'&&/^\d{4}-\d{2}-\d{2}$/.test(v)) v+='T09:00'; el.value=v});
   if(isAdmin()){const s=document.getElementById('ownerSel');s.innerHTML=team.filter(p=>p.actif||p.id===c._owner).map(p=>`<option value="${p.id}">${esc(p.nom||p.email)}${p.role==='admin'?' (admin)':''}</option>`).join('');s.value=c._owner||me.id}
   updateHeader(); updateHint();
 }
@@ -1787,12 +1792,16 @@ function renderCarte(){
   const pane=document.getElementById('pane-carte'), c=cur(); if(!c) return;
   const addr=[c.adresse,[c.cp,c.ville].filter(Boolean).join(' ')].filter(Boolean).join(', ');
   if(!addr){pane.innerHTML=`<div class="dv-empty"><h2 style="font-size:18px">Pas encore d'adresse</h2><p class="hint">Saisissez l'adresse du client dans la fiche pour voir la maison sur la carte.</p></div>`; return}
-  const q=c.lat&&c.lon?`${c.lat},${c.lon}`:addr;
-  pane.innerHTML=`<div class="map-wrap"><div class="ph-bar"><span class="seg">${[['k','Satellite'],['m','Plan']].map(([k,l])=>`<button type="button" class="${mapType===k?'on':''}" data-map="${k}">${l}</button>`).join('')}</span>
+  if(mapType==='sv'&&!(c.lat&&c.lon)){pane.innerHTML='<p class="hint">Recherche de la position de la maison…</p>';
+    adrSearch(addr).then(r=>{if(r[0]&&r[0].lat){c.lat=r[0].lat; c.lon=r[0].lon; persist(c); renderCarte()} else {pane.innerHTML='<p class="hint">Adresse introuvable pour Street View : choisissez-la dans la liste proposée sur la fiche.</p>'}}); return}
+  const q=c.lat&&c.lon?`${c.lat},${c.lon}`:addr, mk=(window.ITE_CONFIG||{}).mapsKey;
+  const src=mapType==='sv'?(mk?`https://www.google.com/maps/embed/v1/streetview?key=${encodeURIComponent(mk)}&location=${c.lat},${c.lon}&fov=80&language=fr`:`https://maps.google.com/maps?layer=c&cbll=${c.lat},${c.lon}&cbp=12,0,0,0,0&hl=fr&output=svembed`)
+    :`https://maps.google.com/maps?q=${encodeURIComponent(q)}&t=${mapType==='k'?'k':''}&z=19&hl=fr&output=embed`;
+  pane.innerHTML=`<div class="map-wrap"><div class="ph-bar"><span class="seg">${[['k','Satellite'],['sv','Street View'],['m','Plan']].map(([k,l])=>`<button type="button" class="${mapType===k?'on':''}" data-map="${k}">${l}</button>`).join('')}</span>
       <a class="btn" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}">Ouvrir dans Google Maps</a>
-      ${c.lat&&c.lon?`<a class="btn" target="_blank" rel="noopener" href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${c.lat},${c.lon}">Street View</a>`:''}
+      ${c.lat&&c.lon?`<a class="btn" target="_blank" rel="noopener" href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${c.lat},${c.lon}">Street View en grand</a>`:''}
       <span class="hint" style="margin:0">${esc(addr)}</span></div>
-    <iframe class="map" title="Carte : ${esc(addr)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=${encodeURIComponent(q)}&t=${mapType==='k'?'k':''}&z=19&hl=fr&output=embed"></iframe></div>`;
+    <iframe class="map" title="Carte : ${esc(addr)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="${src}" allowfullscreen></iframe>${mapType==='sv'?'<p class="hint" style="margin:0">Faites glisser l\'image pour tourner vers la maison. Si la vue reste vide, la rue n\'a pas été photographiée par Google à cet endroit.</p>':''}</div>`;
 }
 document.getElementById('pane-carte').addEventListener('click',e=>{const b=e.target.closest('[data-map]'); if(b){mapType=b.dataset.map; renderCarte()}});
 
@@ -1800,7 +1809,11 @@ document.getElementById('pane-carte').addEventListener('click',e=>{const b=e.tar
 const RES={a_venir:['À venir','#6b7766'],vendu:['Vendu','#2f8f1f'],devis:['Devis à envoyer','#c58a00'],rappeler:['À rappeler','#1f4aa8'],reporte:['Reporté','#7a5bb5'],absent:['Client absent','#b5541b'],refus:['Pas intéressé','#b3261e']};
 const RES_STATUT={vendu:'signe',devis:'devis',refus:'perdu',rappeler:'rdv',reporte:'rdv',absent:'rdv'};
 const REP_COLORS=['#2f8f1f','#1f4aa8','#c0392b','#8e44ad','#d68910','#16a085','#5d6d7e','#a04000'];
-const RKEY='ite-rdv'; let RDV=null, agView=window.innerWidth<760?'liste':'semaine', agRep='all';
+const RKEY='ite-rdv'; let RDV=null, agView=window.innerWidth<760?'liste':'semaine';
+let agHidden=new Set((()=>{try{return JSON.parse(localStorage.getItem('ite-ag-hidden')||'[]')}catch(e){return[]}})());
+const saveHidden=()=>{try{localStorage.setItem('ite-ag-hidden',JSON.stringify([...agHidden]))}catch(e){}};
+const agShown=()=>team.filter(p=>p.actif&&!agHidden.has(p.id));
+const agDefaultRep=()=>{const v=agShown(); return isAdmin()&&v.length===1?v[0].id:myId()};
 const dayStart=d=>{const x=new Date(d); x.setHours(0,0,0,0); return x};
 const mondayOf=d=>{const x=dayStart(d); x.setDate(x.getDate()-((x.getDay()+6)%7)); return x};
 let agStart=mondayOf(new Date());
@@ -1827,7 +1840,7 @@ async function upsertRdv(r,isNew){
   RDV.sort((a,b)=>a.debut.localeCompare(b.debut)); if(MODE!=='cloud') saveLocalRdv(); return true;
 }
 async function deleteRdv(id){if(MODE==='cloud'){const {error}=await sb.from('ite_rdv').delete().eq('id',id); if(error) return toast(error.message)} RDV=RDV.filter(x=>x.id!==id); if(MODE!=='cloud') saveLocalRdv()}
-const visibleRdv=()=>(RDV||[]).filter(r=>agRep==='all'||r.commercial===agRep);
+const visibleRdv=()=>(RDV||[]).filter(r=>!isAdmin()||!agHidden.has(r.commercial));
 const aStatuer=()=>visibleRdv().filter(r=>r.resultat==='a_venir'&&new Date(r.debut).getTime()+(+r.duree||90)*60000<Date.now());
 function renderAgenda(){
   const pane=document.getElementById('pane-agenda');
@@ -1836,12 +1849,14 @@ function renderAgenda(){
   const title=agStart.getMonth()===end.getMonth()?`${agStart.getDate()} – ${end.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})}`:`${agStart.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})} – ${end.toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'})}`;
   pane.innerHTML=`<div class="ag">
     <div class="ag-bar"><div class="ag-nav"><button class="btn small" type="button" data-ag="prev" aria-label="Semaine précédente">◀</button><button class="btn small" type="button" data-ag="today">Aujourd'hui</button><button class="btn small" type="button" data-ag="next" aria-label="Semaine suivante">▶</button><h2>${title}</h2></div>
-      <div class="ag-nav">${isAdmin()?`<select data-ag="rep" aria-label="Commercial"><option value="all">Tous les commerciaux</option>${team.filter(p=>p.actif).map(p=>`<option value="${p.id}" ${agRep===p.id?'selected':''}>${esc(p.nom||p.email)}</option>`).join('')}</select>`:''}
+      <div class="ag-nav">
         <span class="seg sm">${[['semaine','Semaine'],['liste','Liste']].map(([k,l])=>`<button type="button" class="${agView===k?'on':''}" data-agview="${k}">${l}</button>`).join('')}</span>
         <button class="btn primary" type="button" data-ag="new">+ Nouveau RDV</button></div></div>
+    ${isAdmin()?`<div class="ag-reps"><span class="hint" style="margin:0">Afficher :</span>${team.filter(p=>p.actif).map(p=>`<label class="ag-rep" style="--c:${repColor(p.id)}"><input type="checkbox" data-agrep="${p.id}" ${agHidden.has(p.id)?'':'checked'}><i></i>${esc(p.nom||p.email)}<small>(${(RDV||[]).filter(r=>r.commercial===p.id&&new Date(r.debut)>=agStart&&new Date(r.debut)<addDays(agStart,7)).length})</small></label>`).join('')}
+      <button class="linkbtn" type="button" data-ag="all">Tous</button><button class="linkbtn" type="button" data-ag="none">Aucun</button></div>`:''}
     ${late.length?`<div class="ag-late"><b>${late.length} RDV à statuer</b>${late.slice(0,8).map(r=>`<button type="button" class="ag-chip" data-rdv="${r.id}" style="--c:${repColor(r.commercial)}">${new Date(r.debut).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})} ${hhmm(r.debut)} · ${esc(r.titre||'RDV')}</button>`).join('')}</div>`:''}
     ${agView==='semaine'?weekHtml():listHtml()}
-    ${isAdmin()&&team.length>1?`<div class="ag-legend">${team.filter(p=>p.actif).map(p=>`<span><i style="background:${repColor(p.id)}"></i>${esc(p.nom||p.email)}</span>`).join('')}</div>`:''}</div>`;
+</div>`;
 }
 const H0=7,H1=21,HP=46;
 function weekHtml(){
@@ -1928,10 +1943,10 @@ async function agModalClick(e){
     let cid=document.getElementById('rvClient').value, c=clients.find(x=>x.id===cid);
     if(!cid){
       const nom=document.getElementById('rvNom').value.trim(); if(!nom) return toast('Indiquez le nom du client');
-      c=blank(); Object.assign(c,{nom,prenom:document.getElementById('rvPrenom').value.trim(),tel:fmtTel(document.getElementById('rvTel').value),adresse:document.getElementById('rvAdr').value.trim(),cp:document.getElementById('rvCp').value.trim(),ville:document.getElementById('rvVille').value.trim(),statut:'rdv',dateRdv:date});
+      c=blank(); Object.assign(c,{nom,prenom:document.getElementById('rvPrenom').value.trim(),tel:fmtTel(document.getElementById('rvTel').value),adresse:document.getElementById('rvAdr').value.trim(),cp:document.getElementById('rvCp').value.trim(),ville:document.getElementById('rvVille').value.trim(),statut:'rdv',dateRdv:date+'T'+time});
       if(MODE==='cloud'){const {error}=await sb.from('ite_clients').insert({id:c.id,data:payload(c),owner:rep}); if(error) return toast('Client non créé : '+error.message); known.add(c.id); c._owner=rep}
       clients.push(c); if(MODE!=='cloud') persist(c); renderList(); cid=c.id;
-    } else if(c){c.dateRdv=date; if(['prospect',''].includes(c.statut||'')) c.statut='rdv'; c.updated=Date.now(); persist(c); renderList()}
+    } else if(c){c.dateRdv=date+'T'+time; if(['prospect',''].includes(c.statut||'')) c.statut='rdv'; c.updated=Date.now(); persist(c); renderList()}
     const isNew=!r, row=Object.assign({},r||{id:newId(),resultat:'a_venir',compte_rendu:''},{commercial:rep,client_id:cid,debut,duree,titre:c?fullName(c):'RDV',adresse:c?[c.adresse,c.cp,c.ville].filter(Boolean).join(' '):'',commentaire:document.getElementById('rvCom').value.trim()});
     b.disabled=true; const ok=await upsertRdv(row,isNew); b.disabled=false; if(!ok) return;
     m.hidden=true; agStart=mondayOf(new Date(debut)); renderAgenda(); toast(isNew?'RDV ajouté à l\'agenda':'RDV modifié');
@@ -1945,11 +1960,16 @@ agPane.addEventListener('click',e=>{
   if(b&&b.dataset.ag){const a=b.dataset.ag;
     if(a==='prev'||a==='next'){agStart=addDays(agStart,(a==='prev'?-7:7)); renderAgenda(); return}
     if(a==='today'){agStart=mondayOf(new Date()); renderAgenda(); return}
-    if(a==='new'){const d=new Date(); d.setDate(d.getDate()+1); d.setHours(9,0,0,0); agModal(rdvForm({debut:d.toISOString(),duree:90,commercial:agRep!=='all'?agRep:myId(),client_id:currentId&&cur()&&(!isAdmin()||cur()._owner===myId())?currentId:''})); return}}
+    if(a==='all'||a==='none'){agHidden=new Set(a==='all'?[]:team.map(p=>p.id)); saveHidden(); renderAgenda(); return}
+    if(a==='new'){const d=new Date(); d.setDate(d.getDate()+1); d.setHours(9,0,0,0); agModal(rdvForm({debut:d.toISOString(),duree:90,commercial:agDefaultRep(),client_id:currentId&&cur()&&(!isAdmin()||cur()._owner===myId())?currentId:''})); return}}
   const day=e.target.closest('.ag-day'); if(day&&!b){const rect=day.getBoundingClientRect(), y=e.clientY-rect.top, h=H0+Math.floor(y/HP*2)/2, d=new Date(day.dataset.day); d.setHours(Math.floor(h),(h%1)*60,0,0);
-    agModal(rdvForm({debut:d.toISOString(),duree:90,commercial:agRep!=='all'?agRep:myId(),client_id:''}))}
+    agModal(rdvForm({debut:d.toISOString(),duree:90,commercial:agDefaultRep(),client_id:''}))}
 });
-agPane.addEventListener('change',e=>{if(e.target.dataset.ag==='rep'){agRep=e.target.value; renderAgenda()}});
+agPane.addEventListener('change',e=>{const id=e.target.dataset.agrep; if(id){e.target.checked?agHidden.delete(id):agHidden.add(id); saveHidden(); renderAgenda()}});
+document.getElementById('btnRdvAg').onclick=async()=>{const c=cur(); if(!c) return; await loadRdv(); setTab('agenda');
+  let d=c.dateRdv?new Date(/T/.test(c.dateRdv)?c.dateRdv:c.dateRdv+'T09:00'):null; if(!d||isNaN(d)){d=new Date(); d.setDate(d.getDate()+1); d.setHours(9,0,0,0)}
+  const ex=(RDV||[]).find(r=>r.client_id===c.id&&r.resultat==='a_venir'); if(ex){rvRes=null; agModal(rdvDetail(ex)); return}
+  agStart=mondayOf(d); renderAgenda(); agModal(rdvForm({debut:d.toISOString(),duree:90,commercial:c._owner||myId(),client_id:known.has(c.id)||MODE==='local'?c.id:''}))};
 
 /* ===== Administration ===== */
 function renderAdmin(){
