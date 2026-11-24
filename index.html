@@ -1011,7 +1011,7 @@ async function createDevis(){
     deduireCee:false,modePaiement:e.modePaiement,
     lignes:[
       {titre:'Prestations administratives – Constitution et suivi des dossiers',desc:TXT_ADMIN,qte:1,unite:'Forfait',pu:0,tva:e.tva},
-      {titre:e.reference,desc:`Marque: ${e.marque}\nRéférence : ${e.reference}\nEpaisseur ${e.epaisseur} mm\n\nRésistance thermique ${e.resistance} m2.K/W`,qte:surf,unite:'U',pu:n(e.prixIsolant),tva:e.tva},
+      {titre:e.reference,desc:`Marque: ${e.marque}\nRéférence : ${e.reference}\nEpaisseur ${e.epaisseur} mm\n\nRésistance thermique ${e.resistance} m2.K/W`,qte:surf,unite:'m²',pu:n(e.prixIsolant),tva:e.tva},
       {titre:"Main d'œuvre pour travaux isolation des murs par l’extérieur",desc:TXT_MO,qte:surf,unite:'m²',pu:n(e.prixMO),tva:e.tva}
     ]};
   syncDevis(c); persist(c); renderDevis(); toast('Devis '+no+' créé');
@@ -1070,6 +1070,7 @@ function fld(lbl,attr,val,o={}){
 }
 function renderDevis(){
   const pane=document.getElementById('pane-devis'), c=cur(); if(!c) return;
+  if(c.devis&&!c._sig&&Array.isArray(c.devis.lignes)) c.devis.lignes.forEach(l=>{if(l.unite==='U'&&/^Marque\s*:/.test(l.desc||'')) l.unite='m²'});
   if(!c.devis){
     pane.innerHTML=`<div class="dv-empty"><h2 style="font-size:18px">Pas encore de devis pour ${esc(fullName(c))}</h2>
       <p class="hint" style="max-width:52ch">Le devis reprend les coordonnées de la fiche, la surface de murs à isoler et vos tarifs. Les 3 lignes ITE habituelles sont pré-remplies : prestations administratives, isolant et main d'œuvre. Tout reste modifiable.</p>
