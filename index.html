@@ -251,6 +251,53 @@ label small{font-weight:400}
 .dv .box table td{font-size:9pt;padding:0.4mm 0 0.4mm 6mm}
 .dv .box .red{color:#d00;font-weight:bold}
 .dv .foot{margin-top:6mm;text-align:center;font-size:7pt;color:#222}
+
+/* Options, documents joints, signature */
+.ob-rows{display:flex;flex-direction:column;gap:10px}
+.ob-row{border:1px solid var(--line);border-radius:12px;padding:10px;display:grid;grid-template-columns:minmax(0,1fr) 90px 120px 90px auto;gap:8px;align-items:end;background:var(--bg)}
+.ob-row .desc{grid-column:1/-1}
+.ob-row .mv,.ax-row .mv{display:flex;gap:4px;padding-bottom:4px;align-items:center}
+@media (max-width:760px){.ob-row{grid-template-columns:repeat(2,minmax(0,1fr))}.ob-row .ttl{grid-column:1/-1}}
+.ob-bar{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:10px}
+.ob-annex-list{display:flex;flex-direction:column;gap:8px}
+.ax-row{display:grid;grid-template-columns:48px minmax(0,1fr) auto auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:8px 10px;background:var(--bg)}
+.ax-row img{width:48px;height:66px;object-fit:cover;border:1px solid var(--line);background:#fff}
+@media (max-width:600px){.ax-row{grid-template-columns:48px minmax(0,1fr)}.ax-row .mv{grid-column:1/-1;justify-content:flex-end}}
+.bo-local{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 16px}
+.bo-local summary{cursor:pointer;font-family:var(--display);font-weight:800;margin-bottom:8px}
+.dvOpt{border:1px solid var(--line);border-radius:999px;padding:8px 12px;background:var(--surface);color:var(--fg);font-weight:600;max-width:100%}
+.ax-pick{display:flex;flex-wrap:wrap;gap:8px 20px}
+.ax-pick label{flex-direction:row;align-items:center;gap:8px;color:var(--fg)}
+.dv-annex-prev h3{font-size:14px;margin:0 0 8px}
+.ap-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px}
+.ap-grid figure{margin:0}.ap-grid img{width:100%;aspect-ratio:210/297;object-fit:contain;background:#fff;border:1px solid var(--line);border-radius:4px}
+.ap-grid figcaption{font-size:11px;color:var(--muted);margin-top:4px}
+.sig-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 16px;display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.sig-link{display:flex;flex-wrap:wrap;gap:8px;align-items:center;width:100%}
+.sig-link input{flex:1 1 260px;min-width:0;border:1px solid var(--line);border-radius:10px;padding:7px 10px;background:var(--bg);color:var(--fg);font-size:12.5px}
+.sig-ok{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.sig-ok img{height:60px;max-width:220px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:4px}
+.dv .sigimg{display:block;max-height:22mm;max-width:70mm;margin-top:2mm}
+.sign{max-width:900px;margin:0 auto;padding:16px;display:flex;flex-direction:column;gap:16px}
+.sign-top{display:flex;gap:14px;align-items:center}
+.sign-top img{height:52px;background:#fff;border-radius:8px;padding:4px}
+.sign-top h1{font-size:20px;margin:0}.sign-top p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.sign-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px}
+.sign-card a.btn{text-decoration:none}
+.sign-card h1,.sign-card h2{font-size:18px;margin:0}
+.sign-card label.chk{flex-direction:row;align-items:center;gap:8px;color:var(--fg)}
+.pad-wrap{display:flex;flex-direction:column;gap:6px;align-items:flex-start;font-size:12.5px;color:var(--muted)}
+.pad-wrap canvas{width:100%;max-width:520px;height:180px;background:#fff;border:2px dashed var(--line);border-radius:12px;touch-action:none;cursor:crosshair}
+.sign-paper{padding:16px}.sign-paper .zoomer{width:800px;margin:0 auto;display:flex;flex-direction:column;gap:16px;align-items:center}
+.sign-paper .dv{margin:0}
+.annex-page{width:210mm;max-width:100%;background:#fff;box-shadow:0 2px 14px rgba(0,0,0,.15)}
+.annex{display:none}
+@page annexe{size:A4 portrait;margin:0}
+@media print{
+  body.print-devis #signRoot{display:none!important}
+  #printRoot .annex{display:flex;page:annexe;break-before:page;width:210mm;height:296mm;align-items:center;justify-content:center;overflow:hidden}
+  #printRoot .annex img{max-width:210mm;max-height:296mm;object-fit:contain}
+}
 #printRoot{display:none}
 @media print{
   body.print-devis .wrap, body.print-devis .toast{display:none!important}
@@ -454,7 +501,7 @@ function persist(c){
   if(MODE==='local'){try{localStorage.setItem(KEY,JSON.stringify(clients))}catch(e){} return}
   if(c) queueSave(c);
 }
-function payload(c){const d=Object.assign({},c);delete d._owner;delete d.id;return d}
+function payload(c){const d={};Object.keys(c).forEach(k=>{if(k!=='id'&&k[0]!=='_')d[k]=c[k]});return d}
 function setSaved(t){const el=document.getElementById('savedInfo');if(el)el.textContent=t}
 function queueSave(c){clearTimeout(timers.get(c.id));setSaved('Enregistrement…');timers.set(c.id,setTimeout(()=>saveNow(c),600))}
 async function saveNow(c){
@@ -473,10 +520,11 @@ async function removeRemote(id){
   known.delete(id); return true;
 }
 async function loadRemote(){
-  const {data,error}=await sb.from('ite_clients').select('id,owner,data,updated_at').order('updated_at',{ascending:false});
+  let {data,error}=await sb.from('ite_clients').select('id,owner,data,updated_at,sign_token,signature').order('updated_at',{ascending:false});
+  if(error&&/sign_token|signature/.test(error.message||'')) ({data,error}=await sb.from('ite_clients').select('id,owner,data,updated_at').order('updated_at',{ascending:false}));
   if(error){toast('Chargement impossible : '+error.message);return false}
   known.clear();
-  clients=data.map(r=>{known.add(r.id);return migrate(Object.assign({},DEFAULTS,r.data,{id:r.id,_owner:r.owner,updated:Date.parse(r.updated_at)}))});
+  clients=data.map(r=>{known.add(r.id);const c=migrate(Object.assign({},DEFAULTS,r.data,{id:r.id,_owner:r.owner,_token:r.sign_token||null,_sig:r.signature||null,updated:Date.parse(r.updated_at)}));if(c._sig)c.statut='signe';return c});
   return true;
 }
 const cur=()=>clients.find(c=>c.id===currentId);
@@ -883,7 +931,7 @@ function clientBlock(c,d){
   return {nm, lines:[c.adresse,[c.cp,c.ville].filter(Boolean).join(' ').toUpperCase(),c.tel?'Tél : '+c.tel:'',c.email?'E-mail : '+c.email:'',
     d.zone?'Zone : '+d.zone:'',d.precarite?'Précarité : '+d.precarite:'',d.chauffage?'Type de chauffage : '+d.chauffage:'',d.logement?'Type de logement : '+d.logement:''].filter(Boolean)};
 }
-function devisDocHtml(c){
+function devisDocHtml(c,sig){
   const d=c.devis, e=ent(), t=devisTotals(c), cb=clientBlock(c,d);
   const head=`<div class="hd"><img class="logo" src="${LOGO_SRC}" alt="${esc(e.nomCourt)}"><div class="rge"><img src="${RGE_SRC}" alt="RGE Qualibat"><span>N° ${esc(e.rge)}<br>VAL ${esc(e.rgeFin)}</span></div></div>`;
   const op=`<tr class="op long"><td class="d" colspan="5"><span>BAR-EN-102 : Mise en place d’une isolation thermique des murs par l'extérieur<br>
@@ -909,7 +957,7 @@ function devisDocHtml(c){
   <div class="end">
     ${e.mentionAides&&t.region?`<p>${esc(e.mentionAides)}</p>`:''}
     ${t.cee&&e.termesCee?`<p><b style="font-size:8.5pt">Termes et conditions CEE</b><br>${esc(e.termesCee).replace('{prime}',num2(t.cee)+' €')}</p>`:''}
-    <div class="box"><div class="sig"><span>Apposer signature précédée de la mention "Bon pour accord"<br>Le :</span><small>Mode de paiement : ${esc(d.modePaiement)}</small></div>
+    <div class="box"><div class="sig">${sig?`<span>Bon pour accord<br>Signé électroniquement le ${frDateTime(sig.date)} par <b>${esc(sig.nom)}</b><img class="sigimg" src="${sig.image}" alt="Signature"></span>`:`<span>Apposer signature précédée de la mention "Bon pour accord"<br>Le :</span>`}<small>Mode de paiement : ${esc(d.modePaiement)}</small></div>
       <table><tr><td>Total H.T</td><td>${eur2(t.ht)}</td></tr><tr><td>${tvaLbl}</td><td>${eur2(t.tva)}</td></tr>
         <tr><td><b>Total TTC</b></td><td><b>${eur2(t.ttc)}</b></td></tr>
         ${t.region?`<tr><td>Aides région</td><td>- ${eur2(t.region)}</td></tr>`:''}
@@ -934,14 +982,15 @@ function renderDevis(){
   if(!c.devis){
     pane.innerHTML=`<div class="dv-empty"><h2 style="font-size:18px">Pas encore de devis pour ${esc(fullName(c))}</h2>
       <p class="hint" style="max-width:52ch">Le devis reprend les coordonnées de la fiche, la surface de murs à isoler et vos tarifs. Les 3 lignes ITE habituelles sont pré-remplies : prestations administratives, isolant et main d'œuvre. Tout reste modifiable.</p>
-      <button class="btn primary" id="dvCreate" type="button">Créer le devis</button></div>${entBlock()}`;
-    return;
+      <button class="btn primary" id="dvCreate" type="button">Créer le devis</button></div>${entBlock()}${boBlockLocal()}`;
+    fillAnnexAdmin(); return;
   }
   const d=c.devis, t=devisTotals(c);
   pane.innerHTML=`<div class="dv-edit">
    <div class="dv-actions"><button class="btn primary local-only" id="dvPrint" type="button">Imprimer / PDF du devis</button>
      <button class="btn" id="dvSync" type="button">Reprendre les coordonnées de la fiche</button>
      <span class="sp" id="dvDelWrap"><button class="btn danger" id="dvDel" type="button">Supprimer le devis</button></span></div>
+   <fieldset class="sig-box"><legend>Signature électronique du client</legend>${sigBlockHtml(c)}</fieldset>
    <div class="grid">
     <fieldset><legend>Devis</legend><div class="fields">
       ${fld('N° de devis','data-d="numero"',d.numero)}${fld('N° client','data-d="numClient"',d.numClient)}
@@ -965,7 +1014,8 @@ function renderDevis(){
           <button class="btn small" type="button" data-mv="up" aria-label="Monter la ligne" ${i?'':'disabled'}>↑</button><button class="btn small" type="button" data-mv="down" aria-label="Descendre la ligne" ${i<d.lignes.length-1?'':'disabled'}>↓</button><button class="btn small danger" type="button" data-mv="del" aria-label="Supprimer la ligne">✕</button></div>
         ${fld('Description <small>(**texte** = gras)</small>','data-l="desc"',l.desc,{area:1,rows:Math.min(10,Math.max(2,(l.desc||'').split('\n').length)),cls:'desc'})}
       </div>`).join('')}
-    </div><div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn" type="button" id="dvAdd">+ Ajouter une ligne</button></div></fieldset>
+    </div><div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn" type="button" id="dvAdd">+ Ajouter une ligne</button>${optSelectHtml()}</div></fieldset>
+    <fieldset class="span-all"><legend>Documents joints à la suite du devis</legend><div id="dvAnnex"><p class="hint">Chargement…</p></div></fieldset>
     <fieldset class="span-all"><legend>Aides et règlement</legend><div class="fields" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
       ${fld('Prime CEE (termes du devis)','data-c="cee"',c.cee,{type:'number',step:'0.01',u:'€'})}${fld('Aides région (déduites)','data-c="aideRegion"',c.aideRegion,{type:'number',step:'0.01',u:'€'})}
       ${fld('Mode de paiement','data-d="modePaiement"',d.modePaiement)}
@@ -974,17 +1024,18 @@ function renderDevis(){
     <div class="dv-sum" id="dvSum"></div>
     <p class="hint">Le montant des travaux de la simulation suit automatiquement le total TTC du devis. Les aides sont les mêmes que dans la fiche.</p></fieldset>
    </div>
-   <div class="dv-paper" id="dvPaper"></div>
-   ${entBlock()}
+   <div class="dv-paper" id="dvPaper"></div><div class="dv-annex-prev" id="dvAnnexPrev"></div>
+   ${entBlock()}${boBlockLocal()}
   </div>`;
   if(inIframe) pane.querySelectorAll('.local-only').forEach(x=>x.hidden=true);
-  refreshDevis();
+  if(c._sig){pane.querySelectorAll('.grid input,.grid textarea,.grid select,.grid button').forEach(x=>x.disabled=true); ['dvSync','dvDelWrap'].forEach(k=>{const x=document.getElementById(k); if(x) x.hidden=true})}
+  refreshDevis(); fillDvAnnex(); fillAnnexAdmin();
 }
 function refreshDevis(){
   const c=cur(); if(!c||!c.devis) return; const t=devisTotals(c);
   const s=document.getElementById('dvSum'); if(s) s.innerHTML=`<span>Total HT <b class="num">${eur2(t.ht)}</b></span><span>TVA <b class="num">${eur2(t.tva)}</b></span><span>Total TTC <b class="num">${eur2(t.ttc)}</b></span><span>Reste à régler <b class="num" style="color:var(--bad)">${eur2(t.reste)}</b></span>`;
   c.devis.lignes.forEach((l,i)=>{const el=document.querySelector(`[data-tot="${i}"]`); if(el) el.textContent=eur2(n(l.qte)*n(l.pu))});
-  const p=document.getElementById('dvPaper'); if(p) p.innerHTML=devisDocHtml(c);
+  const p=document.getElementById('dvPaper'); if(p) p.innerHTML=c._sig?devisDocHtml(Object.assign({},c,{devis:c._sig.devis}),c._sig):devisDocHtml(c);
 }
 function entBlock(){
   if(!canEditEnt()) return '';
@@ -997,7 +1048,11 @@ function entBlock(){
 const dvPane=document.getElementById('pane-devis');
 dvPane.addEventListener('input',e=>{
   const c=cur(), el=e.target; if(!c) return;
-  if(el.dataset.e!==undefined) return;
+  if(el.dataset.e!==undefined||el.closest('.ob')||el.dataset.sans!==undefined) return;
+  if(c._sig) return;
+  if(el.classList.contains('dvOpt')){const o=opts()[+el.value]; if(!o||!c.devis) return;
+    c.devis.lignes.push({titre:o.titre,desc:o.desc||'',qte:1,unite:o.unite||'U',pu:n(o.pu),tva:o.tva!==undefined&&o.tva!==''?n(o.tva):ent().tva});
+    syncDevis(c); persist(c); renderDevis(); renderList(); toast('Option ajoutée : pensez à la quantité'); return}
   if(el.dataset.c){c[el.dataset.c]=el.value; syncDevis(c); persist(c); refreshDevis(); return}
   if(!c.devis) return;
   if(el.dataset.d){
@@ -1009,18 +1064,17 @@ dvPane.addEventListener('input',e=>{
   const line=el.closest('.dv-line'); if(line&&el.dataset.l){c.devis.lignes[+line.dataset.i][el.dataset.l]=el.value}
   syncDevis(c); persist(c); refreshDevis(); renderList();
 });
-dvPane.addEventListener('change',e=>{if(e.target.type==='checkbox'&&e.target.dataset.d){e.target.dispatchEvent(new Event('input',{bubbles:true}))}});
+dvPane.addEventListener('change',e=>{const el=e.target, c=cur();
+  if(el.dataset.sans!==undefined&&c&&c.devis&&!c._sig){const s=new Set(c.devis.sansAnnexes||[]); el.checked?s.delete(el.dataset.sans):s.add(el.dataset.sans); c.devis.sansAnnexes=[...s]; persist(c); fillDvAnnex(); return}
+  if(e.target.type==='checkbox'&&e.target.dataset.d){e.target.dispatchEvent(new Event('input',{bubbles:true}))}});
 dvPane.addEventListener('click',async e=>{
   const c=cur(), b=e.target.closest('button'); if(!b||!c) return;
   if(b.id==='dvCreate'){b.disabled=true; await createDevis(); return}
+  if(['dvLink','dvCopy','dvUnlink','dvCheck','dvUnsign','dvUnsignYes'].includes(b.id)) return signAction(b.id,c);
   if(b.id==='entSave'){
     const vals={}; dvPane.querySelectorAll('[data-e]').forEach(i=>{vals[i.dataset.e]=i.value});
     vals.prochainNumero=n(vals.prochainNumero)||1;
-    if(MODE==='cloud'){
-      const data=Object.assign({},CFG.defaults,{entreprise:Object.assign({},CFG.defaults.entreprise||{},vals)});
-      const {error}=await sb.from('ite_config').update({data,updated_at:new Date().toISOString()}).eq('id',1);
-      if(error) return toast('Enregistrement impossible : '+error.message); CFG.defaults=data;
-    } else setSet({entreprise:Object.assign({},getSet().entreprise||{},vals)});
+    if(!(await saveCfg(d=>Object.assign(d,{entreprise:Object.assign({},d.entreprise||{},vals)})))) return;
     pageCss(); refreshDevis(); toast('Réglages de l\'entreprise enregistrés'); return;
   }
   if(!c.devis) return;
@@ -1032,9 +1086,262 @@ dvPane.addEventListener('click',async e=>{
   if(b.id==='dvDel'){document.getElementById('dvDelWrap').innerHTML='<span class="confirm">Supprimer ce devis ? <button class="btn danger small" id="dvDelYes" type="button">Oui, supprimer</button><button class="btn small" id="dvDelNo" type="button">Annuler</button></span>';return}
   if(b.id==='dvDelNo'){renderDevis();return}
   if(b.id==='dvDelYes'){delete c.devis; persist(c); renderDevis(); toast('Devis supprimé'); return}
-  if(b.id==='dvPrint'){pageCss(); document.getElementById('printRoot').innerHTML=devisDocHtml(c); document.body.classList.add('print-devis');
-    const old=document.title; document.title='Devis '+c.devis.numero+' '+[c.nom,c.prenom].filter(Boolean).join(' ');
-    setTimeout(()=>{window.print(); document.title=old; document.body.classList.remove('print-devis')},60); return}
+  if(b.id==='dvPrint'){pageCss(); const v=c._sig?Object.assign({},c,{devis:c._sig.devis}):c;
+    document.getElementById('printRoot').innerHTML=devisDocHtml(v,c._sig)+annexPrintHtml(annexOn(await getAnnexes(),v.devis));
+    doPrint('Devis '+v.devis.numero+' '+[c.nom,c.prenom].filter(Boolean).join(' ')+(c._sig?' signé':'')); return}
+});
+
+/* ===== Options du devis (catalogue géré par l'administrateur) ===== */
+const OPT_DEFAULT=[
+  {titre:'Crépi sur murs non isolés',desc:'Application d’un enduit de finition (crépi) sur les murs non isolés, teinte au choix du client, pour un aspect de façade homogène.',unite:'m²',pu:0,tva:10},
+  {titre:'Déport des gonds',desc:'Dépose des gonds existants et pose de gonds déportés adaptés à l’épaisseur de l’isolant, pour conserver l’ouverture complète des volets.',unite:'U',pu:0,tva:5.5},
+  {titre:'Dépose et repose de store banne',desc:'Dépose du store banne avant les travaux, puis repose sur la façade isolée avec des fixations adaptées à l’épaisseur de l’isolant.',unite:'U',pu:0,tva:5.5}];
+function opts(){const s=MODE==='cloud'?CFG.defaults.options:getSet().options; return Array.isArray(s)?s:OPT_DEFAULT}
+const canEditBO=()=>MODE==='local'||isAdmin();
+/* Enregistre les réglages partagés en relisant la version en base (évite d'écraser le n° de devis) */
+async function saveCfg(fn){
+  if(MODE!=='cloud'){const s=getSet(); setSet(fn(s)); return true}
+  const {data:row}=await sb.from('ite_config').select('data').eq('id',1).maybeSingle();
+  const data=fn(Object.assign({},(row&&row.data)||CFG.defaults));
+  const {error}=await sb.from('ite_config').update({data,updated_at:new Date().toISOString()}).eq('id',1);
+  if(error){toast('Enregistrement impossible : '+error.message);return false}
+  CFG.defaults=data; return true;
+}
+let OBO=null;
+function optAdminHtml(reset=true){
+  if(reset||!OBO) OBO=JSON.parse(JSON.stringify(opts()));
+  return `<div class="ob ob-opts"><div class="ob-rows">${OBO.map((o,i)=>`<div class="ob-row" data-oi="${i}">
+    ${fld('Option','data-of="titre"',o.titre,{cls:'ttl'})}${fld('Unité','data-of="unite"',o.unite)}
+    ${fld('Prix TTC','data-of="pu"',o.pu,{type:'number',step:'0.01',u:'€'})}${fld('TVA','data-of="tva"',o.tva,{type:'number',step:'0.1',u:'%'})}
+    <div class="mv"><button class="btn small" type="button" data-ob="optUp" aria-label="Monter" ${i?'':'disabled'}>↑</button><button class="btn small" type="button" data-ob="optDown" aria-label="Descendre" ${i<OBO.length-1?'':'disabled'}>↓</button><button class="btn small danger" type="button" data-ob="optDel" aria-label="Supprimer l'option">✕</button></div>
+    ${fld('Descriptif imprimé sur le devis','data-of="desc"',o.desc,{area:1,rows:2,cls:'desc'})}</div>`).join('')||'<p class="hint">Aucune option.</p>'}</div>
+    <div class="ob-bar"><button class="btn" type="button" data-ob="optAdd">+ Nouvelle option</button><button class="btn primary" type="button" data-ob="optSave">Enregistrer les options</button></div>
+    <p class="hint">Ces options apparaissent dans la liste « Ajouter une option » de chaque devis${MODE==='cloud'?', pour tous les commerciaux':''}. Le prix reste modifiable sur chaque devis. Une option à 0 € s'affiche à 0 € : pensez à saisir vos prix.</p></div>`;
+}
+function rerenderOpts(el){const box=el.closest('.ob-opts'); box.outerHTML=optAdminHtml(false)}
+
+/* ===== Documents joints (fiche produit, RGE, décennale…) ===== */
+let ANNEX=null;
+const AKEY='ite-annexes';
+async function getAnnexes(force){
+  if(ANNEX&&!force) return ANNEX;
+  if(MODE==='cloud'){
+    const {data,error}=await sb.from('ite_annexes').select('id,titre,ordre,pages,created_at').order('ordre');
+    if(error){ANNEX=[]; if(!/ite_annexes/.test(error.message||'')) toast('Documents joints indisponibles : '+error.message); return ANNEX}
+    ANNEX=data;
+  } else {try{ANNEX=JSON.parse(localStorage.getItem(AKEY)||'[]')}catch(e){ANNEX=[]}}
+  ANNEX.sort((a,b)=>(a.ordre-b.ordre)||String(a.created_at||'').localeCompare(String(b.created_at||'')));
+  return ANNEX;
+}
+function saveLocalAnnex(){try{localStorage.setItem(AKEY,JSON.stringify(ANNEX));return true}catch(e){toast('Mémoire du navigateur pleine : document non enregistré');return false}}
+async function addAnnex(titre,pages){
+  const list=await getAnnexes(), ordre=list.reduce((m,a)=>Math.max(m,a.ordre||0),0)+1;
+  if(MODE==='cloud'){const {error}=await sb.from('ite_annexes').insert({titre,ordre,pages}); if(error){toast('Ajout impossible : '+error.message);return false} await getAnnexes(true); return true}
+  ANNEX.push({id:uid(),titre,ordre,pages,created_at:new Date().toISOString()}); return saveLocalAnnex();
+}
+async function patchAnnex(id,patch){
+  if(MODE==='cloud'){const {error}=await sb.from('ite_annexes').update(patch).eq('id',id); if(error){toast('Modification impossible : '+error.message);return false}}
+  const a=ANNEX.find(x=>x.id===id); if(a) Object.assign(a,patch); if(MODE!=='cloud') return saveLocalAnnex(); return true;
+}
+async function deleteAnnex(id){
+  if(MODE==='cloud'){const {error}=await sb.from('ite_annexes').delete().eq('id',id); if(error){toast('Suppression impossible : '+error.message);return false}}
+  ANNEX=ANNEX.filter(x=>x.id!==id); if(MODE!=='cloud') saveLocalAnnex(); return true;
+}
+let pdfReady=null;
+function loadPdfJs(){
+  if(window.pdfjsLib) return Promise.resolve();
+  if(pdfReady) return pdfReady;
+  const v='3.11.174', srcs=[[`https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${v}/pdf.min.js`,`https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${v}/pdf.worker.min.js`],
+    [`https://cdn.jsdelivr.net/npm/pdfjs-dist@${v}/build/pdf.min.js`,`https://cdn.jsdelivr.net/npm/pdfjs-dist@${v}/build/pdf.worker.min.js`]];
+  pdfReady=(async()=>{for(const [s,w] of srcs){try{await loadScript(s); window.pdfjsLib.GlobalWorkerOptions.workerSrc=w; return}catch(e){}} pdfReady=null; throw new Error('Lecteur PDF introuvable (connexion internet nécessaire)')})();
+  return pdfReady;
+}
+const W_PAGE=1240;
+async function fileToPages(file,onPage){
+  const pages=[];
+  if(/^image\//.test(file.type)){
+    const url=URL.createObjectURL(file), img=new Image(); img.src=url; await img.decode();
+    const k=Math.min(1,W_PAGE/img.naturalWidth), cv=document.createElement('canvas'); cv.width=Math.round(img.naturalWidth*k); cv.height=Math.round(img.naturalHeight*k);
+    const g=cv.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,cv.width,cv.height); g.drawImage(img,0,0,cv.width,cv.height); URL.revokeObjectURL(url);
+    pages.push(cv.toDataURL('image/jpeg',0.75)); return pages;
+  }
+  await loadPdfJs();
+  const pdf=await window.pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;
+  for(let i=1;i<=pdf.numPages;i++){
+    const p=await pdf.getPage(i), v1=p.getViewport({scale:1}), vp=p.getViewport({scale:W_PAGE/v1.width});
+    const cv=document.createElement('canvas'); cv.width=Math.round(vp.width); cv.height=Math.round(vp.height);
+    const g=cv.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,cv.width,cv.height);
+    await p.render({canvasContext:g,viewport:vp}).promise; pages.push(cv.toDataURL('image/jpeg',0.72)); if(onPage) onPage(i,pdf.numPages);
+  }
+  return pages;
+}
+function annexAdminHtml(){
+  return `<div class="ob ob-annex"><div class="ob-annex-list"><p class="hint">Chargement…</p></div>
+    <div class="ob-bar"><label class="btn primary">+ Ajouter un document (PDF ou image)<input type="file" data-ob="axFile" accept="application/pdf,image/png,image/jpeg" multiple hidden></label></div>
+    <p class="hint">Les documents s'impriment à la suite de chaque devis, dans cet ordre, et sont joints au lien de signature. Sur un devis, on peut en décocher un.</p></div>`;
+}
+async function fillAnnexAdmin(){
+  const els=document.querySelectorAll('.ob-annex-list'); if(!els.length) return;
+  const list=await getAnnexes();
+  const html=list.length?list.map((a,i)=>`<div class="ax-row" data-ax="${esc(a.id)}"><img src="${a.pages[0]||''}" alt="">
+    <label>Titre<div class="in"><input data-axt value="${esc(a.titre)}"></div></label><span class="hint" style="margin:0">${a.pages.length} ${plural(a.pages.length,'page')}</span>
+    <div class="mv"><button class="btn small" type="button" data-ob="axUp" aria-label="Monter" ${i?'':'disabled'}>↑</button><button class="btn small" type="button" data-ob="axDown" aria-label="Descendre" ${i<list.length-1?'':'disabled'}>↓</button><span class="axdel"><button class="btn small danger" type="button" data-ob="axDel" aria-label="Supprimer le document">✕</button></span></div></div>`).join('')
+    :'<p class="hint">Aucun document pour l\'instant. Ajoutez par exemple la fiche produit, l\'attestation RGE et l\'assurance décennale.</p>';
+  els.forEach(el=>el.innerHTML=html);
+}
+function boBlockLocal(){
+  if(MODE!=='local') return '';
+  return `<details class="span-all bo-local"><summary>Options du devis</summary>${optAdminHtml()}</details>
+    <details class="span-all bo-local"><summary>Documents joints au devis</summary>${annexAdminHtml()}</details>`;
+}
+document.addEventListener('input',e=>{
+  const el=e.target; if(!el.closest('.ob')) return;
+  const row=el.closest('.ob-row'); if(row&&el.dataset.of){OBO[+row.dataset.oi][el.dataset.of]=el.value}
+});
+document.addEventListener('change',async e=>{
+  const el=e.target; if(!el.closest('.ob')) return;
+  if(el.dataset.axt!==undefined){const id=el.closest('.ax-row').dataset.ax; if(await patchAnnex(id,{titre:el.value.trim()})) toast('Titre enregistré'); return}
+  if(el.dataset.ob==='axFile'){
+    const files=[...el.files]; el.value=''; 
+    for(const f of files){
+      try{toast('Conversion de « '+f.name+' »…');
+        const pages=await fileToPages(f,(i,t)=>toast(`Conversion de « ${f.name} » : page ${i}/${t}`));
+        if(await addAnnex(f.name.replace(/\.[a-z0-9]+$/i,'').replace(/[_-]+/g,' ').trim(),pages)) toast('Document ajouté : '+pages.length+' '+plural(pages.length,'page'));
+      }catch(err){toast('Impossible de lire « '+f.name+' » : '+err.message)}
+    }
+    fillAnnexAdmin(); fillDvAnnex();
+  }
+});
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('button[data-ob]'); if(!b) return; const a=b.dataset.ob;
+  if(a.startsWith('opt')){
+    const row=b.closest('.ob-row'), i=row?+row.dataset.oi:-1;
+    if(a==='optAdd'){OBO.push({titre:'',desc:'',unite:'U',pu:0,tva:ent().tva}); rerenderOpts(b); return}
+    if(a==='optDel'){OBO.splice(i,1); rerenderOpts(b); return}
+    if(a==='optUp'||a==='optDown'){const j=a==='optUp'?i-1:i+1; [OBO[i],OBO[j]]=[OBO[j],OBO[i]]; rerenderOpts(b); return}
+    if(a==='optSave'){
+      const clean=OBO.filter(o=>String(o.titre||'').trim()).map(o=>({titre:o.titre.trim(),desc:o.desc||'',unite:o.unite||'U',pu:n(o.pu),tva:n(o.tva)}));
+      if(await saveCfg(d=>Object.assign(d,{options:clean}))){OBO=null; toast('Options enregistrées'); document.querySelectorAll('.ob-opts').forEach(x=>x.outerHTML=optAdminHtml()); refreshOptSelect()}
+      return;
+    }
+  }
+  const id=b.closest('.ax-row')?.dataset.ax; if(!id) return;
+  if(a==='axDel'){b.parentElement.innerHTML='<span class="confirm">Supprimer ? <button class="btn danger small" type="button" data-ob="axDelYes">Oui</button></span>';return}
+  if(a==='axDelYes'){if(await deleteAnnex(id)) toast('Document supprimé'); fillAnnexAdmin(); fillDvAnnex(); return}
+  if(a==='axUp'||a==='axDown'){
+    const L=ANNEX, i=L.findIndex(x=>x.id===id), j=a==='axUp'?i-1:i+1; if(j<0||j>=L.length) return;
+    [L[i],L[j]]=[L[j],L[i]]; for(let k=0;k<L.length;k++){if(L[k].ordre!==k+1){if(MODE==='cloud') await sb.from('ite_annexes').update({ordre:k+1}).eq('id',L[k].id); L[k].ordre=k+1}}
+    if(MODE!=='cloud') saveLocalAnnex(); fillAnnexAdmin(); fillDvAnnex();
+  }
+});
+
+/* Documents joints au devis : choix, aperçu, impression */
+const annexOn=(list,d)=>list.filter(a=>!((d&&d.sansAnnexes)||[]).includes(String(a.id)));
+function annexPrintHtml(list){return list.map(a=>a.pages.map(p=>`<div class="annex"><img src="${p}" alt="${esc(a.titre)}"></div>`).join('')).join('')}
+async function fillDvAnnex(){
+  const box=document.getElementById('dvAnnex'), c=cur(); if(!box||!c||!c.devis) return;
+  const list=await getAnnexes(), d=c._sig?c._sig.devis:c.devis, sans=d.sansAnnexes||[];
+  box.innerHTML=list.length?`<div class="ax-pick">${list.map(a=>`<label><input type="checkbox" data-sans="${esc(a.id)}" ${sans.includes(String(a.id))?'':'checked'} ${c._sig?'disabled':''}> ${esc(a.titre)} <small>(${a.pages.length} p.)</small></label>`).join('')}</div>`
+    :`<p class="hint">Aucun document joint pour l'instant. ${canEditBO()?(MODE==='cloud'?'Ajoutez-les dans l\'onglet Administration › Documents joints au devis.':'Ajoutez-les dans « Documents joints au devis » en bas de cet onglet.'):'L\'administrateur peut les ajouter.'}</p>`;
+  const prev=document.getElementById('dvAnnexPrev'); if(prev){const on=annexOn(list,d); prev.innerHTML=on.length?`<h3>Documents joints à la suite du devis</h3><div class="ap-grid">${on.map(a=>a.pages.map((p,k)=>`<figure><img src="${p}" alt="" loading="lazy"><figcaption>${esc(a.titre)}${a.pages.length>1?' · '+(k+1)+'/'+a.pages.length:''}</figcaption></figure>`).join('')).join('')}</div>`:''}
+}
+function refreshOptSelect(){const s=document.querySelector('select.dvOpt'); if(s) s.outerHTML=optSelectHtml()}
+function optSelectHtml(){const o=opts(); return `<select class="dvOpt" aria-label="Ajouter une option"><option value="">+ Ajouter une option…</option>${o.map((x,i)=>`<option value="${i}">${esc(x.titre)} (${eur2(n(x.pu))} / ${esc(x.unite)})</option>`).join('')}</select>`}
+
+/* ===== Signature électronique simple ===== */
+const signUrl=tok=>location.origin+location.pathname.replace(/index\.html$/,'')+'?signer='+tok;
+const frDateTime=iso=>{const d=new Date(iso); return d.toLocaleDateString('fr-FR')+' à '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})};
+function newToken(){const a=new Uint8Array(24); crypto.getRandomValues(a); return [...a].map(x=>x.toString(16).padStart(2,'0')).join('')}
+function sigBlockHtml(c){
+  if(MODE!=='cloud') return `<p class="hint" style="margin:0">La signature en ligne par le client fonctionne dans la version en ligne (Vercel + Supabase), pas dans ce fichier.</p>`;
+  if(c._sig){const s=c._sig; return `<div class="sig-ok"><img src="${s.image}" alt="Signature du client"><div><b>Devis signé le ${frDateTime(s.date)}</b> par ${esc(s.nom)}.<br><span class="hint" style="margin:0">Adresse IP ${esc(s.ip||'inconnue')} · empreinte ${esc(String(s.empreinte||'').slice(0,16))}… · le devis signé n'est plus modifiable.</span></div></div>
+    ${isAdmin()?`<span id="dvUnsignWrap"><button class="btn small danger" type="button" id="dvUnsign">Annuler la signature</button></span>`:''}`}
+  if(c._token){const u=signUrl(c._token), e=ent();
+    const subj=`Votre devis ${c.devis.numero} – ${e.nomCourt}`, body=`Bonjour ${[c.prenom,c.nom].filter(Boolean).join(' ')},\n\nVoici votre devis d'isolation thermique par l'extérieur, avec ses documents joints. Vous pouvez le lire et le signer en ligne avec ce lien :\n${u}\n\nJe reste à votre disposition pour toute question.\n\nCordialement,\n${profile?(profile.nom||''):''}\n${e.nomCourt}`;
+    return `<div class="sig-link"><input readonly value="${esc(u)}" aria-label="Lien de signature" onclick="this.select()">
+      <button class="btn small primary" type="button" id="dvCopy">Copier le lien</button>
+      <a class="btn small" href="mailto:${encodeURIComponent(c.email||'')}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}">Envoyer par e-mail</a>
+      <button class="btn small" type="button" id="dvCheck">Vérifier la signature</button>
+      <button class="btn small danger" type="button" id="dvUnlink">Désactiver le lien</button></div>
+      <p class="hint">En attente de signature. Le client voit le devis à jour et ses documents joints, saisit son nom et signe au doigt ou à la souris. Pas besoin de compte.</p>`}
+  return `<button class="btn primary" type="button" id="dvLink">Créer le lien de signature</button>
+    <p class="hint">Signature électronique simple et gratuite : le client ouvre le lien, lit le devis et signe. La date, l'heure, l'adresse IP et une empreinte du devis signé sont enregistrées.</p>`;
+}
+async function signAction(id,c){
+  if(id==='dvLink'){
+    if(!c.email) toast('Pensez à saisir l\'e-mail du client dans la fiche');
+    if(!known.has(c.id)||timers.has(c.id)){if(!(await saveNow(c))) return}
+    const tok=newToken(); const {error}=await sb.from('ite_clients').update({sign_token:tok}).eq('id',c.id);
+    if(error) return toast('Lien impossible : '+error.message+(/sign_token/.test(error.message)?' (exécutez mise-a-jour-devis.sql)':''));
+    c._token=tok; if(['prospect','rdv',''].includes(c.statut||'')){c.statut='devis'; persist(c); renderList()} renderDevis(); toast('Lien de signature créé'); return;
+  }
+  if(id==='dvCopy'){try{await navigator.clipboard.writeText(signUrl(c._token)); toast('Lien copié')}catch(e){toast('Sélectionnez le lien puis copiez-le')} return}
+  if(id==='dvUnlink'){const {error}=await sb.from('ite_clients').update({sign_token:null}).eq('id',c.id); if(error) return toast(error.message); c._token=null; renderDevis(); toast('Lien désactivé'); return}
+  if(id==='dvCheck'){const {data,error}=await sb.from('ite_clients').select('signature,data').eq('id',c.id).maybeSingle(); if(error) return toast(error.message);
+    if(data&&data.signature){c._sig=data.signature; c.statut='signe'; renderDevis(); renderList(); toast('Le client a signé')} else toast('Pas encore signé'); return}
+  if(id==='dvUnsign'){document.getElementById('dvUnsignWrap').innerHTML='<span class="confirm">Annuler la signature du client ? <button class="btn danger small" id="dvUnsignYes" type="button">Oui, annuler</button></span>';return}
+  if(id==='dvUnsignYes'){const {error}=await sb.from('ite_clients').update({signature:null,sign_token:null}).eq('id',c.id); if(error) return toast(error.message);
+    c._sig=null; c._token=null; c.statut='devis'; persist(c); renderDevis(); renderList(); toast('Signature annulée'); return}
+}
+
+/* Page publique de signature (lien envoyé au client, sans connexion) */
+let SIGN=null;
+async function signPage(tok){
+  MODE='cloud'; document.querySelector('.wrap').hidden=true; document.getElementById('authScreen').hidden=true;
+  let root=document.getElementById('signRoot'); if(!root){root=document.createElement('div'); root.id='signRoot'; root.className='sign'; document.body.insertBefore(root,document.getElementById('printRoot'))}
+  root.innerHTML='<p class="hint" style="text-align:center;padding:40px">Chargement du devis…</p>';
+  const {data,error}=await sb.rpc('ite_devis_public',{p_token:tok});
+  if(error||!data){root.innerHTML=`<div class="sign-card" style="margin-top:40px"><h1>Lien non valable</h1><p>Ce lien de signature n'est plus actif. Contactez votre conseiller pour en recevoir un nouveau.</p></div>`;return}
+  CFG.defaults={entreprise:data.entreprise||{}}; SIGN={tok,data}; renderSignPage();
+}
+function signView(){const c=Object.assign({},SIGN.data.data), s=SIGN.data.signature; return {c:s?Object.assign(c,{devis:s.devis}):c, s}}
+function renderSignPage(){
+  const root=document.getElementById('signRoot'), {c,s}=signView(), e=ent(), t=devisTotals(c), ann=SIGN.data.annexes||[];
+  root.innerHTML=`<header class="sign-top"><img src="${LOGO_SRC}" alt="${esc(e.nomCourt)}"><div><h1>Devis n° ${esc(c.devis.numero)}</h1><p>${esc([c.prenom,c.nom].filter(Boolean).join(' '))} · Total TTC <b>${eur2(t.ttc)}</b> · Reste à régler <b>${eur2(t.reste)}</b></p></div></header>
+  ${s?`<section class="sign-card" id="signBox">${signedHtml(s)}</section>`:`<section class="sign-card"><p style="margin:0">Lisez votre devis${ann.length?' et ses documents joints':''} ci-dessous, puis signez en bas de la page.</p><a class="btn primary" href="#signBox">Aller à la signature</a></section>`}
+  <div class="dv-paper sign-paper"><div class="zoomer">${devisDocHtml(c,s)}${ann.map(a=>a.pages.map(p=>`<img class="annex-page" src="${p}" alt="${esc(a.titre)}" loading="lazy">`).join('')).join('')}</div></div>
+  ${s?'':`<section class="sign-card" id="signBox">${signFormHtml(c)}</section>`}`;
+  fitSign(); if(!s) initPad();
+}
+function fitSign(){const z=document.querySelector('#signRoot .zoomer'); if(!z) return; const w=z.parentElement.clientWidth-32, k=Math.min(1,w/800); z.style.zoom=k}
+window.addEventListener('resize',()=>{if(SIGN) fitSign()});
+function signedHtml(s){return `<h2>Devis signé, merci !</h2><div class="sig-ok"><img src="${s.image}" alt="Votre signature"><p>Signé électroniquement le <b>${frDateTime(s.date)}</b> par <b>${esc(s.nom)}</b>.</p></div>
+  <button class="btn primary" type="button" id="sgPrint">Enregistrer le devis signé (PDF) / imprimer</button>`}
+function signFormHtml(c){return `<h2>Signer le devis</h2>
+  <label>Vos nom et prénom<div class="in"><input id="sgNom" autocomplete="name" value="${esc([c.prenom,c.nom].filter(Boolean).join(' '))}"></div></label>
+  <label class="chk"><input type="checkbox" id="sgOk"> J'ai lu le devis et ses documents joints. Bon pour accord.</label>
+  <div class="pad-wrap"><span>Signez dans le cadre, au doigt ou à la souris</span><canvas id="sgPad" aria-label="Zone de signature"></canvas><button class="btn small" type="button" id="sgClear">Effacer</button></div>
+  <button class="btn primary" type="button" id="sgGo" disabled>Signer le devis</button>
+  <p class="hint">Signature électronique simple. La date, l'heure, votre adresse IP et une empreinte du devis sont enregistrées avec votre signature.</p>`}
+let padInk=false;
+function initPad(){
+  const cv=document.getElementById('sgPad'); if(!cv) return; const r=cv.getBoundingClientRect(), dpr=Math.min(2,window.devicePixelRatio||1);
+  cv.width=Math.round(r.width*dpr); cv.height=Math.round(r.height*dpr); const g=cv.getContext('2d'); g.scale(dpr,dpr); g.lineWidth=2.2; g.lineCap='round'; g.lineJoin='round'; g.strokeStyle='#0b2a6b';
+  let down=false, last=null; padInk=false;
+  const pt=e=>{const b=cv.getBoundingClientRect(); return [e.clientX-b.left,e.clientY-b.top]};
+  cv.onpointerdown=e=>{down=true; last=pt(e); cv.setPointerCapture(e.pointerId); g.beginPath(); g.arc(last[0],last[1],1,0,7); g.fillStyle='#0b2a6b'; g.fill()};
+  cv.onpointermove=e=>{if(!down) return; const p=pt(e); g.beginPath(); g.moveTo(last[0],last[1]); g.lineTo(p[0],p[1]); g.stroke(); last=p; if(!padInk){padInk=true; checkSign()}};
+  cv.onpointerup=cv.onpointercancel=()=>{down=false};
+}
+function checkSign(){const b=document.getElementById('sgGo'); if(b) b.disabled=!(padInk&&document.getElementById('sgOk').checked&&document.getElementById('sgNom').value.trim())}
+function signPrint(){const {c,s}=signView(); pageCss(); document.getElementById('printRoot').innerHTML=devisDocHtml(c,s)+annexPrintHtml(SIGN.data.annexes||[]); doPrint('Devis '+c.devis.numero+' signé')}
+async function doPrint(title){
+  document.body.classList.add('print-devis'); const old=document.title; document.title=title;
+  await Promise.all([...document.querySelectorAll('#printRoot img')].map(i=>i.decode?i.decode().catch(()=>{}):0));
+  setTimeout(()=>{window.print(); document.title=old; document.body.classList.remove('print-devis')},60);
+}
+document.addEventListener('input',e=>{if(e.target.closest('#signBox')) checkSign()});
+document.addEventListener('change',e=>{if(e.target.closest('#signBox')) checkSign()});
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('#signRoot button'); if(!b) return;
+  if(b.id==='sgPrint') return signPrint();
+  if(b.id==='sgClear'){initPad(); checkSign(); return}
+  if(b.id==='sgGo'){
+    b.disabled=true; b.textContent='Signature en cours…';
+    const {error}=await sb.rpc('ite_signer_devis',{p_token:SIGN.tok,p_nom:document.getElementById('sgNom').value.trim(),p_image:document.getElementById('sgPad').toDataURL('image/png')});
+    if(error){toast(error.message); b.textContent='Signer le devis'; checkSign(); return}
+    await signPage(SIGN.tok); window.scrollTo(0,0);
+  }
 });
 
 /* ===== Administration ===== */
@@ -1069,7 +1376,10 @@ function renderAdmin(){
     </div>
     <div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="btn primary" id="saveDefaults" type="button">Enregistrer les réglages</button></div>
     <p class="hint">S'appliquent aux nouvelles fiches de tous les commerciaux. Les fiches existantes gardent leurs valeurs.</p>
-  </fieldset></div>`;
+  </fieldset>
+  <fieldset class="span-all"><legend>Options du devis</legend>${optAdminHtml()}</fieldset>
+  <fieldset class="span-all"><legend>Documents joints au devis</legend>${annexAdminHtml()}</fieldset></div>`;
+  fillAnnexAdmin();
 }
 async function reloadTeam(){const {data,error}=await sb.from('ite_profiles').select('*').order('nom');if(!error)team=data;return !error}
 document.getElementById('pane-admin').addEventListener('change',async e=>{
@@ -1083,9 +1393,8 @@ document.getElementById('pane-admin').addEventListener('change',async e=>{
 document.getElementById('pane-admin').addEventListener('click',async e=>{
   const t=e.target, tr=t.closest('tr[data-id]');
   if(t.id==='saveDefaults'){
-    const data=Object.assign({},CFG.defaults); document.querySelectorAll('[data-def]').forEach(i=>{data[i.dataset.def]=n(i.value)});
-    const {error}=await sb.from('ite_config').update({data,updated_at:new Date().toISOString()}).eq('id',1);
-    if(error) toast('Enregistrement impossible : '+error.message); else {CFG.defaults=data; toast('Réglages enregistrés')}
+    const vals={}; document.querySelectorAll('[data-def]').forEach(i=>{vals[i.dataset.def]=n(i.value)});
+    if(await saveCfg(d=>Object.assign(d,vals))) toast('Réglages enregistrés');
     return;
   }
   if(!tr) return;
@@ -1213,6 +1522,7 @@ async function boot(){
       document.querySelector('.wrap').hidden=true;
       document.querySelectorAll('.local-only').forEach(e=>e.hidden=false);
       sb=window.supabase.createClient(conf.url,conf.anon);
+      const tok=new URLSearchParams(location.search).get('signer'); if(tok) return signPage(tok);
       sb.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY'){document.querySelector('.wrap').hidden=true;showAuth('reset','Choisissez votre nouveau mot de passe.')}});
       if(/type=recovery/.test(location.hash)) return;
       const {data:{session}}=await sb.auth.getSession();
@@ -1220,6 +1530,7 @@ async function boot(){
       return enterApp(session.user);
     }
   }
+  if(new URLSearchParams(location.search).get('signer')){document.querySelector('.wrap').hidden=true; return showAuth('config','Ce lien de signature s\'ouvre uniquement sur le site en ligne.',true)}
   /* Mode local : fiches enregistrées dans ce navigateur */
   clients=load();
   if(!clients.length){clients=[sample()];persist();}
