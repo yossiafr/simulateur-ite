@@ -1,0 +1,1238 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Simulateur autofinancement ITE</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: fiche client à gauche (liste CRM), formulaire + synthèse « infographie » à droite */
+:root{
+  --bg:#f3f7ee; --surface:#ffffff; --surface-2:#eef5e6; --line:#d6e3c9;
+  --fg:#1d2a17; --muted:#5d6b55;
+  --green:#2f8f1f; --green-deep:#1e6312; --lime:#c9ea6a; --lime-soft:#e8f6c4;
+  --on-green:#ffffff; --warn:#b5541b; --bad:#b3261e;
+  --display:"Montserrat",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111a0e; --surface:#1a2715; --surface-2:#22331c; --line:#2f4627;
+  --fg:#e6f0de; --muted:#9fb193;
+  --green:#4fb83a; --green-deep:#2f7d20; --lime:#b6dd55; --lime-soft:#2c3f1f;
+  --on-green:#ffffff; --warn:#e58a4f; --bad:#ef7a72; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111a0e; --surface:#1a2715; --surface-2:#22331c; --line:#2f4627;
+  --fg:#e6f0de; --muted:#9fb193;
+  --green:#4fb83a; --green-deep:#2f7d20; --lime:#b6dd55; --lime-soft:#2c3f1f;
+  --on-green:#ffffff; --warn:#e58a4f; --bad:#ef7a72; color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--bg);color:var(--fg)}
+body{font-family:var(--body);font-size:14px;line-height:1.45}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--lime);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+
+.wrap{max-width:1320px;margin:0 auto;padding-block:18px 40px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+header.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.brand svg{flex:none}
+.brand .name{font-family:var(--display);font-weight:800;line-height:1.05;font-size:15px;letter-spacing:.02em;text-transform:uppercase}
+.brand .name b{color:var(--green);display:block;font-size:19px}
+.brand .flag{display:flex;height:3px;width:90px;margin-top:4px}
+.brand .flag i{flex:1}
+.top .title{margin-left:auto;font-family:var(--display);font-weight:700;color:var(--muted);font-size:13px;letter-spacing:.06em;text-transform:uppercase}
+
+.app{display:grid;grid-template-columns:280px minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:900px){.app{grid-template-columns:minmax(0,1fr)}}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 14px;cursor:pointer;font-weight:600}
+.btn:hover{border-color:var(--green)}
+.btn.primary{background:var(--green);border-color:var(--green);color:var(--on-green)}
+.btn.primary:hover{background:var(--green-deep)}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--bad)}
+.btn.small{padding:5px 10px;font-size:12.5px}
+
+/* Sidebar */
+aside.list{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+@media (max-width:900px){aside.list{position:static}}
+aside .head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+aside h2{font-size:15px}
+aside input[type=search]{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);margin-bottom:8px}
+.filters{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
+.chipf{border:1px solid var(--line);background:transparent;border-radius:999px;padding:3px 9px;font-size:12px;cursor:pointer}
+.chipf[aria-pressed=true]{background:var(--green);color:var(--on-green);border-color:var(--green)}
+.clients{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;max-height:60vh;overflow:auto}
+.clients button{width:100%;text-align:left;border:1px solid transparent;background:transparent;border-radius:10px;padding:8px 10px;cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 8px}
+.clients button:hover{background:var(--surface-2)}
+.clients button[aria-current=true]{background:var(--lime-soft);border-color:var(--lime)}
+.clients .n{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.clients .s{font-size:12px;color:var(--muted);grid-column:1}
+.clients .p{grid-row:1/3;grid-column:2;align-self:center;font-family:var(--display);font-weight:800;color:var(--green)}
+.empty{color:var(--muted);font-size:13px;padding:10px 4px}
+.side-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;border-top:1px solid var(--line);padding-top:12px}
+
+.status{display:inline-block;font-size:11px;font-weight:600;border-radius:999px;padding:1px 8px;background:var(--surface-2);color:var(--muted)}
+.status.rdv{background:#e3eefc;color:#1f4f8f}
+.status.devis{background:#fff1d6;color:#8a5a00}
+.status.signe{background:var(--green);color:var(--on-green)}
+.status.perdu{background:#f6dede;color:#8f2a24}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .status.rdv{background:#1f3550;color:#bcd6f7}
+:root:not([data-theme="light"]) .status.devis{background:#4a3a12;color:#f3d48a}
+:root:not([data-theme="light"]) .status.perdu{background:#4a1f1c;color:#f3b1ab}}
+:root[data-theme="dark"] .status.rdv{background:#1f3550;color:#bcd6f7}
+:root[data-theme="dark"] .status.devis{background:#4a3a12;color:#f3d48a}
+:root[data-theme="dark"] .status.perdu{background:#4a1f1c;color:#f3b1ab}
+
+/* Form */
+main{display:flex;flex-direction:column;gap:18px;min-width:0}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.toolbar h1{font-size:22px;margin-right:auto}
+.saved{font-size:12px;color:var(--muted)}
+.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px;width:max-content;max-width:100%}
+.tabs button{border:0;background:transparent;border-radius:999px;padding:7px 16px;cursor:pointer;font-weight:600;color:var(--muted)}
+.tabs button[aria-selected=true]{background:var(--green);color:var(--on-green)}
+
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media (max-width:700px){.grid{grid-template-columns:minmax(0,1fr)}}
+fieldset{border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:14px 16px 16px;margin:0;min-width:0}
+legend{font-family:var(--display);font-weight:800;font-size:14px;padding:0 6px;color:var(--green-deep)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) legend{color:var(--lime)}}
+:root[data-theme="dark"] legend{color:var(--lime)}
+.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 12px}
+.fields .full{grid-column:1/-1}
+label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:600;color:var(--muted);min-width:0}
+label small{font-weight:400}
+.in{position:relative;display:flex}
+.in input,.in select,label textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);font-weight:500;min-width:0}
+.in input[type=number]{text-align:right;padding-right:34px}
+.in .u{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:12.5px;pointer-events:none}
+.in input:focus,.in select:focus,label textarea:focus{border-color:var(--green);outline:none;box-shadow:0 0 0 3px var(--lime-soft)}
+.hint{font-size:12px;color:var(--muted);margin:8px 0 0}
+.calc-hint{font-size:12px;color:var(--green);font-weight:600}
+
+/* ===== Synthèse (infographie) ===== */
+.sheet{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:22px;display:flex;flex-direction:column;gap:18px;overflow:hidden}
+.sheet-head{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start;justify-content:space-between}
+.sheet-head h2{font-size:clamp(20px,3vw,30px);font-weight:900;line-height:1.1}
+.ribbon{display:inline-block;margin-top:8px;background:linear-gradient(180deg,var(--green),var(--green-deep));color:var(--on-green);font-family:var(--display);font-style:italic;font-weight:800;font-size:clamp(16px,2.2vw,22px);padding:6px 22px;border-radius:999px}
+.who{text-align:right;font-size:13px;color:var(--muted)}
+.who strong{display:block;color:var(--fg);font-size:16px;font-family:var(--display)}
+
+.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:760px){.steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.step{background:var(--surface-2);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.step .k{display:flex;align-items:center;gap:8px;font-family:var(--display);font-weight:800;font-size:14px}
+.step .k i{flex:none;width:26px;height:26px;border-radius:50%;background:var(--green);color:var(--on-green);display:grid;place-items:center;font-style:normal;font-size:14px}
+.step p{margin:0;font-size:12.5px;color:var(--muted)}
+.step.hot{background:linear-gradient(160deg,var(--green),var(--green-deep));color:var(--on-green)}
+.step.hot p{color:var(--on-green);opacity:.92}
+.step.hot .k i{background:var(--on-green);color:var(--green-deep)}
+.step .big{font-family:var(--display);font-weight:900;font-size:20px}
+.pill{display:inline-block;background:#f8d9d6;color:#9c2a20;font-weight:700;font-size:12px;border-radius:999px;padding:2px 10px;width:max-content}
+
+.three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:stretch}
+@media (max-width:820px){.three{grid-template-columns:minmax(0,1fr)}}
+.box{border:1px solid var(--line);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0;position:relative}
+.box h3{font-size:16px;font-weight:800;display:flex;align-items:center;gap:8px}
+.box .row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:13px}
+.box .val{font-family:var(--display);font-weight:800;font-size:18px;white-space:nowrap}
+.cover{background:var(--lime-soft);border-radius:999px;padding:6px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:700;font-size:13px}
+.cover b{font-family:var(--display);font-size:20px;color:var(--green-deep)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .cover b{color:var(--lime)}}
+:root[data-theme="dark"] .cover b{color:var(--lime)}
+.pv-badge{background:var(--lime);color:#1d2a17;border-radius:999px;padding:4px 14px;font-family:var(--display);font-weight:900;font-size:22px;width:max-content}
+.foot{font-size:11px;color:var(--muted);font-style:italic;margin:0}
+
+.band{background:linear-gradient(160deg,var(--green),var(--green-deep));color:var(--on-green);border-radius:18px;padding:16px 18px;display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:18px;align-items:center}
+@media (max-width:820px){.band{grid-template-columns:minmax(0,1fr)}}
+.band .cell{display:flex;flex-direction:column;gap:6px;min-width:0}
+.band .lbl{font-family:var(--display);font-weight:700;font-size:13px;opacity:.95}
+.band .money{background:#fff;color:#1d2a17;border-radius:999px;padding:6px 16px;font-family:var(--display);font-weight:900;font-size:22px;width:max-content;max-width:100%}
+.band .pct{font-family:var(--display);font-weight:900;font-size:clamp(34px,5vw,48px);line-height:1;color:var(--lime)}
+.band .pct-sub{font-size:13px}
+.band .pct-sub b{color:var(--lime)}
+
+.meter{display:flex;flex-direction:column;gap:8px}
+.meter .bar{display:flex;height:22px;border-radius:999px;overflow:hidden;background:var(--surface-2);border:1px solid var(--line);position:relative}
+.meter .bar span{height:100%}
+.seg-eco{background:var(--green)} .seg-aid{background:var(--lime)} .seg-pv{background:repeating-linear-gradient(45deg,var(--lime-soft),var(--lime-soft) 6px,var(--lime) 6px,var(--lime) 8px)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:5px}
+.meter .mark{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--fg);opacity:.6}
+
+.details{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:820px){.details{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kv{background:var(--surface-2);border-radius:12px;padding:10px 12px;min-width:0}
+.kv span{display:block;font-size:11.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.kv b{font-family:var(--display);font-size:17px}
+.note{font-size:11.5px;color:var(--muted);margin:0}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:8px 16px;border-radius:999px;font-weight:600;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+.toast{z-index:60}
+.userbox{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px}
+.userbox b{font-family:var(--display)}
+.auth{position:fixed;inset:0;z-index:40;background:var(--bg);display:flex;align-items:flex-start;justify-content:center;overflow:auto;
+  padding-block:calc(10vh + env(safe-area-inset-top,0px)) 24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.auth-card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:24px;width:min(400px,100%);display:flex;flex-direction:column;gap:12px}
+.auth-card h2{font-size:20px}
+.auth-card .brand{margin-bottom:4px}
+.auth-msg{margin:0;font-size:13px;color:var(--muted)}
+.auth-msg.err{color:var(--bad);font-weight:600}
+.linkbtn{background:none;border:0;color:var(--green);font-weight:600;cursor:pointer;padding:4px;align-self:center}
+.table-wrap{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--line)}
+.tbl td{padding:8px;border-bottom:1px solid var(--line);vertical-align:middle}
+.tbl select,.tbl input[type=password],.tbl input[type=text]{padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
+.tbl tr.off td{opacity:.55}
+.span-all{grid-column:1/-1}
+.modal-bg{position:fixed;inset:0;background:rgba(10,20,6,.55);z-index:50;display:flex;align-items:flex-start;justify-content:center;overflow:auto;
+  padding-block:calc(24px + env(safe-area-inset-top,0px)) 24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.modal{background:var(--surface);border:1px solid var(--line);border-radius:18px;width:min(760px,100%);padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.modal h2{font-size:18px}
+.modal .steps-mail{margin:0;padding-left:20px;color:var(--muted);font-size:13px}
+.modal .acts{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+.mail-preview{border:1px solid var(--line);border-radius:12px;background:#ffffff;max-height:52vh;overflow:auto;padding:12px}
+.confirm{display:flex;gap:6px;align-items:center;font-size:12.5px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* Impression : uniquement la synthèse */
+/* ===== Devis ===== */
+.dv-edit{display:flex;flex-direction:column;gap:14px}
+.dv-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.dv-actions .sp{margin-left:auto}
+.dv-lines{display:flex;flex-direction:column;gap:10px}
+.dv-line{border:1px solid var(--line);border-radius:12px;padding:10px;display:grid;grid-template-columns:minmax(0,1fr) 90px 90px 110px 80px auto;gap:8px;align-items:end;background:var(--bg)}
+.dv-line .desc{grid-column:1/-1}
+.dv-line .tot{font-family:var(--display);font-weight:800;padding-bottom:9px;white-space:nowrap}
+.dv-line .mv{display:flex;gap:4px;padding-bottom:4px}
+@media (max-width:760px){.dv-line{grid-template-columns:repeat(2,minmax(0,1fr))}.dv-line .ttl{grid-column:1/-1}}
+.dv-sum{display:flex;flex-wrap:wrap;gap:10px 24px;justify-content:flex-end;font-size:13px}
+.dv-sum b{font-family:var(--display);font-size:16px}
+.dv-empty{background:var(--surface);border:1px dashed var(--line);border-radius:var(--r);padding:28px;text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center}
+.dv-paper{background:#e9ece6;border-radius:16px;padding:16px;overflow-x:auto}
+.dv-paper .dv{margin:0 auto;box-shadow:0 2px 14px rgba(0,0,0,.15)}
+/* Document papier : une seule apparence, indépendante du thème */
+.dv{width:210mm;max-width:none;background:#fff;color:#111;font-family:Arial,Helvetica,"Liberation Sans",sans-serif;font-size:9pt;line-height:1.3;padding:10mm 12mm}
+.dv table{width:100%;border-collapse:collapse}
+.dv .hd{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:6mm}
+.dv .hd .logo{width:74mm;height:auto}
+.dv .hd .rge{text-align:right;font-size:6.5pt;line-height:1.1}
+.dv .hd .rge img{width:15mm;height:auto;display:block;margin-left:auto}
+.dv .run{display:flex;justify-content:space-between;font-weight:bold;font-size:10pt;border-bottom:1px solid #111;padding-bottom:1mm;margin-bottom:1mm}
+.dv .top{display:grid;grid-template-columns:1fr 1fr;gap:6mm;margin-bottom:4mm}
+.dv .top h2{font-family:inherit;font-size:13pt;margin:0 0 2mm;border-bottom:1px solid #111;padding-bottom:1mm}
+.dv .top h3{font-size:10.5pt;margin:0 0 2mm;border-bottom:1px solid #111;padding-bottom:1mm}
+.dv .top p{margin:0}
+.dv th{font-size:12pt;text-align:right;border-bottom:1.5px solid #111;padding:1mm 0 1mm 2mm;white-space:nowrap}
+.dv th:first-child{text-align:left;padding-left:0}
+.dv td{vertical-align:top;padding:1.2mm 0 1.2mm 2mm;text-align:right;font-size:7.5pt;white-space:nowrap}
+.dv td.d{text-align:left;padding-left:0;white-space:normal;width:57%;font-size:8.5pt}
+.dv td.d .t{font-weight:bold;font-size:7.5pt;display:block}
+.dv td.d .x{white-space:pre-wrap;display:block;margin-top:2mm;text-align:justify}
+.dv tr.op td.d{font-size:8.5pt}
+.dv tr{break-inside:avoid}
+.dv tr.long{break-inside:auto}
+.dv .end{break-inside:avoid;margin-top:6mm;font-size:7.5pt}
+.dv .end p{margin:0 0 1mm}
+.dv .box{border:1px solid #9aa;background:#eef0fb;margin-top:3mm;display:grid;grid-template-columns:1fr auto;min-height:42mm;padding:2mm 3mm;font-size:9pt}
+.dv .box .sig{display:flex;flex-direction:column;justify-content:space-between}
+.dv .box .sig small{font-size:7.5pt}
+.dv .box table td{font-size:9pt;padding:0.4mm 0 0.4mm 6mm}
+.dv .box .red{color:#d00;font-weight:bold}
+.dv .foot{margin-top:6mm;text-align:center;font-size:7pt;color:#222}
+#printRoot{display:none}
+@media print{
+  body.print-devis .wrap, body.print-devis .toast{display:none!important}
+  body.print-devis #printRoot{display:block}
+  #printRoot{page:devis}
+  #printRoot .dv{width:auto;padding:0;box-shadow:none}
+  #printRoot .dv .foot{display:none}
+}
+@page devis{size:A4 portrait;margin:10mm 12mm 18mm}
+@media print{
+  @page{size:A4 landscape;margin:8mm}
+  :root{--bg:#fff;--surface:#fff;--surface-2:#eef5e6;--fg:#1d2a17;--muted:#4f5c48;--line:#d6e3c9;--lime-soft:#e8f6c4;--lime:#c9ea6a;--green:#2f8f1f;--green-deep:#1e6312;color-scheme:light}
+  body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  header.top .title, aside, .toolbar, .tabs, #pane-form, .no-print{display:none!important}
+  .app{display:block} .wrap{padding:0;max-width:none}
+  #pane-sheet{display:block!important}
+  .sheet{border:0;padding:0;gap:12px}
+  .steps{grid-template-columns:repeat(4,1fr)} .three{grid-template-columns:repeat(3,1fr)} .band{grid-template-columns:1fr 1fr 1.4fr} .details{grid-template-columns:repeat(4,1fr)}
+}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <svg width="46" height="46" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="26" r="20" fill="none" stroke="var(--green)" stroke-width="4" stroke-dasharray="96 30" stroke-linecap="round"/><path d="M12 27 24 16l12 11v11H12z" fill="var(--green)"/><rect x="21" y="29" width="6" height="6" rx="1" fill="var(--on-green)"/><path d="M28 14c2-8 10-10 14-10-1 6-4 12-12 12" fill="var(--lime)" stroke="var(--green)" stroke-width="1.5"/></svg>
+      <div>
+        <div class="name" id="brandName">Les Compagnons <b>Écologiques</b> Français</div>
+        <div class="flag" aria-hidden="true"><i style="background:#1f4fa3"></i><i style="background:#eee"></i><i style="background:#d0302b"></i></div>
+      </div>
+    </div>
+    <div class="title">Simulateur d'autofinancement ITE</div>
+    <div class="userbox" id="userBox" hidden><span id="userName"></span><span class="status" id="userRole"></span><button class="btn small" id="btnLogout" type="button">Déconnexion</button></div>
+  </header>
+
+  <div class="app">
+    <aside class="list">
+      <div class="head"><h2>Clients</h2><button class="btn primary small" id="btnNew" type="button">+ Nouveau</button></div>
+      <input type="search" id="search" placeholder="Rechercher nom, ville, tél…" aria-label="Rechercher un client">
+      <div class="filters" id="filters"></div>
+      <div class="in" id="repFilterWrap" hidden style="margin-bottom:10px"><select id="repFilter" aria-label="Filtrer par commercial"></select></div>
+      <ul class="clients" id="clientList"></ul>
+      <div class="side-actions local-only">
+        <button class="btn small" id="btnExportCsv" type="button">Export CSV</button>
+        <button class="btn small" id="btnExportJson" type="button">Sauvegarde</button>
+        <label class="btn small" style="flex-direction:row;color:var(--fg)">Restaurer<input type="file" id="fileImport" accept=".json,application/json" hidden></label>
+      </div>
+    </aside>
+
+    <main>
+      <div class="toolbar">
+        <h1 id="clientTitle">Nouveau client</h1>
+        <span class="saved" id="savedInfo"></span>
+        <button class="btn" id="btnDup" type="button">Dupliquer</button>
+        <span id="delWrap"><button class="btn danger" id="btnDel" type="button">Supprimer</button></span>
+        <button class="btn local-only" id="btnPrint" type="button">Imprimer / PDF</button>
+        <button class="btn primary" id="btnMail" type="button">Envoyer par e-mail</button>
+      </div>
+      <div class="tabs" role="tablist">
+        <button role="tab" id="tab-form" aria-selected="true" aria-controls="pane-form" type="button">Fiche client</button>
+        <button role="tab" id="tab-sheet" aria-selected="false" aria-controls="pane-sheet" type="button">Synthèse client</button>
+        <button role="tab" id="tab-devis" aria-selected="false" aria-controls="pane-devis" type="button">Devis</button>
+        <button role="tab" id="tab-admin" aria-selected="false" aria-controls="pane-admin" type="button" hidden>Administration</button>
+      </div>
+
+      <form id="pane-form" autocomplete="off">
+        <div class="grid">
+          <fieldset>
+            <legend>Client</legend>
+            <div class="fields">
+              <label>Nom<div class="in"><input id="nom" data-k="nom"></div></label>
+              <label>Prénom<div class="in"><input id="prenom" data-k="prenom"></div></label>
+              <label>Téléphone<div class="in"><input id="tel" data-k="tel" inputmode="tel"></div></label>
+              <label>E-mail<div class="in"><input id="email" data-k="email" type="email"></div></label>
+              <label class="full">Adresse<div class="in"><input id="adresse" data-k="adresse"></div></label>
+              <label>Code postal<div class="in"><input id="cp" data-k="cp" inputmode="numeric"></div></label>
+              <label>Ville<div class="in"><input id="ville" data-k="ville"></div></label>
+              <label>Statut<div class="in"><select id="statut" data-k="statut">
+                <option value="prospect">Prospect</option><option value="rdv">RDV fixé</option><option value="devis">Devis envoyé</option><option value="signe">Signé</option><option value="perdu">Perdu</option></select></div></label>
+              <label>Date du RDV<div class="in"><input id="dateRdv" data-k="dateRdv" type="date"></div></label>
+              <label class="full">Notes<textarea id="notes" data-k="notes" rows="2"></textarea></label>
+              <label class="full" id="ownerWrap" hidden>Commercial responsable<div class="in"><select id="ownerSel"></select></div></label>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Logement & énergie</legend>
+            <div class="fields">
+              <label>Type<div class="in"><select id="typeLogement" data-k="typeLogement"><option>Maison individuelle</option><option>Maison mitoyenne</option><option>Appartement</option></select></div></label>
+              <label>Année de construction<div class="in"><input id="annee" data-k="annee" type="number" min="1800" max="2030"></div></label>
+              <label>Surface habitable<div class="in"><input id="surface" data-k="surface" type="number" min="0"><span class="u">m²</span></div></label>
+              <label>Surface de murs à isoler<div class="in"><input id="surfaceMurs" data-k="surfaceMurs" type="number" min="0"><span class="u">m²</span></div></label>
+              <label>DPE actuel<div class="in"><select id="dpe" data-k="dpe"><option value="">—</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option></select></div></label>
+              <label>Énergie de chauffage<div class="in"><select id="energie" data-k="energie"><option>Gaz</option><option>Fioul</option><option>Électricité</option><option>Pompe à chaleur</option><option>Bois / granulés</option><option>Propane</option></select></div></label>
+              <label>Facture de chauffage annuelle<div class="in"><input id="factureAn" data-k="factureAn" type="number" min="0" step="10"><span class="u">€/an</span></div></label>
+              <label>Économie due à l'ITE<div class="in"><input id="tauxEco" data-k="tauxEco" type="number" min="0" max="80" step="1"><span class="u">%</span></div></label>
+              <label class="full">Économie mensuelle (forcer une valeur) <small>laisser vide pour le calcul auto</small><div class="in"><input id="ecoForce" data-k="ecoForce" type="number" min="0" step="1" placeholder="auto"><span class="u">€/mois</span></div><span class="calc-hint" id="ecoHint"></span></label>
+            </div>
+            <p class="hint">Repère : les murs représentent 20 à 25 % des pertes de chaleur d'une maison non isolée (ADEME). Ajustez le taux selon le logement.</p>
+          </fieldset>
+
+          <fieldset>
+            <legend>Financement</legend>
+            <div class="fields">
+              <label>Montant des travaux TTC<div class="in"><input id="coutTravaux" data-k="coutTravaux" type="number" min="0" step="100"><span class="u">€</span></div></label>
+              <label>Taux d'intérêt annuel<div class="in"><input id="taux" data-k="taux" type="number" min="0" max="25" step="0.1"><span class="u">%</span></div></label>
+              <label>Durée du financement<div class="in"><input id="duree" data-k="duree" type="number" min="1" step="1"><span class="u">mois</span></div></label>
+              <label>Différé avant 1ʳᵉ échéance<div class="in"><input id="differe" data-k="differe" type="number" min="0" max="24" step="1"><span class="u">mois</span></div></label>
+              <label class="full">Mensualité (forcer une valeur) <small>laisser vide pour le calcul auto</small><div class="in"><input id="mensForce" data-k="mensForce" type="number" min="0" step="1" placeholder="auto"><span class="u">€/mois</span></div><span class="calc-hint" id="mensHint"></span></label>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Aides & patrimoine</legend>
+            <div class="fields">
+              <label>Prime CEE<div class="in"><input id="cee" data-k="cee" type="number" min="0" step="50"><span class="u">€</span></div></label>
+              <label>Aide région<div class="in"><input id="aideRegion" data-k="aideRegion" type="number" min="0" step="50"><span class="u">€</span></div></label>
+              <label>Valeur actuelle du bien<div class="in"><input id="valeurBien" data-k="valeurBien" type="number" min="0" step="1000"><span class="u">€</span></div></label>
+              <label>Plus-value estimée<div class="in"><input id="tauxPV" data-k="tauxPV" type="number" min="0" max="30" step="0.5"><span class="u">%</span></div></label>
+              <label class="full">Hausse annuelle du prix de l'énergie<div class="in"><input id="hausse" data-k="hausse" type="number" min="0" max="15" step="0.5"><span class="u">%/an</span></div></label>
+            </div>
+            <p class="hint">Plus-value : +10 % en moyenne après ITE (Notaires de France, transactions 2024). Écart de valeur selon le DPE, réalisable à la revente.</p>
+          </fieldset>
+        </div>
+      </form>
+
+      <section id="pane-sheet" hidden></section>
+      <section id="pane-devis" hidden></section>
+      <section id="pane-admin" hidden></section>
+    </main>
+  </div>
+</div>
+<div class="modal-bg" id="mailModal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mailTitle">
+    <h2 id="mailTitle">Envoyer la simulation par e-mail</h2>
+    <div class="fields">
+      <label>Destinataire<div class="in"><input id="mailTo" type="email" placeholder="e-mail du client"></div></label>
+      <label>Objet<div class="in"><input id="mailSubject"></div></label>
+      <label class="full">Votre signature <small>(mémorisée)</small><textarea id="mailSig" rows="2" placeholder="Prénom Nom · Conseiller · 06 …"></textarea></label>
+    </div>
+    <ol class="steps-mail" id="mailSteps">
+      <li>« Copier et ouvrir ma messagerie » copie le récapitulatif mis en page et ouvre un nouveau message au client.</li>
+      <li>Dans le corps du message, faites <b>Coller</b> (Ctrl+V ou Cmd+V), puis envoyez.</li>
+    </ol>
+    <div class="mail-preview" id="mailPreview"></div>
+    <div class="acts">
+      <button class="btn" id="mailClose" type="button">Fermer</button>
+      <button class="btn" id="mailCopy" type="button">Copier seulement</button>
+      <button class="btn" id="mailGo" type="button">Copier et ouvrir ma messagerie</button>
+      <button class="btn primary" id="mailSend" type="button" hidden>Envoyer au client</button>
+    </div>
+  </div>
+</div>
+<div class="auth" id="authScreen" hidden>
+  <form class="auth-card" id="authForm" novalidate>
+    <div class="brand">
+      <svg width="40" height="40" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="26" r="20" fill="none" stroke="var(--green)" stroke-width="4" stroke-dasharray="96 30" stroke-linecap="round"/><path d="M12 27 24 16l12 11v11H12z" fill="var(--green)"/><rect x="21" y="29" width="6" height="6" rx="1" fill="var(--on-green)"/><path d="M28 14c2-8 10-10 14-10-1 6-4 12-12 12" fill="var(--lime)" stroke="var(--green)" stroke-width="1.5"/></svg>
+      <div class="name">Simulateur <b>ITE</b></div>
+    </div>
+    <h2 id="authTitle">Connexion</h2>
+    <p class="auth-msg" id="authMsg"></p>
+    <label id="lblEmail">E-mail<div class="in"><input id="authEmail" type="email" autocomplete="username"></div></label>
+    <label id="lblPass">Mot de passe<div class="in"><input id="authPass" type="password" autocomplete="current-password"></div></label>
+    <button class="btn primary" id="authSubmit" type="submit">Se connecter</button>
+    <button class="linkbtn" id="authAlt" type="button">Mot de passe oublié ?</button>
+  </form>
+</div>
+<div id="printRoot"></div><style id="pageStyle"></style>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+const KEY='ite-crm-v1';
+const DEFAULTS={nom:'',prenom:'',tel:'',email:'',adresse:'',cp:'',ville:'',statut:'prospect',dateRdv:'',notes:'',
+  typeLogement:'Maison individuelle',annee:'',surface:'',surfaceMurs:'',dpe:'',energie:'Gaz',factureAn:'',tauxEco:25,ecoForce:'',
+  coutTravaux:'',mensForce:'',taux:6,duree:120,differe:6,cee:'',aideRegion:'',valeurBien:'',tauxPV:10,hausse:0};
+const STATUTS={prospect:'Prospect',rdv:'RDV fixé',devis:'Devis envoyé',signe:'Signé',perdu:'Perdu'};
+const inIframe=(()=>{try{return window.self!==window.top}catch(e){return true}})();
+if(inIframe) document.querySelectorAll('.local-only').forEach(e=>e.hidden=true);
+
+let MODE='local', sb=null, me=null, profile=null, team=[], CFG={mail:false,defaults:{}};
+let clients=[], currentId=null, filter='all', repFilter='all';
+const known=new Set(), timers=new Map();
+const isAdmin=()=>MODE==='cloud'&&!!profile&&profile.role==='admin';
+const DEF_KEYS=['tauxEco','taux','duree','differe','tauxPV','hausse'];
+function blank(){const d={};DEF_KEYS.forEach(k=>{if(CFG.defaults[k]!=null&&CFG.defaults[k]!=='')d[k]=CFG.defaults[k]});
+  return Object.assign({},DEFAULTS,d,{id:uid(),created:Date.now(),updated:Date.now(),_owner:me?me.id:undefined})}
+const ownerName=id=>{const p=team.find(t=>t.id===id);return p?(p.nom||p.email):''};
+
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function sample(){return Object.assign({},DEFAULTS,{id:uid(),created:Date.now(),updated:Date.now(),
+  nom:'Exemple',prenom:'Client',tel:'06 00 00 00 00',ville:'Montauban',cp:'82000',statut:'rdv',
+  annee:1978,surface:110,surfaceMurs:140,dpe:'F',energie:'Gaz',factureAn:2400,tauxEco:25,
+  coutTravaux:22000,mensForce:'',taux:6,duree:120,differe:6,cee:4500,aideRegion:1000,valeurBien:220000,tauxPV:10,hausse:0,
+  notes:'Fiche d\'exemple : remplacez par les données de votre client.'})}
+function migrate(c){if('mensualite' in c){delete c.mensualite} if(c.taux==null)c.taux=6;if(c.mensForce==null)c.mensForce='';if(c.aideRegion==null){c.aideRegion=c.autresAides||'';delete c.autresAides}return c}
+function load(){try{const r=JSON.parse(localStorage.getItem(KEY)||'[]');if(!Array.isArray(r))return[];r.forEach(migrate);return r}catch(e){return[]}}
+/* Enregistrement : navigateur (mode local) ou base Supabase (mode en ligne) */
+function persist(c){
+  if(MODE==='local'){try{localStorage.setItem(KEY,JSON.stringify(clients))}catch(e){} return}
+  if(c) queueSave(c);
+}
+function payload(c){const d=Object.assign({},c);delete d._owner;delete d.id;return d}
+function setSaved(t){const el=document.getElementById('savedInfo');if(el)el.textContent=t}
+function queueSave(c){clearTimeout(timers.get(c.id));setSaved('Enregistrement…');timers.set(c.id,setTimeout(()=>saveNow(c),600))}
+async function saveNow(c){
+  clearTimeout(timers.get(c.id)); timers.delete(c.id);
+  let error;
+  if(known.has(c.id)) ({error}=await sb.from('ite_clients').update({data:payload(c)}).eq('id',c.id));
+  else {({error}=await sb.from('ite_clients').insert({id:c.id,data:payload(c)})); if(!error){known.add(c.id);c._owner=c._owner||me.id}}
+  if(error){setSaved('Non enregistré');toast('Enregistrement impossible : '+error.message);return false}
+  if(c.id===currentId) updateHeader();
+  return true;
+}
+async function removeRemote(id){
+  if(MODE!=='cloud'||!known.has(id)) return true;
+  const {error}=await sb.from('ite_clients').delete().eq('id',id);
+  if(error){toast('Suppression impossible : '+error.message);return false}
+  known.delete(id); return true;
+}
+async function loadRemote(){
+  const {data,error}=await sb.from('ite_clients').select('id,owner,data,updated_at').order('updated_at',{ascending:false});
+  if(error){toast('Chargement impossible : '+error.message);return false}
+  known.clear();
+  clients=data.map(r=>{known.add(r.id);return migrate(Object.assign({},DEFAULTS,r.data,{id:r.id,_owner:r.owner,updated:Date.parse(r.updated_at)}))});
+  return true;
+}
+const cur=()=>clients.find(c=>c.id===currentId);
+const n=v=>{const x=parseFloat(String(v).replace(',','.'));return isFinite(x)?x:0};
+
+/* ===== Calcul ===== */
+function compute(d){
+  const duree=Math.max(0,Math.round(n(d.duree))), diff=Math.max(0,Math.round(n(d.differe)));
+  const capital=n(d.coutTravaux), ti=n(d.taux)/100/12;
+  const capDiff=capital*Math.pow(1+ti,diff); /* intérêts du différé capitalisés */
+  const mensAuto=duree>0?(ti>0?capDiff*ti/(1-Math.pow(1+ti,-duree)):capDiff/duree):0;
+  const forced=d.mensForce!==''&&d.mensForce!=null;
+  const mens=forced?n(d.mensForce):mensAuto;
+  const ecoAuto=n(d.factureAn)*n(d.tauxEco)/100/12;
+  const ecoMens=d.ecoForce!==''&&d.ecoForce!=null?n(d.ecoForce):ecoAuto;
+  const h=n(d.hausse)/100, mois=diff+duree;
+  let ecoGlobale=0, ecoDiff=0;
+  for(let m=0;m<mois;m++){const v=ecoMens*Math.pow(1+h,Math.floor(m/12));ecoGlobale+=v;if(m<diff)ecoDiff+=v;}
+  const aides=n(d.cee)+n(d.aideRegion);
+  const pv=n(d.valeurBien)*n(d.tauxPV)/100;
+  const total=mens*duree;
+  const ech=x=>mens>0?x/mens:0;
+  const pct=x=>total>0?x/total:0;
+  return {mens,mensAuto,forced,capital,capDiff,taux:n(d.taux),duree,diff,ecoAuto,ecoMens,ecoGlobale,ecoDiff,aides,cee:n(d.cee),region:n(d.aideRegion),pv,total,
+    echEco:ech(ecoGlobale),echEcoDiff:ech(ecoDiff),echCee:ech(n(d.cee)),echRegion:ech(n(d.aideRegion)),echAides:ech(aides),echPv:ech(pv),
+    partMens:mens>0?ecoMens/mens:0, effort:mens-ecoMens,
+    pEco:pct(ecoGlobale),pAid:pct(aides),pPv:pct(pv),
+    couv:pct(ecoGlobale+aides+pv),couvAff:Math.min(1,pct(ecoGlobale+aides+pv)),couvCash:pct(ecoGlobale+aides),couvTotal:pct(ecoGlobale+aides+pv),reste:total-ecoGlobale-aides-pv, ok:mens>0&&duree>0};
+}
+
+/* ===== Format ===== */
+const eur=v=>new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(Math.round(v||0));
+const pctf=v=>new Intl.NumberFormat('fr-FR',{maximumFractionDigits:0}).format((v||0)*100)+' %';
+const ech1=v=>new Intl.NumberFormat('fr-FR',{maximumFractionDigits:1}).format(v||0);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fullName=c=>[c.prenom,c.nom].filter(Boolean).join(' ')||'Client sans nom';
+const plural=(v,w)=>w+(v>=2?'s':'');
+
+/* ===== Liste ===== */
+function renderFilters(){
+  const f=document.getElementById('filters');
+  f.innerHTML=[['all','Tous'],...Object.entries(STATUTS)].map(([k,l])=>`<button type="button" class="chipf" data-f="${k}" aria-pressed="${filter===k}">${l}</button>`).join('');
+}
+function renderList(){
+  const q=document.getElementById('search').value.trim().toLowerCase();
+  const items=clients.filter(c=>(filter==='all'||c.statut===filter)&&(repFilter==='all'||c._owner===repFilter)&&(!q||[c.nom,c.prenom,c.ville,c.tel,c.email,c.cp].join(' ').toLowerCase().includes(q)))
+    .sort((a,b)=>b.updated-a.updated);
+  const ul=document.getElementById('clientList');
+  ul.innerHTML=items.length?items.map(c=>{const r=compute(c);return `<li><button type="button" data-id="${c.id}" aria-current="${c.id===currentId}">
+    <span class="n">${esc(fullName(c))}</span><span class="p num">${r.ok?pctf(r.couvAff):'–'}</span>
+    <span class="s"><span class="status ${c.statut}">${STATUTS[c.statut]||''}</span> ${esc(c.ville||'')}${isAdmin()&&c._owner?' · '+esc(ownerName(c._owner)):''}</span></button></li>`}).join('')
+    :'<li class="empty">Aucun client ne correspond.</li>';
+}
+
+/* ===== Formulaire ===== */
+function fillForm(){
+  const c=cur(); if(!c) return;
+  document.querySelectorAll('[data-k]').forEach(el=>{el.value=c[el.dataset.k]??''});
+  if(isAdmin()){const s=document.getElementById('ownerSel');s.innerHTML=team.filter(p=>p.actif||p.id===c._owner).map(p=>`<option value="${p.id}">${esc(p.nom||p.email)}${p.role==='admin'?' (admin)':''}</option>`).join('');s.value=c._owner||me.id}
+  updateHeader(); updateHint();
+}
+function updateHeader(){
+  const c=cur();
+  document.getElementById('clientTitle').textContent=fullName(c);
+  document.getElementById('savedInfo').textContent='Enregistré '+new Date(c.updated).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'});
+}
+function updateHint(){
+  const r=compute(cur());
+  document.getElementById('mensHint').textContent=r.capital>0?`Calcul auto à ${ech1(r.taux)} % : ${eur(r.mensAuto)} / mois sur ${r.duree} mois · coût du crédit ${eur(r.mensAuto*r.duree-r.capital)}`:'Saisissez le montant des travaux pour calculer la mensualité';
+  document.getElementById('ecoHint').textContent=`Calcul auto : ${eur(r.ecoAuto)} / mois`+(r.mens>0?` · utilisé : ${eur(r.ecoMens)} soit ${pctf(r.partMens)} de la mensualité`:'');
+}
+document.getElementById('pane-form').addEventListener('input',e=>{
+  const k=e.target.dataset.k; if(!k) return;
+  const c=cur(); c[k]=e.target.value; c.updated=Date.now(); persist(c);
+  updateHeader(); updateHint(); renderList();
+  if(!document.getElementById('pane-sheet').hidden) renderSheet();
+});
+document.getElementById('pane-form').addEventListener('submit',e=>e.preventDefault());
+
+/* ===== Synthèse ===== */
+function renderSheet(){
+  const c=cur(), r=compute(c);
+  const total=Math.max(1,r.couvTotal);
+  const w=x=>(x/total*100).toFixed(2)+'%';
+  const mark=(1/total*100).toFixed(2)+'%';
+  document.getElementById('pane-sheet').innerHTML=`
+  <div class="sheet">
+    <div class="sheet-head">
+      <div><h2>Isolation de votre maison :</h2><div class="ribbon">un besoin qui s'autofinance</div></div>
+      <div class="who"><strong>${esc(fullName(c))}</strong>${esc([c.adresse,[c.cp,c.ville].filter(Boolean).join(' ')].filter(Boolean).join(', '))}<br>
+        ${esc([c.typeLogement,c.surface?c.surface+' m²':'',c.annee?'construit en '+c.annee:'',c.dpe?'DPE '+c.dpe:'',c.energie].filter(Boolean).join(' · '))}<br>
+        Étude du ${new Date().toLocaleDateString('fr-FR')}</div>
+    </div>
+
+    <div class="steps">
+      <div class="step"><div class="k"><i>1</i>Travaux d'isolation</div><span class="pill">Aucun acompte</span><p>Isolation thermique par l'extérieur${c.surfaceMurs?' · '+esc(c.surfaceMurs)+' m² de murs':''}</p></div>
+      <div class="step"><div class="k"><i>2</i>Fin de chantier</div><p>Déblocage des fonds par la banque</p></div>
+      <div class="step hot"><div class="k"><i>3</i>Pendant ${r.diff} mois</div><div class="big">${r.diff} mois de différé</div><p>Vous cumulez ${eur(r.ecoDiff)} d'économies de chauffage et vos aides (${eur(r.aides)})</p></div>
+      <div class="step"><div class="k"><i>4</i>1ʳᵉ échéance</div><div class="big">${r.diff} mois après</div><p>la fin des travaux</p></div>
+    </div>
+
+    <div class="three">
+      <div class="box">
+        <h3>${ico('flame')}Économies de chauffage</h3>
+        <div class="row"><span>Économie mensuelle estimée</span><span class="val num">${eur(r.ecoMens)}</span></div>
+        <div class="row"><span>Sur la durée (${r.diff+r.duree} mois)</span><span class="val num">${eur(r.ecoGlobale)}</span></div>
+        <div class="cover"><span>Couvre environ</span><b class="num">${ech1(r.echEco)}</b><span>${plural(r.echEco,'échéance')}</span></div>
+        <p class="foot">Soit ${pctf(r.partMens)} de chaque mensualité.</p>
+      </div>
+      <div class="box">
+        <h3>${ico('coins')}Aides (CEE + région)</h3>
+        <div class="row"><span>Prime CEE</span><span class="val num">${eur(r.cee)}</span></div>
+        <div class="row"><span>Aide région</span><span class="val num">${eur(r.region)}</span></div>
+        <div class="cover"><span>Couvre environ</span><b class="num">${ech1(r.echAides)}</b><span>${plural(r.echAides,'échéance')}</span></div>
+      </div>
+      <div class="box">
+        <h3>${ico('house')}Plus-value immobilière estimée</h3>
+        <div class="row"><span class="pv-badge num">+${ech1(n(c.tauxPV))} %</span><span style="font-size:12px;color:var(--muted)">en moyenne<br>(après ITE)*</span></div>
+        <div class="row"><span>Sur un bien de ${eur(n(c.valeurBien))}</span><span class="val num">${eur(r.pv)}</span></div>
+        <div class="cover"><span>Équivalent à</span><b class="num">${ech1(r.echPv)}</b><span>${plural(r.echPv,'échéance')}</span></div>
+      </div>
+    </div>
+    <p class="foot">*Notaires de France, transactions 2024. Écart de valeur selon le DPE, non garanti par l'ITE seule. Plus-value réalisable à la revente.</p>
+
+    <div class="band">
+      <div class="cell"><span class="lbl">Votre mensualité (financement)</span><span class="money num">${eur(r.mens)}</span><span class="pct-sub">${r.duree} échéances · ${eur(r.total)} au total${r.forced?'':` (crédit de ${eur(r.capital)} à ${ech1(r.taux)} %)`}</span></div>
+      <div class="cell"><span class="lbl">Économie globale générée sur la durée du financement (${ech1((r.diff+r.duree)/12)} ans)</span><span class="money num">${eur(r.ecoGlobale)}</span></div>
+      <div class="cell"><span class="lbl">Votre projet est couvert à</span><span class="pct num">${pctf(r.couvAff)}</span>
+        <span class="pct-sub"><b>${pctf(r.couvCash)}</b> par les économies d'énergie et les aides (${eur(r.ecoGlobale+r.aides)}), complété par la valorisation de votre patrimoine (${eur(r.pv)}*), pour ${eur(r.total)} payés au total.</span></div>
+    </div>
+
+    <div class="meter">
+      <div class="bar" role="img" aria-label="Répartition de la couverture du financement">
+        <span class="seg-eco" style="width:${w(r.pEco)}"></span><span class="seg-aid" style="width:${w(r.pAid)}"></span><span class="seg-pv" style="width:${w(r.pPv)}"></span>
+        ${r.couv>1?`<span class="mark" style="left:${mark}" title="100 % du financement"></span>`:''}
+      </div>
+      <div class="legend"><span><i class="seg-eco"></i>Économies ${pctf(r.pEco)}</span><span><i class="seg-aid"></i>Aides ${pctf(r.pAid)}</span>
+        <span><i class="seg-pv"></i>Plus-value estimée* ${pctf(r.pPv)}</span>${r.couv>1?'<span>Trait vertical : 100 % du montant payé</span>':`<span>Reste à couvrir : ${eur(r.reste)}</span>`}</div>
+    </div>
+
+    <div class="details">
+      <div class="kv"><span>Effort réel par mois</span><b class="num">${eur(Math.max(0,r.effort))}</b></div>
+      <div class="kv"><span>Montant des travaux</span><b class="num">${eur(n(c.coutTravaux))}</b></div>
+      <div class="kv"><span>Facture chauffage actuelle</span><b class="num">${eur(n(c.factureAn))}/an</b></div>
+      <div class="kv"><span>Économie retenue</span><b class="num">${c.ecoForce!==''&&c.ecoForce!=null?'saisie manuelle':ech1(n(c.tauxEco))+' %'}</b></div>
+    </div>
+    <p class="note">Simulation indicative et non contractuelle. Économies estimées à partir de la facture de chauffage déclarée${n(c.hausse)?` et d'une hausse de l'énergie de ${ech1(n(c.hausse))} %/an`:', à prix de l\'énergie constant'}. Montant des aides sous réserve d'éligibilité.</p>
+  </div>`;
+}
+function ico(k){
+  const p={flame:'<path d="M12 2c1 4 6 6 6 12a6 6 0 0 1-12 0c0-3 2-5 3-6 0 3 2 4 3 4-2-4 0-8 0-10z" fill="var(--green)"/>',
+    coins:'<ellipse cx="9" cy="8" rx="6" ry="2.5" fill="var(--lime)" stroke="var(--green)"/><path d="M3 8v4c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5V8" fill="var(--lime)" stroke="var(--green)"/><path d="M9 14.5v3c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5v-6c0-1.4-2.7-2.5-6-2.5" fill="none" stroke="var(--green)"/>',
+    house:'<path d="M3 12 12 4l9 8v8H3z" fill="none" stroke="var(--green)" stroke-width="2"/><path d="m8 16 3-3 2 2 5-5" fill="none" stroke="var(--green)" stroke-width="2"/>'}[k];
+  return `<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">${p}</svg>`;
+}
+
+/* ===== Navigation ===== */
+function select(id){currentId=id; fillForm(); renderList(); if(!document.getElementById('pane-sheet').hidden) renderSheet(); if(!document.getElementById('pane-devis').hidden) renderDevis(); resetDel();}
+function setTab(t){
+  ['form','sheet','devis','admin'].forEach(k=>{document.getElementById('tab-'+k).setAttribute('aria-selected',k===t);document.getElementById('pane-'+k).hidden=k!==t});
+  if(t==='sheet') renderSheet();
+  if(t==='admin') renderAdmin();
+  if(t==='devis') renderDevis();
+  if(t==='form') fillForm();
+}
+document.getElementById('tab-devis').onclick=()=>setTab('devis');
+document.getElementById('tab-admin').onclick=()=>setTab('admin');
+document.getElementById('tab-form').onclick=()=>setTab('form');
+document.getElementById('tab-sheet').onclick=()=>setTab('sheet');
+document.getElementById('clientList').addEventListener('click',e=>{const b=e.target.closest('[data-id]'); if(b) select(b.dataset.id)});
+document.getElementById('filters').addEventListener('click',e=>{const b=e.target.closest('[data-f]'); if(!b) return; filter=b.dataset.f; renderFilters(); renderList()});
+document.getElementById('search').addEventListener('input',renderList);
+document.getElementById('btnNew').onclick=()=>{const c=blank();clients.push(c);persist(c);select(c.id);setTab('form');document.getElementById('nom').focus()};
+document.getElementById('btnDup').onclick=()=>{const c=Object.assign({},cur(),{id:uid(),created:Date.now(),updated:Date.now()});c.nom=(c.nom||'')+' (copie)';delete c.devis;if(MODE==='cloud')c._owner=me.id;clients.push(c);persist(c);select(c.id);toast('Fiche dupliquée')};
+function resetDel(){const w=document.getElementById('delWrap');w.hidden=MODE==='cloud'&&!isAdmin();w.innerHTML='<button class="btn danger" id="btnDel" type="button">Supprimer</button>'}
+document.getElementById('delWrap').addEventListener('click',e=>{
+  const id=e.target.id;
+  if(id==='btnDel'){document.getElementById('delWrap').innerHTML='<span class="confirm">Supprimer cette fiche ? <button class="btn danger small" id="delYes" type="button">Oui, supprimer</button><button class="btn small" id="delNo" type="button">Annuler</button></span>'}
+  else if(id==='delNo') resetDel();
+  else if(id==='delYes'){(async()=>{if(!(await removeRemote(currentId))) return resetDel(); clients=clients.filter(c=>c.id!==currentId); if(!clients.length) clients.push(blank()); persist(); select(clients[0].id); toast('Fiche supprimée')})()}
+});
+document.getElementById('btnPrint').onclick=()=>{document.body.classList.remove('print-devis');setTab('sheet');setTimeout(()=>window.print(),50)};
+
+/* ===== Export / import (fichier local) ===== */
+function download(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
+document.getElementById('btnExportJson').onclick=()=>download('clients-ite-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify(clients,null,2),'application/json');
+document.getElementById('btnExportCsv').onclick=()=>{
+  const cols=[['Nom','nom'],['Prénom','prenom'],['Téléphone','tel'],['E-mail','email'],['Adresse','adresse'],['CP','cp'],['Ville','ville'],['Statut',c=>STATUTS[c.statut]],['Date RDV','dateRdv'],['DPE','dpe'],['Énergie','energie'],['Facture chauffage €/an','factureAn'],['Travaux €','coutTravaux'],['Taux %','taux'],['Mensualité €',c=>Math.round(compute(c).mens)],['Total payé €',c=>Math.round(compute(c).total)],['Durée mois','duree'],['CEE €','cee'],['Aide région €','aideRegion'],['Valeur bien €','valeurBien'],
+    ['Économie mensuelle €',c=>Math.round(compute(c).ecoMens)],['Économie globale €',c=>Math.round(compute(c).ecoGlobale)],['Projet couvert %',c=>Math.round(compute(c).couv*100)],['Couvert par économies + aides %',c=>Math.round(compute(c).couvCash*100)],['Couvert par économies seules %',c=>Math.round(compute(c).pEco*100)],['Notes','notes']];
+  if(isAdmin()) cols.unshift(['Commercial',c=>ownerName(c._owner)]);
+  const cell=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const csv='﻿'+cols.map(c=>cell(c[0])).join(';')+'\n'+clients.map(c=>cols.map(([,k])=>cell(typeof k==='function'?k(c):c[k])).join(';')).join('\n');
+  download('clients-ite-'+new Date().toISOString().slice(0,10)+'.csv',csv,'text/csv;charset=utf-8');
+};
+document.getElementById('fileImport').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const rd=new FileReader(); rd.onload=()=>{try{const arr=JSON.parse(rd.result); if(!Array.isArray(arr)) throw 0;
+    let added=0; arr.forEach(c=>{if(c&&c.id){const i=clients.findIndex(x=>x.id===c.id); const v=migrate(Object.assign({},DEFAULTS,c)); if(MODE==='cloud'){v._owner=i>=0?clients[i]._owner:me.id} if(i>=0) clients[i]=v; else {clients.push(v);added++} persist(v)}});
+    persist(); select(clients[0].id); toast(arr.length+' fiche(s) restaurée(s)')}catch(err){toast('Fichier non reconnu : choisissez une sauvegarde .json du simulateur')} e.target.value=''};
+  rd.readAsText(f);
+});
+/* ===== E-mail ===== */
+const SKEY='ite-crm-settings';
+function getSet(){try{return JSON.parse(localStorage.getItem(SKEY)||'{}')}catch(e){return{}}}
+function setSet(o){try{localStorage.setItem(SKEY,JSON.stringify(Object.assign(getSet(),o)))}catch(e){}}
+function mailHtml(c,r,sig){
+  const G='#2f8f1f',D='#1e6312',L='#e8f6c4',F='font-family:Arial,Helvetica,sans-serif;';
+  const row=(a,b,strong)=>`<tr><td style="${F}padding:7px 12px;border-bottom:1px solid #e3ecd9;color:#3d4a36;font-size:14px">${a}</td><td style="${F}padding:7px 12px;border-bottom:1px solid #e3ecd9;text-align:right;font-size:14px;${strong?'font-weight:bold;color:#1d2a17':'color:#1d2a17'}">${b}</td></tr>`;
+  const sect=(t,rows,cover)=>`<tr><td style="padding:10px 0 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #d6e3c9;border-radius:10px;border-collapse:separate">
+    <tr><td colspan="2" style="${F}padding:10px 12px 6px;font-size:16px;font-weight:bold;color:${D}">${t}</td></tr>${rows}
+    ${cover?`<tr><td colspan="2" style="padding:8px 12px 12px"><div style="${F}background:${L};border-radius:20px;padding:7px 14px;font-size:14px;color:#1d2a17">${cover}</div></td></tr>`:''}</table></td></tr>`;
+  const civ=c.nom?`Bonjour ${esc([c.prenom,c.nom].filter(Boolean).join(' '))},`:'Bonjour,';
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;margin:0 auto;background:#ffffff">
+  <tr><td style="${F}font-size:14px;color:#1d2a17;padding:0 0 12px">${civ}<br><br>Suite à notre échange, voici la simulation de financement de l'isolation par l'extérieur de votre maison${c.ville?' à '+esc(c.ville):''}.</td></tr>
+  <tr><td style="background:${G};background:linear-gradient(160deg,${G},${D});border-radius:12px;padding:16px 18px">
+    <div style="${F}color:#ffffff;font-size:13px;letter-spacing:1px;text-transform:uppercase;font-weight:bold">${esc(document.getElementById('brandName').textContent.replace(/\s+/g,' ').trim())}</div>
+    <div style="${F}color:#ffffff;font-size:22px;font-weight:bold;margin-top:4px">Isolation de votre maison : un besoin qui s'autofinance</div></td></tr>
+  ${sect('Votre financement',row('Montant des travaux',eur(r.capital))+(r.forced?'':row('Taux d\'intérêt',ech1(r.taux)+' %'))+row('Différé avant la 1<sup>re</sup> échéance',r.diff+' mois')+row('Votre mensualité',eur(r.mens)+' × '+r.duree,true)+row('Total remboursé',eur(r.total)))}
+  ${sect('Économies de chauffage',row('Économie mensuelle estimée',eur(r.ecoMens),true)+row('Économie globale sur '+ech1((r.diff+r.duree)/12)+' ans',eur(r.ecoGlobale)),`Couvre environ <b>${ech1(r.echEco)}</b> ${plural(r.echEco,'échéance')}`)}
+  ${sect('Aides',row('Prime CEE',eur(r.cee))+row('Aide région',eur(r.region)),`Couvre environ <b>${ech1(r.echAides)}</b> ${plural(r.echAides,'échéance')}`)}
+  ${sect('Plus-value immobilière estimée (+'+ech1(n(c.tauxPV))+' %)*',row('Sur un bien de '+eur(n(c.valeurBien)),eur(r.pv),true),`Équivalent à <b>${ech1(r.echPv)}</b> ${plural(r.echPv,'échéance')}, réalisable à la revente`)}
+  <tr><td style="padding:12px 0 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${D};border-radius:12px"><tr>
+    <td style="${F}padding:16px 18px;color:#ffffff;font-size:14px">Votre projet est couvert à<div style="font-size:40px;font-weight:bold;color:#c9ea6a;line-height:1.1">${pctf(r.couvAff)}</div>
+    ${pctf(r.couvCash)} par les économies d'énergie et les aides (${eur(r.ecoGlobale+r.aides)}), complété par la valorisation de votre patrimoine (${eur(r.pv)}*), pour ${eur(r.total)} payés au total.<br>Effort réel : environ ${eur(Math.max(0,r.effort))} par mois.</td></tr></table></td></tr>
+  <tr><td style="${F}font-size:11px;color:#6b7863;padding:10px 0 0;font-style:italic">*Plus-value estimée : Notaires de France, transactions 2024. Écart de valeur selon le DPE, non garanti par l'ITE seule, réalisable uniquement à la revente. Simulation indicative et non contractuelle, aides sous réserve d'éligibilité.</td></tr>
+  <tr><td style="${F}font-size:14px;color:#1d2a17;padding:14px 0 0">Je reste à votre disposition pour toute question.<br><br>Bien cordialement,<br>${esc(sig||'').replace(/\n/g,'<br>')}</td></tr></table>`;
+}
+function mailText(c,r,sig){
+  return [c.nom?`Bonjour ${[c.prenom,c.nom].filter(Boolean).join(' ')},`:'Bonjour,','',
+  'Voici la simulation de financement de l\'isolation par l\'extérieur de votre maison.','',
+  `Mensualité : ${eur(r.mens)} × ${r.duree} (total ${eur(r.total)})`,
+  `Économie de chauffage : ${eur(r.ecoMens)}/mois, soit ${eur(r.ecoGlobale)} sur la durée (${ech1(r.echEco)} échéances)`,
+  `Aides : CEE ${eur(r.cee)} + région ${eur(r.region)} (${ech1(r.echAides)} échéances)`,
+  `Plus-value estimée : ${eur(r.pv)} (${ech1(r.echPv)} échéances, à la revente)`,
+  `Votre projet est couvert à ${pctf(r.couvAff)}, dont ${pctf(r.couvCash)} par les économies et les aides et le reste par la plus-value estimée (à la revente, non garantie*).`,'*Notaires de France, transactions 2024.','','Simulation indicative et non contractuelle.','','Bien cordialement,',sig||''].join('\n');
+}
+function openMail(){
+  const c=cur();
+  document.getElementById('mailTo').value=c.email||'';
+  document.getElementById('mailSubject').value='Votre simulation isolation extérieure'+(c.nom?' – '+fullName(c):'');
+  document.getElementById('mailSig').value=getSet().sig||(profile?profile.nom:'')||'';
+  const direct=MODE==='cloud'&&CFG.mail;
+  document.getElementById('mailSend').hidden=!direct;
+  document.getElementById('mailSteps').hidden=direct;
+  refreshMail();
+  document.getElementById('mailModal').hidden=false;
+  document.getElementById('mailTo').focus();
+}
+function refreshMail(){const c=cur();document.getElementById('mailPreview').innerHTML=mailHtml(c,compute(c),document.getElementById('mailSig').value)}
+async function copyMail(){
+  const c=cur(), r=compute(c), sig=document.getElementById('mailSig').value;
+  const html=mailHtml(c,r,sig), text=mailText(c,r,sig);
+  try{ if(window.ClipboardItem&&navigator.clipboard&&navigator.clipboard.write){
+      await navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([html],{type:'text/html'}),'text/plain':new Blob([text],{type:'text/plain'})})]); return true;} }catch(e){}
+  try{ const el=document.getElementById('mailPreview'); const rg=document.createRange(); rg.selectNodeContents(el);
+      const sel=getSelection(); sel.removeAllRanges(); sel.addRange(rg); const ok=document.execCommand('copy'); sel.removeAllRanges(); if(ok) return true; }catch(e){}
+  return false;
+}
+document.getElementById('btnMail').onclick=openMail;
+document.getElementById('mailClose').onclick=()=>{document.getElementById('mailModal').hidden=true};
+document.getElementById('mailModal').addEventListener('click',e=>{if(e.target.id==='mailModal') e.currentTarget.hidden=true});
+document.addEventListener('keydown',e=>{if(e.key==='Escape') document.getElementById('mailModal').hidden=true});
+document.getElementById('mailSig').addEventListener('input',e=>{setSet({sig:e.target.value});refreshMail()});
+document.getElementById('mailTo').addEventListener('change',e=>{const c=cur(); if(!c.email&&e.target.value){c.email=e.target.value;c.updated=Date.now();persist(c);fillForm()}});
+document.getElementById('mailCopy').onclick=async()=>{toast(await copyMail()?'Récapitulatif copié : collez-le dans votre e-mail':'Copie impossible : sélectionnez l\'aperçu et copiez-le')};
+document.getElementById('mailGo').onclick=async()=>{
+  const ok=await copyMail();
+  const to=document.getElementById('mailTo').value.trim(), sub=document.getElementById('mailSubject').value;
+  location.href='mailto:'+encodeURIComponent(to).replace(/%40/g,'@')+'?subject='+encodeURIComponent(sub);
+  toast(ok?'Copié. Collez dans le message (Ctrl+V / Cmd+V)':'Copie impossible : sélectionnez l\'aperçu et copiez-le');
+};
+
+document.getElementById('mailSend').onclick=async(e)=>{
+  const btn=e.currentTarget, c=cur(), r=compute(c), sig=document.getElementById('mailSig').value;
+  const to=document.getElementById('mailTo').value.trim();
+  if(!to){toast('Renseignez l\'e-mail du client');return}
+  btn.disabled=true; btn.textContent='Envoi…';
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    const res=await fetch('/api/send-mail',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(session?session.access_token:'')},
+      body:JSON.stringify({to,subject:document.getElementById('mailSubject').value,html:mailHtml(c,r,sig),text:mailText(c,r,sig),fromName:profile?profile.nom:''})});
+    const out=await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(out.erreur||('Erreur '+res.status));
+    document.getElementById('mailModal').hidden=true; toast('E-mail envoyé à '+to);
+  }catch(err){toast('Envoi impossible : '+err.message)}
+  finally{btn.disabled=false; btn.textContent='Envoyer au client'}
+};
+
+
+/* ===== Devis ===== */
+const LOGO_SRC='data:image/webp;base64,UklGRp4qAABXRUJQVlA4IJIqAADwlwCdASqkAaMAPmEqkUYkIqGhKFP8kIAMCWVu/HyYptv2/7c+l42dBvss+O8nt/30m/3Ldlc795yW/N9FT6R+R+ef/7R+NHu38Rvwn5Jegf479L/g/7r+0f+C9MLyc9e/670W/kf2z/Ff3390v8F7sf678uvQP41f2X3JfIL+Sfzj/H/2L9sv8HxW+z/8T0BfZ76V/ov8F+939w9J3+s/tvql9j/9F9w/2Afz/+r/6z+98m/+J/5XsBfzD+sf8D/F/kx9M383/4/9B/m/2+9vv5j/nP+3/kv9P+1n2Hfy7+t/8r+/f579nfnj9n/owfuh//0IS6SnZ+BOGXAxhrlddiLWgVqv97wxdW29jeojOPwF0338UcGh9vFYtLcc/pgbmQJkdesZR5NsN5j4cv8fg1aor2tSbKsiHUGnsSdve67dag2CKcND7eKxbCtcUsodULO4MH9jOXW4VsMe5RSCw++Y35SjWR8YN7vPMziFB2NcdfvWNIVavwf/3I+c8JRyrn0cqp9nvKP3/CO45EmFdeZF5nJM9elkD7MTF2HoWj5k6DLgQkxz2AE6rv376H2NR55cLcZeyPfyP6yUvV3khjpSH2HnuFP6xjNuvCY3v2nke5XxIV/T5RXrtuMNAqrfKvkoLo9A0p13M/s/ssYkt5eopNCUR/Jmq7cCPQtKuNIiUsddaMRraa4SvejN5gje/B9PUxGmg0su6+Pet3TeIji09SrJYPMHzlT81L0GnrTPo9OjKhdPitUq7v2lyeZMwLI3t+RQrRjI0bABnwdOB0eHQisUuWxyU2ydTqlcAeJic/IR2uLNq/ih05K4vwwUj7KLdNgarovzDxlBYKymIfEs1HXZBoHBz9hegXu1LH74EN8I1e5umv5Ebf+2Jss5DaYx/7k178YF3lNTqWolb4lELM4u+oupi1ZBH4AG4Ah/8/+THnSelZK4CfFyi2P/H9+CjEuToRFQkf+DKOZEnM87OY3k5sUKaGvwiQMs/5SkMe3XoWkE4FVgtq6FvJX4tyb3Jqll8LhXj3sb27f6GSs8aDfWnSbkjKBlU9/+P28hiWjWGibRiDRfa1tjVsWYLRvMcXVUXt03jJn4Xh9T0rfmtCdWVZbm7bX8UMX1hopIUUdvcJFnhNW3MVRPM39yC62vmKjPenUlqsqi8eDsuZtn/hc8hVlY//WHQncq2U5ZzGwZy/R2DtrBv0Eb3T9KzPPNw+cXlTywmEdEYeQ2Gj+WMb3T8W+U4JgIvn+k48ZPjJP1qMEqHj7K6RNBX5XqU5OFHxmtQ35TuMf1NfutSE7lrg2TZfxQXbifYTm7qtuTT+dFR4Z+0IXX5KAIJwkekI6vbl8sHdc1L3NrfP3idkE97xQG+36BMNWb522dZtda15UxjrbXSLcCsNs1mn8BgloeU+I1aDYcep+hazwMz9EdI7Kyd0Au2hOEQDnfY2Z/yNK4OWu59a49Jx9vFTKOfw9BOV7US0rvMDKZMOK0mSH26RVjXvLGPN4Uqder8tj1fln5avNiGcFbxrQ5j4CAq2UxMMjN6JUd4SAHJ8cd3rXTnmmACH8KnAhGRbVjvY4882tr/+VPn+9yev0e4rFsK1xw8drjo9I8SilDjU2/iLYVrjhoUAAA/v9g/HA4ECSq3GK1NXsYDn8jJOyi+30j25TioYvB0HlWi+fPzI577yn+UDcOKKSeTHPMhpef0lProtjgl2ukkTYhl/7bEtkbfWxJsvYr+d9hGgN9CWudh9728BQG02wLO3th5ZHbiGnplD+P0ziFWfxkSBTXKCJJNK/fky+RmZS95fPDBW0pmaaF0+81M9WGRLGQWktsmM80E8mnINzMW/t3+2gxlG6smE24ogegmQXNCDjg8Ce4EF1Hkh41Tsj3bm6XxqcdHcZRLkjLQo7RDyz46begZOqfo0XRmV4qzXAj74z/g7kWvh0r1kW3abTCYXmSPQbn1P3g7H4y6evZY1gRemXjFLRATcKossmX4CPKcxB4lNRrK3k9zEdjTu4hbWnjpKDhfd88updvxSeAAGU1LbVCqji9gOpHZcNXFvKQOuas6L0ttnxyIWvwkHhZWCuyZswgeHg1jEN8cjsRv3MTIf1ja968FlV9Hh011sSNPKqOgXo8LLi7k80STynuD2+7kOFZC0pjke9K3z0qSRv01iejth0VtZl/fuB7eAJpsDwwKVTFqDrq1wIRh83Ay9xiXADJudVFjnmMC2dCAJgrSQzZnEV6lkseoxzmn0WdiZM1MTvl7X66gQh0l7UwNbrPF5qscuk23+zxVMfCR+kyMtBFotDo5a2ouAoS/5hKPK0bsjbCi+/qmhO5f4anH0B7FgCZ9H3Yq228wDrUJ9MugB7ak5/35QLdJn/3ekwlgZGKMWU8EcyoUX9K1LYd2yB1eeRCwIO/mUSQHejnpa09tO1R7Pa0gKophNTwh+0ssqnXa4uwPofR5ZLwFyd1Cm20nAtkWBWMfpgpS/nTp3RTJ5AAAiwRyvbUrQ3T/LauSk0XSXQIsuNRABt62h00xpBtZLN/KQOI0kZztutqz+Kn4J9YDf0uGq4uiktivIfk7+3Gjf+4y0vQ6qNaWFnyATo0ayhAX/njasKiRLZFjpazpAozLYfGOBbEMqVZq2ma/+3hHqjwC6+NGy3/ToBB0XPSsH6O49QqJHcxcy6lFkK/OEIDvCNORROSLbyGAIONuoA+xSFHtK1UE1mdIEL6BT/9hJnlczKiNDNnpfES41U1vXsWDT5cfpV8J6dFYRNHtwB/ygf8EXhyt6uk9+J7iB3bS7EEi3ACuo79KBCt0oPE2ls9/hLFUwpVFr7zGyFqCJIcoIQ+mT+Fs51MIT2ei72gfQrABeH4X8l8zDjW5xH5HAhXNYZP1IKr0FYFxtZzsqloXoFZSuAtMP9dFzzw1ByjfrAXJkOSBdkzCRzqTTKb/AXI3Cwp9IthTlig7oDttLiXfucGykOqnXKTxabP8F8HDhNbdvW+Mu4jjrlwk9vl4yIPYyt1uTn4GHvtBIXwx1+FjzXZWfFp+HQo9YhJzYw8CSPPFZKjocwlLQFfDagpWGSB3yjk7C/A+G69R0s7xMEk8+srh7uNDFI5Z+hzCCx6DgCSNhAKGchHlDDOhWPk72lvqfoYSQdeMZecN6+pxL26nrOOpYzZuLtn8rhBtnttIaCsBs6QX1rdml7o3un47ShDSFYZIlSlK7axYrVcOJOoLqo5N2C/IHNiGhMt7jO9B1SnKd99YKZmBNS6kOB3D5GAEjaoufYr2DFVnNs7mM340OS8QJr9q9g3QK5XJsaSN2em2b3Xiw9sK8+pd6AEbenm3a6Ai45Gur7Eo6kxNhRq5BSf/Lkp6y+pe+SXR19NkQ7U1zvYqqPyTikGDJ7T9I6QwYfE7qYeJceD2oV+OSnFynK1e9cM3y3JA2/D7+iQMMNU7BLKlULvDi4BGYE+G7/YA017oiWkbV9gwev+Iycpm/W/AVat4YuK/eP6Q4o3Pdn/0ulCNa2xUO6GoG6wjbAb3WHdcyaYR0iB2vSawvAw8dZRd+JZiEisHhGLQEn1LhtVHT17sf9r2KdKzXYISYyJHnSybOpflGreVK9Ohq/D12CJafPKDjlbDYREzDwc0BbYJiq4ioewLDG2534igqvAjNTV8xlz4gr83SsLF35W4c1CttB5jlkaaIDsgtt6EDAWXoXgE82s/gEennjDVMsl8F4Dg/Y7IQh0guvw85r5JeaV0DSISyEVQ3Sj5xiwp2YBkHsAP7tK9c+Q4EPvr3HPKGK8Sj0HaQZJ8XMVUFQ3klAf8Uj90OvuShJiUCtg/IBeTU+gRvR0gytkkdFF+TgdVGeujCvquMgrqrFsswW68e7McR0mCoTrd0JLyU1KGRI44IFBrDl3jq3pyOyyCJ8/ZZxsqmSVqaSD6G94YG8S7TlbWK3hhU7HqbSRhq07c9gpwbqL7wyvI3cgCC5eeuG1Z9tBPmHdv32GfMAy+Ga6UYX8cpaIqMFV5tVd+PRoXYG0sdGIUu2J3s7YYgaiTlb6tDjleM75e3qyZAUujyNcOl8E1SR5ZLAXdG+0voXix0goHQz+0qr9GzzgqDBix3Z3Afy1gbDHCBGE6BcWdTu2PozHW6zjOq8RdD79sEe+PfLFq81zvJlpIvDjCsgTRPpydau5c8Ig/1/UP/+K/guv9fX8EYrDR/1R9Gxz+3dCyAjl5HlmBQkJAkSkNbKz0IYHcY9fPIrIYkkDrmQxhgHiEA/EoDg8ba6+CSejzHyQBnL3cDWdCNXO7JSdnMGqNYsO/vTK9+b3kV0TZQuepkJi8JRgfqeV8keRFy0OFW4V528tZbpEtuXnXK0npGfxEXq/nBO68REicdw4Q3Uo0w+LVlmSkscQKBZLecyve74K/3dBpFKJvViZ5AUPQPusV3IJervxsKpmeb+76lBowlRFZt7BiN1+KyHkYTW5U2GbJOXV5e4yn3znw5zRHOFOMhNrBieQbWY1Q2bZkMS5sBuVrSNjJskx81nGPfCHxlpNIGMM/gaBoiKaPDQVrBLXhRLwvzIIGnbHz78WuZY+fs6XL+ap84xqc24Gyzju/WMpVJnf4G/c36X1FU3bPLOyQh2XW2OkQA4nsaGsn5+gHhm2oW0TdCCSIwFQOPMuMDp7N3eheDEJVumYB7FqC2tpoFxpKogaGppecf5Yrr3ohjSKVz3HIKar4t86HNvI8ehOef8M+7BjO7k7x7p94K+Ybk7ydrSX59lyu4DkgZFClSnVfWfSM2g3FCAlim4qTJ73Vzg5eHKfjnq69Pwd0XB91VHtNg1VREwghYhbDm91OD6/yFo6MSlfHLEp/My2SN15Brf+6YsvO1qzLAn1+5p27erRJwbFq8LPuIv/uIlroVwYxxYu11df/CrEWRJk5zFaARTmOO6HCmLgFnuqKwhRy7lqwvMM3d+6fKu1/b/rRsyqsXaumjAAjZO3eHktehe7FbTLwIpMY+fT+QABYJw4s060TYCqhigVgkqRYYuwJresMjiVV1alOCLC0i5aIBHp80iOzYTKWyKQmnO8/rfAa360hShZ1I0RuDR3WhT+SuR4nKcLfROD7Ch9hhuWvtuzDd2nXnLVJzbXHLScBjBi/EuWKZjpVeg83Z0tL85fxCHH65HDprw9o8cNxmOzpmXULgZGv8W29d6smxt8R60r3ZGGa5wVm4Vn8rbperXh37n5ZIc18bBqBV3bpUbUjqBBnrKiKNtlVeDPeCzE2MJ4RE380K3rDHI9YBMbgo6BHS5PE26S/9YvEhh4SgBiexe/ABiMOuLsmutY87UbQvONYL0zOKvMXkbOKzXH9tK3+NstVJuJiwUTTyE88MpiWzBB0EiSnn5zeJjiLqZnRYfeN+9n6nyHFNGP5buKjRgWVYrUoXS/dU9TL8oVWa4A4ueLcGzJHoe2OWi65kemRTuKqNmvzjtwuMQcVWl+UlevbS75e8GIzIGUrok5g5GaEKc6Kle5hjvmdEHD7H2l6uilgNpn8Lo5N6TZcaQu8etAUVIJ928OPRcynmNcsjnIOmgelrk/EYkVcSRF5eYhjpeky8XqmSsCyGNtg2bTEEBV/WKCcd0EYuJqDuViYUn4nQIkM4zXbypdv0mxb7zjXEhWOCbN5efv0xLMOji3TsWhOcCM625/iv1eKZRTtHx+gBFQ0nMt57gB0gY7g4R8PpW6bfSzbE70xxVUpDIX2VYsq2vrwYlWIlatAd+d/W0OV1kPdt1M2/H0K39R7S538MQ4h24nEsRq+JkMk3rtYvRuNfPCP1vKAkOfss1R97EA/PdjxGNi6CURWWkHDd3Xv5Y90020BWyvlY7MyiubTf5xW2zcKGatYGDV/XY936zF/QQEqseDL6NG7lfU/tfiv1Y4bkDoroO4O9RraHpH2E5D6lyXaSkKhUB+/oVguup5BGbnrHzS5c2uRr3wS4rvEN54UVoXcUEMzJWINLU1ODtFhfVBaiMNCJ9fUtOk8qSYdLhTjD7R4D0s5xRwJRFuB9hoMTT2bo4LP7V9BP5LshL5G88XMBp7BleetrPndJ02yZP7D6NESGaZ9jBdRlQVHcSj7TOAtwJXyV+Vl/bo2hfGhZUIbH4wltcRPtP/sLYhtaTo+B0ill6OL89UZVD/3PDAa/ji6XgWwiNkpNHaTeuqJ1YGiuY2dDi1LjafduXTNhNJYey5YbTiy4HSc7Ou3BAEtYRUlvCxlYY2kmIuDKQrsY7dg8NTgBBAN/F+qjNuxHsYKzRbJk+viXYEwwE0zOc5Byzqhpm4EtZ+4QBcRNcppjrWipM7fI/5TrZ5WQjLXXP4z9rHBtrD/L2aB035kDL/CRgXgx5vvLJ0V24glKYCgocUATwop9RdRP3Q6N/p5xHy0mr67+RQgDJxDQdhHQnu6UvbK4LECfwBx1KeVRaec8lp0D1H3NZ3I4eHTtjD9UNIWFSQrA73JwtNRJqaO0qpyFjt/xThELAiwo0P/kBJ+lwhV7cTr0YUCeA4+qoc4gQoaG9z3OVbec9Fe9VzOEH/jZbPVuwPDCYdVXp6BAExUdWdxgTX4eZ3QqY9OtRtGBe0SUf7wWXj+JjTM+4b/Pzn+57iPamdXOTZH0AWd1SLVUpUUSn4RcXcnzhKgwX9A7JD12fPkIR37OILugCg0N7rIthzmPXkdXpr+V3OcyfE2JhJEcBf/Ju08IuBlZ9ZBvpXotIKLTvf3GjvVl/iIrG1S4uE6LXt1jAMdt33QndqTbAnK9UNf3A3zXBQKrmS1LgOFYTSf9+fDC9zjv5T2YuFhZ1IE81IN8NDQecwU0dE4kjj3yG1ZfPQdTLi9drVDgggH3KiaxFwgB4lrcnIF8qe5Zr3tFNT+eMxl5AwXNpSwT87GgY47d5UquHIWmBVEMFGWPaasrUgZey2nuIvytumb7t2D7rjh8cWATmiQOTYlCJerGNQb6N+H65g3Zlvs2xwruVIUDZh3jQRMs7oqZcy6qsUTxaNOWtOe/+FlE8bJwXnT0rDOA4QcFnbT3GYxMjQiwkI0dGwKTgzz8FXdhKEEXcFkzJYWS12hElDRYKayByTq1ERO7MUNbtLgMoDLjNzNqe4BO4ii71QA7jEFuHSReI3XrkKOlBTDVUrAkESg6Se1pK/OwXRiOf9WUCDvkXvKrVcF1Vydwv4ZwkbKMjaGn0WAKw5rSDgMKWeZF8HtaBITInZjdqFrEM9nreDTt3OcYXlzNLZuNShNUdw/QalQz8B2tAEyWQcdPg+RDt/OtkvEfrTOWyLWyfOQ/EYilct8ONnGu51oCpOVKjtDEOeaXNcQYKl2m87PK4yFmE9PPKdTOAvVAhFQknrIAGBn6f7E8EOZOKl14Ggu+hWdg4BgT3PWMFzV3aip+epC2ePB+KSTmZ7+5uJHaoqLikq0FznjeYYAKO+TNkLH/QgLwP/5kzGDhTZ05PBlYWAu8w7uJ/BogyJB0V3ZXAPJUK1vQED1lbo3VHUCnrFO0ejatvK2nBiaQnwX2JaVND6QleMe6FzKWQNN1Z1gReDPhrz54Ky3mYnOlMPsFwV2fj/gm4O3HP4bBrIIyERbCunyOp/DFfgzcGF0j1Bfe2j15aVS8trDX+UxVtDN3XTNAKSparDclBWLXdphRnSzalI4rAgpZTl6VJhsu2OXj3b6ZB8dyM/G0fTG8pziNyt5pJO2PLt1/lp4bGOU4u56qa10ttVNOmxGa3L5ajHlVDslDd8zc3lSD6s8ZrXm8H3w9+Hm+TZaVemRpztiar/Seif+ArE+2i1N+62POKxoR4dt38wb67anxMkXgzX8MkIMyHRC/vS18Ud5iRypl5UDsZO+tk6W44J69ji2zxF51KJTx1B5+vMe4qGsAzmim46c8OsFa3IIJm+W09n3LR2os+VYvuaxwUHmXLcBAsujzzzqbp7aN/qT2noTTSRe/64FqsQhhvoAsF5Q1Olf1cgzfIJ2sdY17tYMlWDT2t9UlBLmZG5gx5KgJyEl+x2XUq8UZohQ+qYO+I/PS6XKjeYYvysxbpWEjmhIo9QfGJxVkntO+OFq96fa3tNX9+pZdWuI50G24EdUKPqt8F2hbVRqZHYzGISzPHc7e6XOSID9TXExZgwb68XVfjIipG3r67cafFqGBvtQJNOzpV6bQdBcJFTJ2vhB64fa0+0pyQoABSct3+6HnghlY3WcN3Jv84lG5NnKC60TPyBPCTFEnAj8j15hUSRdLOM9NQKxI5fWuoMB/HDZ06zVU2KAtAq5ZjIEgd2Gi6GUH2cg3M+qvlxMiyLsKWJyOgd8D6Y1xuvtV4JxmHMXds27M94WYFmfDuaVSDACQ4vYV9aHFkdvngf7hIsL4dWnsMVM4sX/P4HwoLrUa6OwYQzx7TBgfs1aFx4ayKNTRhI8Up6R6o0BCi8NqrrLROzAt8Vt3RNPZ6n3WVLHw8uqbI+UaYTIoQH9WI1V7qjOTbxlOouMMoud9d2V7xQ/IhDnJXugB+NrfZz0fHvZm0ZeFRysrJSslEohojOpFTdOtKAv2TDsR29UjBDnHCGWBv2TWThy6MDTGoaLca4gKvl6T+kkQBcGyeKH6qSZM80o9nQ+bPTtYmFfD7RPPvFwvEIi2eLjlOxmhA3TxYFm6yxwI8LXaNAoIWH11mjkP0js6F9olE0jz8yggH2RE/XFyf8hUSg/PBOjNVUgbLywLEvTuiNfcVAxzUyx8+T5cN2naLKPl8gUDdAl3TLfZQjL2qVlTQvCkN6Acu0z1yTcU/i8DL7m/cni7682QdeEQiWftOLS9S2fKVREqQB09H9w0xTkzoWM3fgQMAWk/NSqEXzPtZvN65eCKG1gefDlCqYNkqz7ljMS3GQPKV2r7VdhvCH+chMOMgPVuuE310j1b7eFMfvZDc9D4fv6gHaD/2pSDIOi1sCJcm9lkQhw6lfX8C9l6y3YiBBrmwYDEj1MNFmsV628DlPGaR9iPfFHigAvFZINeRWM2VVQebrzSj9fS8tGh5X8fpGRlfb3ORayaynkmThhWnyurhAJ2Ulf/Ao1Pl5sbiDIAopfZjKExHnA//IyhgDNgeGbvDw1FN9fVbv7RTSRz7vNtoCHzAOSmhIz46jT8m7BAo8fQMnotY0RcikYc9iBvYNZnetnNRd0bpuBqTqNY/xWRKKmckmRmEe6e0yi+to6CbSEhEm+YUhCWDnGzAoQYcAC8FiQb4RxmXUb7CuZqxkV98kaW/xKugGURl5KoFojPJ2jmD51OXM5FBfjJmdu780SfyKRiuIUdal2137QdnpcyQR3/fDHAzB9IgVfzBq62f3gjBZ8S/M0ZI9dyqJhVeyckFJdjlrUyd3TJGBtvYSVHMHhN8bnqF0InHB7iTvpBmRZf7iq5yYOQylBlFnGZU7NyKRe35vFxnuhXGDESr3HZlNhmSy1e4wB8vEFqJxt0y90MaAo3LvUbYCzrCVgIxSGjOelPTKIyIfoFTFh7TZGoCYHmHCQIbgq/bP3NR3MruUDvf4zsaAYUnlkpKqfb9H7kkTZTBJlE2V89+BZz/nckvPkkw7nI/XMM4a6yopA723LVrQ2B2iLNOXwbNondbvXvCzlyBVuJHsygJXmVNMN6oyH/hQJYAEZpU98YQqIqpH9mGIZRjhJHQCftzaxFjZvsD0EuhX9eOLOQPEr5we/+KJ/lBWo/NkHcrgAGcSH3N3F1WxpHHqLI9f7LqZVSR8g/A94jDmFBPlROKI46/4wwOy+c9F13m0ED8pa+t7sTtMRyCFsw3Jh1Z6d98xb40OeAma/SoMGHczmqIC8vomYDz7uQXvZpHxM5l2x5k46vBOJnctezpTQhxiqD2WLVWKkYnToBjVuA4/HHNvwiIlpsGGVSJGC+Nzvgj8jMcq3oTp08IZ8LpUFOBIuxsxrI+jn7dmA4jzgdcA6Dp2c4LJgz6LbSrVrT2/C+w0pjHIpO1ngZyRw+2ly6rVBG7f+yV+dTt5mWkPIPP1VvN2OXoar5/ihjQEGn87MA7/xsg8ZgETjzn68T5+8oXlGxv/jSoG2QjRcWXX4j52+geNdp0Fn5un+A8VB7KuXCYSCOE/qsQy6M/FcFxyEaK14C2Lbz1kKLmdAwdg9dI4201ZPh6U/IWN1RxZCdJ2tW0OxJmuMMu1d1SZ5Th0U0U6MK+jq+NEnkpkN0BLV2y6ry7IA5RNBDhYwfanr+dZEItjLzUsF0WMOawAsdq0m+3ndgdIiRBO2Y1UOU+o2QNG2a/bsIa2il9Hycu3JUmarqQcIPNkyiX0PXgwaxYBZ1EnOeDu1Moa+1ldwPxxQF2jgMCXWSPnFYLZ7ThOg63h5iEJZfL8A9pp6zf5jNQm8MzquVbUlcKjs3sqTXV2fGT/Bf6EVw6I28KAtRg6x0g7DNpxRH43qqvki01rRFGdG6+S3xyMJ4Yk5+F0XRn7a2svYiyR18eCOzfNZwZu2Rnxz8pXaI6U4sMIWpjZu2wUUiXHi987hcaufmjXAbF3F9nNjCVJ7Gy4sPRJeTNq9aj4g3Ak8h2+0tGnkiNCtr71trkHsAUVSHYOnmdH9IbyjTvk0aUUAmjtZMyeuY3g4lb+EYCynasz7NrIGQyq2CgGDEmZ0/kjDJ6bakCJAykzVONmCRwi4zmKO8yUYktW24De4BQfSR8dIA+jHtXWKJcKd9pf89lreDDIvKRGKNEsmeQZdcOLAJndU1D5XOpBW5avQ1XPWKUfE5l4uoaYF4dFsAT8VLUwuj8166nppDLbkeL0UhI/imLrhdTGm4Fv3ofj3uR+6l9Ho/uw8cF929k/Ahimdnw/u6MR52MOC5h0bO29FvV7qE7vX2ETsIE5jeikj7xdlJHnO2BP66+aUzEVGwKhBfnwY6CIt5D1Zed3zfUO6DU9SWul9GJOjr8Nn/SlnUVeCPdANzeh3i3sJ5jAOSC0kzW4N0JGWCMR9zPf2PkbykP16ZbzTmcZIzMXAh1xS/IcsGoAmxFO6AYED9eIP19/JX/wNiu9xG/HTpu8DPhKWBMwefLxCxSE2zpXPsR0amMYO6JQsnKXByd3RTJVpYbzO9kawxrAEOElyuamBf4k3q3w7/vj07QIlTU+XgOsZD66GAQ6g9QKKxMwr/eRy5Pl1P5c5gJEfUtiiqjG2SPXyf2JR6ZKSK97Qndv1FpG9kO9frEzD2+l03zOESu46BIfWRT+gbpGNfcGt6F12dpKLppZghsmgfvekW0CKaQb02FueK8doUPYHp6NVMUoUoHjqKW/YHiCujToxfe9Szrgmh2IlAOit7g4zSvsEYmDKe/a07id04lCoLXNwAG1xJe07X2r5+hGUq2i1uWZrvUpwmyMfwM5AoG6CgEShy5GEzCHGXCfupCFPJKVmaXNG2EzyBg94udjZvMMyCOLq2bR78dKKSUetNMpdlImSteAOAx2SUcEUsYhbhpl0LGMuHTDfdsBhoA0yd5G28RLetNhAZ/tjWLqg4xh6cyzOU4hLOk9XDig2W6zmMMlHjHvlQiUt4g0j6x5SkvBKwoNcGd5/LGFNPpkMUSdvjgOgeEvY8DahEvmbIQ1mIsQgE9EhB9CfQs9Yspg4CSPnTFJnMNSOFqGcDtmAeSOEdJurrjH/A79tFdnef+lwPcCPiNmFqXtfwUPXfamVNUSF3ZubCqR7H9fLJIWDsMqKDFVNkzgygGpjTVpL8PpVck/jFA89BwXA+h36pYYkhaNkPfvX9h+jFexgr0RAXb3edcax2Njfab1Nyj+R3aGtb/GgkonoVp4DLWE4b5vXfOUzZByEmEd3gXtW8y77qg7HEgaKa/cfa/ZfqjtMi1Id4oUr0ARwiS2WWNyOvKSsYUIewWKV0AQuErgl2A5qzwUBTujyJaWPhojyJ35lEaKdbxn8thsi+IjligghLAbN7TBg3C3XQk0F1WP+taPVeLW9/othNDY5WCJ1SzOEGTus+bWq2X40//oZ73F4ClkAGFDmJEaElDzLJqRPxJwNlCh0BYGGBOa8FDnP4j6yHTioryKbaMcYEzw8bsic18Lt1jsW8iFmYxsx2wsk6Im7u+00CrCDoKOKGLyt7q7+QYqEOf0v1yI5RySYFYmiOYm/FvvObjWs7rgHI5xCn6o6+3bQMMq9x7lk/2gGqe1jA3BWeLLrOg9ABKuhkbqFXRrh82tY6ou/xzXh7mkIBRgRsd/Pb5bD2P8dRFdrN9cod0CIJRCzac0Fqz+U3n8y/GfnXvzcXSQ8D8nooksLyxW5MVJ7J4t6Evh75pM7E2/GOt2ysPI4AMRb1MTldlht8WHONjEFMZwNphbQPYA+480s289s7UW0taQv7v6Ns7Zya3zy1TqE7wCqVGoalqn4uMPPbBLoG0MnTchQuHlqSzf1bxaON+70/PbsGlCbAwToYDRmmv1rxpu+BqPyZy9Ahvd+AXy1Y83MsIFRmzaweqJ/BJBM5TaJaiH/NHp7oZuBBOMTCtYR5H7yA7UBOpyDHaR9i/45iKfiKpdxOLZtJOjq5cqSuggSeIv5+M4gFLc3zGG1MrZ0qoUsn5YGWTsHPfg5LOtcc5CowdS58lknb6K6V0MGOkRxNj3FTgx2Xpp1Al+wUqhoxzWF5PPDZRH+ggy/aur254s8aNfL83vaA1Hl/YtRJIOSs5eyxwm4ys7TSezIX3+1561QpKydCH0SlZt+3T2p/jvA6BYmEAZip0V2xc6/SnK9qOc9WcW5C90AVRqEpHdIEAjaAIwWNDF0Ugvb+Z/Ysq24TntPhLrXgIbn1JmnGreQhLV+flOyMz3PKRoGf1p54wVIRF/tye5WEUcPvUqB/9CrdiTxbSss2d5+6tAFym+27+I6IjCq8mRGU6JOhOALOBTI74bgNwkgqy5Q7F3/drXj9rahVsfKI04mDbl+QeJHZybduCdMnFxZugMEj2ZpKd0vSZXoQAmUMeVry4Bx7/uN6SRe5+xpJv2woT7H1M9h7OsDfDbVSVBRQ61qoORj2kylzaCDYf8T66tkCgHNEInBqCLQfKcU4fT6mjE7am5ql0TypbRAvtvupDC7eWD70w/cMxgLdG4KtNAf5KSuDIFr8XSGeNDH1Hh+qe5rMDvrrS8SmHK2MQj7l4cKQ2ihvpFDyWtmQn5bzcW+lMywwlYuyPGA6VQxoeK9G3vU/NjmYUklDPxDn2EAr9sdXE83koRIM05vX4ARxIJkkn6y4122oUjvUN8RM8jdobavuZ06Qye3135oT3rVPKm95V0HfFOgTDZ/PtfNQP1t2bZwzbEe56vUNUm3g/bQzbqRtYyQnff7YbAwPIR1uJhi2HvMLwfNFjjb6bI9EV9Jugl7/WidefXT53Yzut8JP/R/I3az6zvd6BYSdOHlSiUQS+xpB77etqqQ8u1v8BKiH+6OG0Kfm6bEGTIEF4U6tmhp5TURMSB6as89nTt7eUTNgWvvaNQqUlRxaOn4Pvb6F1GDMit2TUkTLp0MdeJ+ZvFTcEjFROo9cIBFjKJBnjy59Zmo0bD7aa4LukLJFkQ0iPmGIFIeok2XtWM6Vm/ms/jEItgb7qe63P4Xnnx7+uZbu6FrB8PsQTMYCr24AsrMs4iVqj8b4w8z50J/8ZwamKu28KgprSiRgKI8fwK+RGrn0Kk1Cmsjdppu3ljq8t6tXI/VxjWfmMUc56YdwtZ94KwAc1ZwszIqKUhE4J5i9Mrt7rImHHQcBODOxaRRf5vtPU3cZJsClqRgZ6sjOFclq589OVK1hPIgh0gJUUKBKi8IhG1aTHk8CyIQIqUyrPnYc55m0FmMF8G0g77k95L3XS/EoR6KaCc2j94oy7cwNgrlnbCZrQ3H9zdpvYM2AsPx9UsP5Y+fdzOt/hgZc6yNion8I+LngWSfT84RPrqggDzlyyEmdD/rnQwWashsLZDZ9WHFc8f8bSb26NeKqdbiij9ERmBg7/MKKsACjksX7vrQEO0lRc9KZ4fwlS8C9G4tNfU891gVJQTS1wmNUro6nht4pgax8Ly5wF6Fl5ftWCNosu5EFZwZHT4xEMQ4TjaAwwadl5S0aiiD04CfCi7ellgNEwUHnSr1E/LcoaDEShMR9dIf/AJKeYJFCLK2j/wMzGQMWhyaHnAtm2jE7Zp4P0IWlgaHnpWyfrXQjt98KUWOXgMYW14DMrjMQ+/SchgPrKM+/Qez9jirGnov3Z9O6YeDwtwiRJH2WcjwanqYFxPXb1E8Vg+inQkX+IYgRhn57dIQfe19ryahX15kB890xLSjbSv6EIsuvYh8J6dCjyiUftHrxrAATBMxiaiuTolQQ9LO0l7UorLjHhmzR5KvJQv7czkKZMcTZkWZzycg8nApBb/iGtJ7fvUToAOlXMVgzSBRM9Z3xK7fLGkDycQoSr9RpSS2h2iSZjBL195ZqWCKaAM2HBMTgiWJuUTRwPcRVNvbfg7g6wlcaFFf7D+DzXFIEjvSFwAm6u3NARWoch5/qhwTLUYPdDjAsaHKBwSmjBne7dLSyTCMx9+h5WJ3mLdTTDJcniHzlYIf1H6RoIVW3fCQYvvRd+hOwAAAAAAAq+GPLoqhsTURy0533EPWnDi3YEsFriYg20ACVv4AAAAAA==', RGE_SRC='data:image/png;base64,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';
+const TXT_ADMIN=`Prise en charge complète des démarches administratives liées au projet, comprenant:
+
+Démarches auprès des obligés CEE (pollueurs et organismes partenaires) : constitution, préparation et dépôt des dossiers de demande de primes Certificats d'Économies d'Énergie (CEE), vérification des pièces justificatives et suivi administratif jusqu'à leur traitement.
+
+Déclaration préalable de travaux auprès de la mairie : préparation et constitution du dossier administratif, rassemblement des documents nécessaires, dépôt auprès du service urbanisme et suivi de l'instruction.
+
+Accompagnement et suivi administratif : échanges avec les organismes concernés, gestion des éventuelles demandes de pièces complémentaires et suivi des dossiers jusqu'à leur finalisation.`;
+const TXT_MO=`1. Installation et sécurisation du chantier
+   - Mise à disposition d'une équipe de professionnels qualifiés.
+   - Livraison, montage et démontage d'un échafaudage réglementaire adapté à la configuration du bâtiment.
+   - Mise en place des dispositifs nécessaires à la sécurisation du chantier.
+   - Protection des sols et des abords par bâches étanches et protections adaptées.
+
+2. Préparation des supports et pose de l'isolant
+   - Traitement et préparation des supports.
+   - Nettoyage, ponçage et rebouchage des imperfections si nécessaire.
+   - Pose du profilé de départ en aluminium, dans le respect des règles de mise en œuvre, avec une distance supérieure à 15 cm entre le sol fini et le rail.
+   - Pose des panneaux isolants par encollage selon la technique de pose adaptée par plots et/ou boudins.
+   - Fixation complémentaire des panneaux par chevillage, avec un minimum de 5 chevilles par plaque d'isolant.
+   - Respect des règles de pose, d'étanchéité et de harpage.
+   - Pose des panneaux à joints décalés.
+   - Rebouchage au mortier des éventuels espaces entre les panneaux afin de limiter les ponts thermiques et d'assurer la continuité de l'isolation.
+
+3. Traitement des points singuliers et accessoires
+   - Pose de profilés d'angle en PVC avec armature en fibre de verre.
+   - Pose de profilés goutte d'eau et de l'ensemble des accessoires nécessaires à la finition du système.
+   - Découpage des appuis de fenêtres existants lorsque nécessaire.
+   - Fourniture et remplacement par de nouveaux appuis de fenêtres en aluminium.
+   - Adaptation du système autour des descentes d'eaux pluviales, luminaires, coffrets et différentes fixations présentes sur la façade.
+   - Mise en place d'un couronnement en aluminium pour la protection des débords de toiture, lorsque prévu dans les prestations.
+
+4. Armature et enduits de base
+   - Application d'une première couche d'enduit **Monocolle**.
+   - Pose et noyage d'un treillis d'armature en fibre de verre soudé et traité anti-alcalin.
+   - Application d'une deuxième couche d'enduit afin de recouvrir l'armature, protéger l'isolant et assurer la continuité et l'étanchéité du système.
+
+5. Finitions – Enduit et crépi
+   - Application de l'enduit de base **AFC 1.5 – Base Soltherm**.
+   - Application du revêtement de finition taloché **CREPITEX 2.0**.
+   - Réalisation de la finition suivant la teinte choisie par le client.
+   - Application d'une peinture de couleur selon le choix du client, lorsque celle-ci est prévue dans les prestations du devis.
+
+6. Protection en tête d'ITE
+Un soin particulier sera apporté à la protection de la partie haute de l'Isolation Thermique par l'Extérieur.
+
+Les raccordements et finitions en tête d'ITE seront réalisés avec une épaisseur suffisante des produits de finition afin d'assurer une protection durable contre les intempéries, les infiltrations éventuelles et les rayonnements UV.
+
+7. Nettoyage et fin de chantier
+   - Nettoyage complet de la zone de travaux.
+   - Évacuation des déchets générés par le chantier.
+   - Retrait des protections mises en place.
+   - Démontage de l'échafaudage.
+   - Vérification finale de l'ensemble des travaux réalisés avant réception du chantier.
+
+En cas d'indisponibilité d'un matériau ou produit prévu au devis, celui-ci pourra être remplacé par un produit équivalent, présentant des caractéristiques techniques, performances et qualités similaires ou supérieures.`;
+const ENT_DEFAULT={
+  nomCourt:'C.E.F.', representant:'LE GOFF SAVY', siret:'88484037200020', rge:'E-E184755', rgeDebut:'01/01/2021', rgeFin:'19/11/2027',
+  prefixeClient:'CEF', prochainNumero:1,
+  marque:'HIRSCH ISOLATION', reference:'GRAPHIPAN ITETH 32 120MM', epaisseur:'120', resistance:'3,85', acermi:'12/081/795',
+  prixIsolant:145, prixMO:100, tva:5.5, modePaiement:'Chèque, Virement',
+  mentionAides:"Ce devis est valable uniquement si les demandes d'aides locales reçoivent des accords définitifs.",
+  termesCee:"Tout ou partie des travaux relatifs à ce devis ou bon de commande sont éligibles à une prime d’un montant de {prime} euros dont EDF (SIREN 552 081 317) est à l’origine dans le cadre du dispositif des Certificats d’Economies d’Energie. Le montant de cette prime ne pourra être révisé à la baisse qu’en cas de modification du volume de Certificats d’Economies d’Energie attaché à l’opération ou aux opérations d’économies d’énergie ou de la situation de précarité énergétique et ce, de manière proportionnelle. Dans le cadre de la réglementation un contrôle qualité des travaux sur site ou par contact pourra être demandé. Un refus de ce contrôle sur site ou par contact via EDF ou un prestataire d'EDF conduira au refus de cette prime par EDF.",
+  pied1:'C.E.F. – 14 Avenue du Général de Gaulle, 94160 SAINT MANDE – contact@compagnons-ecologiques.fr – 01 43 68 76 01 S.A.S au capital de 51 000,00€',
+  pied2:'SIRET 884 840 372 000 20 – APE 4329A – TVA FR19 884 840 372 Assurance Décennale Axa France n°10699861904 – RGE E184755'
+};
+const ENT_FIELDS=[['nomCourt','Nom court (C.E.F.)'],['representant','Représentant'],['siret','SIRET (bloc opération)'],['rge','N° certificat RGE'],['rgeDebut','RGE attribué le'],['rgeFin','RGE valable jusqu\'au'],
+  ['prefixeClient','Préfixe n° client'],['prochainNumero','Prochain n° de devis'],['marque','Marque isolant'],['reference','Référence isolant'],['epaisseur','Épaisseur (mm)'],['resistance','Résistance R (m².K/W)'],['acermi','Certification ACERMI'],
+  ['prixIsolant','Prix isolant TTC / m²'],['prixMO','Prix main d\'œuvre TTC / m²'],['tva','TVA (%)'],['modePaiement','Mode de paiement'],['mentionAides','Mention aides locales'],['termesCee','Termes CEE ({prime} = montant)'],['pied1','Pied de page, ligne 1'],['pied2','Pied de page, ligne 2']];
+function ent(){const e=MODE==='cloud'?(CFG.defaults.entreprise||{}):(getSet().entreprise||{});return Object.assign({},ENT_DEFAULT,e)}
+const canEditEnt=()=>MODE==='local'||isAdmin();
+const eur2=v=>new Intl.NumberFormat('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}).format(v||0)+' €';
+const num2=v=>new Intl.NumberFormat('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}).format(v||0);
+const md=t=>esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+const frDate=d=>{if(!d)return'';const [y,m,j]=d.split('-');return `${j}/${m}/${y}`};
+const CHAUFFAGE={'Gaz':'Gaz','Fioul':'Fioul','Électricité':'Electrique / Electricité','Pompe à chaleur':'Pompe à chaleur / Electricité','Bois / granulés':'Bois / Granulés','Propane':'Propane / GPL'};
+function logementTxt(c){const age=n(c.annee)?(new Date().getFullYear()-n(c.annee)):99;return (c.typeLogement||'Maison individuelle')+' / '+(age>15?'+15 ans':'-15 ans')}
+function devisTotals(c){
+  const d=c.devis; let ttc=0,ht=0;
+  d.lignes.forEach(l=>{const t=n(l.qte)*n(l.pu);ttc+=t;ht+=t/(1+n(l.tva)/100)});
+  const tva=ttc-ht, region=n(c.aideRegion), cee=n(c.cee);
+  const reste=ttc-region-(d.deduireCee?cee:0);
+  const taux=[...new Set(d.lignes.map(l=>n(l.tva)))];
+  return {ttc,ht,tva,region,cee,reste,taux};
+}
+async function nextNumero(){
+  if(MODE==='cloud'){
+    const {data,error}=await sb.rpc('ite_next_devis');
+    if(!error&&data!=null) return data;
+    toast('Numérotation partagée indisponible : vérifiez le numéro (mise à jour SQL à faire)');
+    return n(ent().prochainNumero)||1;
+  }
+  const e=ent(), k=n(e.prochainNumero)||1; setSet({entreprise:Object.assign({},getSet().entreprise||{},{prochainNumero:k+1})}); return k;
+}
+async function createDevis(){
+  const c=cur(), e=ent(), today=new Date().toISOString().slice(0,10), yr=today.slice(0,4);
+  const k=await nextNumero(), no=yr+'-'+String(k).padStart(4,'0');
+  const surf=n(c.surfaceMurs)||0;
+  c.devis={numero:no,numClient:(e.prefixeClient||'CEF')+'-'+no,date:today,civilite:'M.',
+    adresseTravaux:[c.adresse,[c.cp,c.ville].filter(Boolean).join(' ')].filter(Boolean).join('\n'),
+    zone:'H1',precarite:'',chauffage:CHAUFFAGE[c.energie]||c.energie||'',logement:logementTxt(c),
+    surface:surf,marque:e.marque,reference:e.reference,epaisseur:e.epaisseur,resistance:e.resistance,acermi:e.acermi,kwhCumac:'',
+    deduireCee:false,modePaiement:e.modePaiement,
+    lignes:[
+      {titre:'Prestations administratives – Constitution et suivi des dossiers',desc:TXT_ADMIN,qte:1,unite:'Forfait',pu:0,tva:e.tva},
+      {titre:e.reference,desc:`Marque: ${e.marque}\nRéférence : ${e.reference}\nEpaisseur ${e.epaisseur} mm\n\nRésistance thermique ${e.resistance} m2.K/W`,qte:surf,unite:'U',pu:n(e.prixIsolant),tva:e.tva},
+      {titre:"Main d'œuvre pour travaux isolation des murs par l’extérieur",desc:TXT_MO,qte:surf,unite:'m²',pu:n(e.prixMO),tva:e.tva}
+    ]};
+  syncDevis(c); persist(c); renderDevis(); toast('Devis '+no+' créé');
+}
+function syncDevis(c){ if(!c.devis) return; const t=devisTotals(c); c.coutTravaux=String(Math.round(t.ttc*100)/100); c.updated=Date.now(); }
+function clientBlock(c,d){
+  const nm=[d.civilite,(c.nom||'').toUpperCase(),(c.prenom||'').toUpperCase()].filter(Boolean).join(' ');
+  return {nm, lines:[c.adresse,[c.cp,c.ville].filter(Boolean).join(' ').toUpperCase(),c.tel?'Tél : '+c.tel:'',c.email?'E-mail : '+c.email:'',
+    d.zone?'Zone : '+d.zone:'',d.precarite?'Précarité : '+d.precarite:'',d.chauffage?'Type de chauffage : '+d.chauffage:'',d.logement?'Type de logement : '+d.logement:''].filter(Boolean)};
+}
+function devisDocHtml(c){
+  const d=c.devis, e=ent(), t=devisTotals(c), cb=clientBlock(c,d);
+  const head=`<div class="hd"><img class="logo" src="${LOGO_SRC}" alt="${esc(e.nomCourt)}"><div class="rge"><img src="${RGE_SRC}" alt="RGE Qualibat"><span>N° ${esc(e.rge)}<br>VAL ${esc(e.rgeFin)}</span></div></div>`;
+  const op=`<tr class="op long"><td class="d" colspan="5"><span>BAR-EN-102 : Mise en place d’une isolation thermique des murs par l'extérieur<br>
+    Surface à isoler : <b>${num2(n(d.surface))} m2</b><br>
+    Marque <b>${esc(d.marque)}</b>, Référence <b>${esc(d.reference)}</b>, Epaisseur <b>${esc(d.epaisseur)} mm</b><br>
+    Résistance thermique <b>${esc(d.resistance)} m².K/W</b> évaluée selon la norme NF EN 12664, la norme NF EN 12667 ou la norme NF EN 12939 pour les isolants non réfléchissants et selon la norme NF EN ISO 22097 pour les isolants réfléchissants.<br>
+    Certification Acermi <b>${esc(d.acermi)}</b></span>
+    ${d.kwhCumac?`<span style="display:block;margin-top:2mm">- Kwh Cumac : <b>${num2(n(d.kwhCumac))}</b></span>`:''}
+    <span style="display:block;margin-top:2mm">Matériel(s) fourni(s) et mis en place par notre société <b>${esc(e.nomCourt)}</b><br>représentée par ${esc(e.representant)}, SIRET <b>${esc(e.siret)}</b>, Certificat rge Numéro <b>${esc(e.rge)}</b> attribué le <b>${esc(e.rgeDebut)}</b> valable jusqu'au <b>${esc(e.rgeFin)}</b></span></td></tr>`;
+  const rows=d.lignes.map(l=>`<tr class="${(l.desc||'').length>600?'long':''}"><td class="d"><span class="t">${esc(l.titre)}</span>${l.desc?`<span class="x">${md(l.desc)}</span>`:''}</td>
+    <td>${num2(n(l.qte))} ${esc(l.unite)}</td><td>${eur2(n(l.pu))}</td><td>${eur2(n(l.qte)*n(l.pu))}</td><td>${num2(n(l.tva))} %</td></tr>`).join('');
+  const tvaLbl=t.taux.length===1?`Total TVA ${String(t.taux[0]).replace('.',',')}%`:'Total TVA';
+  return `<div class="dv">
+  <table><thead>
+    <tr><td colspan="5" style="padding:0;text-align:left;white-space:normal">${head}<div class="run"><span>DEVIS ${esc(d.numero)} du ${frDate(d.date)}</span><span>${esc(cb.nm)}</span></div></td></tr>
+    <tr><th>Détail</th><th>Qté</th><th>P.U TTC</th><th>Total TTC</th><th>TVA</th></tr>
+  </thead><tbody>
+    <tr><td class="d" colspan="5" style="font-size:8.5pt"><div class="top">
+      <div><h2>DEVIS : ${esc(d.numero)}</h2><p>Numéro Client : <b>${esc(d.numClient)}</b><br>Date de devis : <b>${frDate(d.date)}</b><br>Adresse des travaux : ${esc(d.adresseTravaux).replace(/\n/g,'<br>')}</p></div>
+      <div><h3>${esc(cb.nm)}</h3><p>${cb.lines.map(esc).join('<br>')}</p></div></div></td></tr>
+    ${op}${rows}
+  </tbody></table>
+  <div class="end">
+    ${e.mentionAides&&t.region?`<p>${esc(e.mentionAides)}</p>`:''}
+    ${t.cee&&e.termesCee?`<p><b style="font-size:8.5pt">Termes et conditions CEE</b><br>${esc(e.termesCee).replace('{prime}',num2(t.cee)+' €')}</p>`:''}
+    <div class="box"><div class="sig"><span>Apposer signature précédée de la mention "Bon pour accord"<br>Le :</span><small>Mode de paiement : ${esc(d.modePaiement)}</small></div>
+      <table><tr><td>Total H.T</td><td>${eur2(t.ht)}</td></tr><tr><td>${tvaLbl}</td><td>${eur2(t.tva)}</td></tr>
+        <tr><td><b>Total TTC</b></td><td><b>${eur2(t.ttc)}</b></td></tr>
+        ${t.region?`<tr><td>Aides région</td><td>- ${eur2(t.region)}</td></tr>`:''}
+        ${d.deduireCee&&t.cee?`<tr><td>Prime CEE</td><td>- ${eur2(t.cee)}</td></tr>`:''}
+        <tr><td class="red">Reste à régler</td><td class="red">${eur2(t.reste)}</td></tr></table></div>
+  </div>
+  <div class="foot">${esc(e.pied1)}<br>${esc(e.pied2)}</div>
+</div>`;
+}
+function pageCss(){
+  const e=ent(), q=v=>String(v||'').replace(/\\/g,'\\\\').replace(/"/g,'\\"');
+  document.getElementById('pageStyle').textContent=`@page devis{@bottom-center{content:"${q(e.pied1)}\\A ${q(e.pied2)}";white-space:pre-wrap;font:7pt Arial,Helvetica,sans-serif;color:#222}@bottom-right{content:counter(page) "/" counter(pages);font:bold 8pt Arial,Helvetica,sans-serif}}`;
+}
+function fld(lbl,attr,val,o={}){
+  const v=esc(val??'');
+  if(o.area) return `<label class="${o.cls||''}">${lbl}<textarea ${attr} rows="${o.rows||2}">${v}</textarea></label>`;
+  if(o.opts) return `<label class="${o.cls||''}">${lbl}<div class="in"><select ${attr}>${o.opts.map(x=>`<option ${x===val?'selected':''}>${esc(x)}</option>`).join('')}</select></div></label>`;
+  return `<label class="${o.cls||''}">${lbl}<div class="in"><input ${attr} value="${v}" ${o.type?`type="${o.type}"`:''} ${o.step?`step="${o.step}"`:''}>${o.u?`<span class="u">${o.u}</span>`:''}</div></label>`;
+}
+function renderDevis(){
+  const pane=document.getElementById('pane-devis'), c=cur(); if(!c) return;
+  if(!c.devis){
+    pane.innerHTML=`<div class="dv-empty"><h2 style="font-size:18px">Pas encore de devis pour ${esc(fullName(c))}</h2>
+      <p class="hint" style="max-width:52ch">Le devis reprend les coordonnées de la fiche, la surface de murs à isoler et vos tarifs. Les 3 lignes ITE habituelles sont pré-remplies : prestations administratives, isolant et main d'œuvre. Tout reste modifiable.</p>
+      <button class="btn primary" id="dvCreate" type="button">Créer le devis</button></div>${entBlock()}`;
+    return;
+  }
+  const d=c.devis, t=devisTotals(c);
+  pane.innerHTML=`<div class="dv-edit">
+   <div class="dv-actions"><button class="btn primary local-only" id="dvPrint" type="button">Imprimer / PDF du devis</button>
+     <button class="btn" id="dvSync" type="button">Reprendre les coordonnées de la fiche</button>
+     <span class="sp" id="dvDelWrap"><button class="btn danger" id="dvDel" type="button">Supprimer le devis</button></span></div>
+   <div class="grid">
+    <fieldset><legend>Devis</legend><div class="fields">
+      ${fld('N° de devis','data-d="numero"',d.numero)}${fld('N° client','data-d="numClient"',d.numClient)}
+      ${fld('Date','data-d="date"',d.date,{type:'date'})}${fld('Civilité','data-d="civilite"',d.civilite,{opts:['M.','Mme','M. et Mme','Société']})}
+      ${fld('Adresse des travaux','data-d="adresseTravaux"',d.adresseTravaux,{area:1,cls:'full'})}
+    </div></fieldset>
+    <fieldset><legend>Situation du client</legend><div class="fields">
+      ${fld('Zone climatique','data-d="zone"',d.zone,{opts:['H1','H2','H3']})}${fld('Précarité','data-d="precarite"',d.precarite,{opts:['','Très modeste','Modeste','Intermédiaire','Classique']})}
+      ${fld('Type de chauffage','data-d="chauffage"',d.chauffage)}${fld('Type de logement','data-d="logement"',d.logement)}
+    </div></fieldset>
+    <fieldset class="span-all"><legend>Opération BAR-EN-102</legend><div class="fields" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+      ${fld('Surface à isoler','data-d="surface"',d.surface,{type:'number',step:'0.01',u:'m²'})}${fld('Marque','data-d="marque"',d.marque)}${fld('Référence','data-d="reference"',d.reference)}
+      ${fld('Épaisseur','data-d="epaisseur"',d.epaisseur,{u:'mm'})}${fld('Résistance R','data-d="resistance"',d.resistance,{u:'m².K/W'})}${fld('Certification ACERMI','data-d="acermi"',d.acermi)}
+      ${fld('kWh cumac','data-d="kwhCumac"',d.kwhCumac,{type:'number',step:'1'})}
+    </div><p class="hint">Changer la surface met à jour la quantité des lignes en m² ou en U qui avaient la même surface.</p></fieldset>
+    <fieldset class="span-all"><legend>Lignes du devis</legend><div class="dv-lines">
+      ${d.lignes.map((l,i)=>`<div class="dv-line" data-i="${i}">
+        ${fld('Intitulé','data-l="titre"',l.titre,{cls:'ttl'})}${fld('Qté','data-l="qte"',l.qte,{type:'number',step:'0.01'})}${fld('Unité','data-l="unite"',l.unite)}
+        ${fld('P.U TTC','data-l="pu"',l.pu,{type:'number',step:'0.01',u:'€'})}${fld('TVA','data-l="tva"',l.tva,{type:'number',step:'0.1',u:'%'})}
+        <div class="mv"><span class="tot num" data-tot="${i}">${eur2(n(l.qte)*n(l.pu))}</span>
+          <button class="btn small" type="button" data-mv="up" aria-label="Monter la ligne" ${i?'':'disabled'}>↑</button><button class="btn small" type="button" data-mv="down" aria-label="Descendre la ligne" ${i<d.lignes.length-1?'':'disabled'}>↓</button><button class="btn small danger" type="button" data-mv="del" aria-label="Supprimer la ligne">✕</button></div>
+        ${fld('Description <small>(**texte** = gras)</small>','data-l="desc"',l.desc,{area:1,rows:Math.min(10,Math.max(2,(l.desc||'').split('\n').length)),cls:'desc'})}
+      </div>`).join('')}
+    </div><div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn" type="button" id="dvAdd">+ Ajouter une ligne</button></div></fieldset>
+    <fieldset class="span-all"><legend>Aides et règlement</legend><div class="fields" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
+      ${fld('Prime CEE (termes du devis)','data-c="cee"',c.cee,{type:'number',step:'0.01',u:'€'})}${fld('Aides région (déduites)','data-c="aideRegion"',c.aideRegion,{type:'number',step:'0.01',u:'€'})}
+      ${fld('Mode de paiement','data-d="modePaiement"',d.modePaiement)}
+      <label style="flex-direction:row;align-items:center;gap:8px;color:var(--fg)"><input type="checkbox" data-d="deduireCee" ${d.deduireCee?'checked':''}> Déduire aussi la prime CEE du reste à régler</label>
+    </div>
+    <div class="dv-sum" id="dvSum"></div>
+    <p class="hint">Le montant des travaux de la simulation suit automatiquement le total TTC du devis. Les aides sont les mêmes que dans la fiche.</p></fieldset>
+   </div>
+   <div class="dv-paper" id="dvPaper"></div>
+   ${entBlock()}
+  </div>`;
+  if(inIframe) pane.querySelectorAll('.local-only').forEach(x=>x.hidden=true);
+  refreshDevis();
+}
+function refreshDevis(){
+  const c=cur(); if(!c||!c.devis) return; const t=devisTotals(c);
+  const s=document.getElementById('dvSum'); if(s) s.innerHTML=`<span>Total HT <b class="num">${eur2(t.ht)}</b></span><span>TVA <b class="num">${eur2(t.tva)}</b></span><span>Total TTC <b class="num">${eur2(t.ttc)}</b></span><span>Reste à régler <b class="num" style="color:var(--bad)">${eur2(t.reste)}</b></span>`;
+  c.devis.lignes.forEach((l,i)=>{const el=document.querySelector(`[data-tot="${i}"]`); if(el) el.textContent=eur2(n(l.qte)*n(l.pu))});
+  const p=document.getElementById('dvPaper'); if(p) p.innerHTML=devisDocHtml(c);
+}
+function entBlock(){
+  if(!canEditEnt()) return '';
+  const e=ent();
+  return `<details class="span-all" style="background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 16px"><summary style="cursor:pointer;font-family:var(--display);font-weight:800">Réglages de l'entreprise pour les devis</summary>
+    <div class="fields" style="margin-top:12px">${ENT_FIELDS.map(([k,l])=>fld(l,`data-e="${k}"`,e[k],(k==='termesCee'||k==='mentionAides'||k.startsWith('pied'))?{area:1,cls:'full',rows:k==='termesCee'?4:2}:{})).join('')}</div>
+    <div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="btn primary" type="button" id="entSave">Enregistrer les réglages de l'entreprise</button></div>
+    <p class="hint">S'appliquent à tous les nouveaux devis${MODE==='cloud'?' de tous les commerciaux':''}. Les devis déjà créés gardent leurs lignes.</p></details>`;
+}
+const dvPane=document.getElementById('pane-devis');
+dvPane.addEventListener('input',e=>{
+  const c=cur(), el=e.target; if(!c) return;
+  if(el.dataset.e!==undefined) return;
+  if(el.dataset.c){c[el.dataset.c]=el.value; syncDevis(c); persist(c); refreshDevis(); return}
+  if(!c.devis) return;
+  if(el.dataset.d){
+    const k=el.dataset.d, v=el.type==='checkbox'?el.checked:el.value;
+    if(k==='surface'){const old=n(c.devis.surface); c.devis.lignes.forEach(l=>{if(n(l.qte)===old&&old>0&&/m²|m2|U/i.test(l.unite))l.qte=v}); c.surfaceMurs=v;}
+    c.devis[k]=v;
+    if(k==='surface') {c.devis.lignes.forEach((l,i)=>{const q=document.querySelector(`.dv-line[data-i="${i}"] [data-l="qte"]`); if(q&&q!==el) q.value=l.qte})}
+  }
+  const line=el.closest('.dv-line'); if(line&&el.dataset.l){c.devis.lignes[+line.dataset.i][el.dataset.l]=el.value}
+  syncDevis(c); persist(c); refreshDevis(); renderList();
+});
+dvPane.addEventListener('change',e=>{if(e.target.type==='checkbox'&&e.target.dataset.d){e.target.dispatchEvent(new Event('input',{bubbles:true}))}});
+dvPane.addEventListener('click',async e=>{
+  const c=cur(), b=e.target.closest('button'); if(!b||!c) return;
+  if(b.id==='dvCreate'){b.disabled=true; await createDevis(); return}
+  if(b.id==='entSave'){
+    const vals={}; dvPane.querySelectorAll('[data-e]').forEach(i=>{vals[i.dataset.e]=i.value});
+    vals.prochainNumero=n(vals.prochainNumero)||1;
+    if(MODE==='cloud'){
+      const data=Object.assign({},CFG.defaults,{entreprise:Object.assign({},CFG.defaults.entreprise||{},vals)});
+      const {error}=await sb.from('ite_config').update({data,updated_at:new Date().toISOString()}).eq('id',1);
+      if(error) return toast('Enregistrement impossible : '+error.message); CFG.defaults=data;
+    } else setSet({entreprise:Object.assign({},getSet().entreprise||{},vals)});
+    pageCss(); refreshDevis(); toast('Réglages de l\'entreprise enregistrés'); return;
+  }
+  if(!c.devis) return;
+  if(b.id==='dvAdd'){c.devis.lignes.push({titre:'',desc:'',qte:1,unite:'U',pu:0,tva:ent().tva}); persist(c); renderDevis(); return}
+  if(b.dataset.mv){const i=+b.closest('.dv-line').dataset.i, L=c.devis.lignes;
+    if(b.dataset.mv==='del') L.splice(i,1); else {const j=b.dataset.mv==='up'?i-1:i+1; [L[i],L[j]]=[L[j],L[i]]}
+    syncDevis(c); persist(c); renderDevis(); return}
+  if(b.id==='dvSync'){const d=c.devis; d.adresseTravaux=[c.adresse,[c.cp,c.ville].filter(Boolean).join(' ')].filter(Boolean).join('\n'); d.chauffage=CHAUFFAGE[c.energie]||c.energie||d.chauffage; d.logement=logementTxt(c); persist(c); renderDevis(); toast('Coordonnées reprises de la fiche'); return}
+  if(b.id==='dvDel'){document.getElementById('dvDelWrap').innerHTML='<span class="confirm">Supprimer ce devis ? <button class="btn danger small" id="dvDelYes" type="button">Oui, supprimer</button><button class="btn small" id="dvDelNo" type="button">Annuler</button></span>';return}
+  if(b.id==='dvDelNo'){renderDevis();return}
+  if(b.id==='dvDelYes'){delete c.devis; persist(c); renderDevis(); toast('Devis supprimé'); return}
+  if(b.id==='dvPrint'){pageCss(); document.getElementById('printRoot').innerHTML=devisDocHtml(c); document.body.classList.add('print-devis');
+    const old=document.title; document.title='Devis '+c.devis.numero+' '+[c.nom,c.prenom].filter(Boolean).join(' ');
+    setTimeout(()=>{window.print(); document.title=old; document.body.classList.remove('print-devis')},60); return}
+});
+
+/* ===== Administration ===== */
+function renderAdmin(){
+  const pane=document.getElementById('pane-admin'); if(!isAdmin()){pane.innerHTML='';return}
+  const d=Object.assign({tauxEco:25,taux:6,duree:120,differe:6,tauxPV:10,hausse:0},CFG.defaults);
+  const cnt=id=>clients.filter(c=>c._owner===id&&known.has(c.id)).length;
+  const signes=id=>clients.filter(c=>c._owner===id&&known.has(c.id)&&c.statut==='signe').length;
+  const f=(k,l,u,st)=>`<label>${l}<div class="in"><input id="def-${k}" data-def="${k}" type="number" step="${st}" value="${esc(d[k])}"><span class="u">${u}</span></div></label>`;
+  pane.innerHTML=`<div class="grid">
+  <fieldset class="span-all"><legend>Commerciaux</legend>
+    <div class="table-wrap"><table class="tbl"><thead><tr><th>Nom</th><th>E-mail</th><th>Rôle</th><th class="num">Clients</th><th class="num">Signés</th><th>Accès</th>${CFG.api?'<th>Mot de passe</th>':''}</tr></thead><tbody>
+    ${team.map(p=>`<tr data-id="${p.id}" class="${p.actif?'':'off'}"><td><input type="text" data-act="nom" aria-label="Nom" value="${esc(p.nom)}" placeholder="Nom à saisir" style="width:150px">${p.id===me.id?' (vous)':''}</td><td>${esc(p.email)}</td>
+      <td><select data-act="role" aria-label="Rôle" ${p.id===me.id?'disabled':''}><option value="commercial" ${p.role!=='admin'?'selected':''}>Commercial</option><option value="admin" ${p.role==='admin'?'selected':''}>Admin</option></select></td>
+      <td class="num">${cnt(p.id)}</td><td class="num">${signes(p.id)}</td>
+      <td><label style="flex-direction:row;align-items:center;gap:6px;color:var(--fg)"><input type="checkbox" data-act="actif" ${p.actif?'checked':''} ${p.id===me.id?'disabled':''}>${p.actif?'Actif':'Désactivé'}</label></td>
+      ${CFG.api?'<td class="pwd"><button class="btn small" data-act="pwd" type="button">Changer</button></td>':''}</tr>`).join('')}
+    </tbody></table></div>
+    ${CFG.api?`<form id="newUser" class="fields" style="margin-top:14px" novalidate>
+      <label>Nom du commercial<div class="in"><input id="nuNom" autocomplete="off"></div></label>
+      <label>E-mail<div class="in"><input id="nuEmail" type="email" autocomplete="off"></div></label>
+      <label>Mot de passe provisoire <small>8 caractères min.</small><div class="in"><input id="nuPass" type="text" autocomplete="off"></div></label>
+      <label>Rôle<div class="in"><select id="nuRole"><option value="commercial">Commercial</option><option value="admin">Admin</option></select></div></label>
+      <div class="full" style="display:flex;justify-content:flex-end"><button class="btn primary" type="submit">Créer le compte</button></div>
+    </form>
+    <p class="hint">Communiquez au commercial son e-mail et son mot de passe provisoire. Il pourra le changer avec « Mot de passe oublié ». Un commercial ne voit que ses propres clients. Un compte désactivé ne peut plus se connecter à ses fiches.</p>`
+    :`<p class="hint"><b>Ajouter un commercial :</b> dans Supabase › Authentication › Users › Add user › Create new user, saisissez son e-mail et un mot de passe provisoire, cochez « Auto Confirm User ». Revenez ici : il apparaît dans la liste, désactivé. Saisissez son nom, cochez « Actif », puis communiquez-lui son e-mail et son mot de passe. Il pourra le changer avec « Mot de passe oublié ».<br>Un commercial ne voit que ses propres clients. Un compte désactivé ne peut plus se connecter à ses fiches.</p>`}
+  </fieldset>
+  <fieldset class="span-all"><legend>Réglages par défaut des nouvelles fiches</legend>
+    <div class="fields" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+      ${f('tauxEco','Économie due à l\'ITE','%',1)}${f('taux','Taux d\'intérêt','%',0.1)}${f('duree','Durée','mois',1)}${f('differe','Différé','mois',1)}${f('tauxPV','Plus-value','%',0.5)}${f('hausse','Hausse énergie','%/an',0.5)}
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="btn primary" id="saveDefaults" type="button">Enregistrer les réglages</button></div>
+    <p class="hint">S'appliquent aux nouvelles fiches de tous les commerciaux. Les fiches existantes gardent leurs valeurs.</p>
+  </fieldset></div>`;
+}
+async function reloadTeam(){const {data,error}=await sb.from('ite_profiles').select('*').order('nom');if(!error)team=data;return !error}
+document.getElementById('pane-admin').addEventListener('change',async e=>{
+  const tr=e.target.closest('tr[data-id]'); if(!tr) return; const id=tr.dataset.id, act=e.target.dataset.act;
+  if(act!=='role'&&act!=='actif'&&act!=='nom') return;
+  const patch=act==='role'?{role:e.target.value}:act==='nom'?{nom:e.target.value.trim()}:{actif:e.target.checked};
+  const {error}=await sb.from('ite_profiles').update(patch).eq('id',id);
+  if(error) toast('Modification impossible : '+error.message); else toast('Compte mis à jour');
+  await reloadTeam(); renderAdmin(); renderRepFilter();
+});
+document.getElementById('pane-admin').addEventListener('click',async e=>{
+  const t=e.target, tr=t.closest('tr[data-id]');
+  if(t.id==='saveDefaults'){
+    const data=Object.assign({},CFG.defaults); document.querySelectorAll('[data-def]').forEach(i=>{data[i.dataset.def]=n(i.value)});
+    const {error}=await sb.from('ite_config').update({data,updated_at:new Date().toISOString()}).eq('id',1);
+    if(error) toast('Enregistrement impossible : '+error.message); else {CFG.defaults=data; toast('Réglages enregistrés')}
+    return;
+  }
+  if(!tr) return;
+  const cell=tr.querySelector('.pwd');
+  if(t.dataset.act==='pwd'){cell.innerHTML='<input type="text" aria-label="Nouveau mot de passe" placeholder="nouveau mot de passe" style="width:150px"> <button class="btn small primary" data-act="pwdOk" type="button">OK</button>';cell.querySelector('input').focus()}
+  if(t.dataset.act==='pwdOk'){
+    const r=await adminCall({action:'password',id:tr.dataset.id,password:cell.querySelector('input').value});
+    if(r) {toast('Mot de passe modifié');renderAdmin()}
+  }
+});
+document.getElementById('pane-admin').addEventListener('submit',async e=>{
+  if(e.target.id!=='newUser') return; e.preventDefault();
+  const r=await adminCall({action:'create',nom:document.getElementById('nuNom').value,email:document.getElementById('nuEmail').value,password:document.getElementById('nuPass').value,role:document.getElementById('nuRole').value});
+  if(r){toast('Compte créé');await reloadTeam();renderAdmin();renderRepFilter()}
+});
+async function adminCall(body){
+  try{const {data:{session}}=await sb.auth.getSession();
+    const res=await fetch('/api/admin-users',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(session?session.access_token:'')},body:JSON.stringify(body)});
+    const out=await res.json().catch(()=>({})); if(!res.ok) throw new Error(out.erreur||('Erreur '+res.status)); return out;
+  }catch(err){toast(err.message);return null}
+}
+function renderRepFilter(){
+  const w=document.getElementById('repFilterWrap'); w.hidden=!isAdmin(); if(!isAdmin()) return;
+  const s=document.getElementById('repFilter');
+  s.innerHTML='<option value="all">Tous les commerciaux</option>'+team.map(p=>`<option value="${p.id}">${esc(p.nom||p.email)}</option>`).join('');
+  s.value=team.some(p=>p.id===repFilter)?repFilter:'all';
+}
+document.getElementById('repFilter').addEventListener('change',e=>{repFilter=e.target.value;renderList()});
+document.getElementById('ownerSel').addEventListener('change',async e=>{
+  const c=cur(), val=e.target.value;
+  if(!known.has(c.id)&&!(await saveNow(c))) return;
+  const {error}=await sb.from('ite_clients').update({owner:val}).eq('id',c.id);
+  if(error){toast('Réattribution impossible : '+error.message);e.target.value=c._owner;return}
+  c._owner=val; renderList(); toast('Fiche attribuée à '+ownerName(val));
+});
+
+/* ===== Connexion (mode en ligne) ===== */
+let authMode='login';
+function showAuth(mode,msg,err){
+  authMode=mode;
+  document.getElementById('authScreen').hidden=false;
+  const T={login:['Connexion','Se connecter','Mot de passe oublié ?'],forgot:['Mot de passe oublié','Recevoir le lien','Retour à la connexion'],
+    reset:['Nouveau mot de passe','Enregistrer',''],blocked:['Accès désactivé','Se déconnecter',''],config:['Configuration incomplète','',''] }[mode];
+  document.getElementById('authTitle').textContent=T[0];
+  document.getElementById('authSubmit').textContent=T[1]; document.getElementById('authSubmit').hidden=!T[1];
+  document.getElementById('authAlt').textContent=T[2]; document.getElementById('authAlt').hidden=!T[2];
+  document.getElementById('lblEmail').hidden=!(mode==='login'||mode==='forgot');
+  document.getElementById('lblPass').hidden=!(mode==='login'||mode==='reset');
+  document.getElementById('authPass').value='';
+  document.getElementById('authPass').autocomplete=mode==='reset'?'new-password':'current-password';
+  const m=document.getElementById('authMsg'); m.textContent=msg||''; m.className='auth-msg'+(err?' err':'');
+}
+document.getElementById('authAlt').onclick=()=>showAuth(authMode==='login'?'forgot':'login', authMode==='login'?'Saisissez votre e-mail : vous recevrez un lien pour choisir un nouveau mot de passe.':'');
+document.getElementById('authForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const email=document.getElementById('authEmail').value.trim(), pass=document.getElementById('authPass').value;
+  const btn=document.getElementById('authSubmit'); btn.disabled=true;
+  try{
+    if(authMode==='login'){
+      const {data,error}=await sb.auth.signInWithPassword({email,password:pass});
+      if(error) return showAuth('login',/invalid/i.test(error.message)?'E-mail ou mot de passe incorrect.':error.message,true);
+      await enterApp(data.user);
+    }else if(authMode==='forgot'){
+      const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+'/'});
+      showAuth('login',error?error.message:'Si un compte existe pour cette adresse, un e-mail vient d\'être envoyé.',!!error);
+    }else if(authMode==='reset'){
+      if(pass.length<8) return showAuth('reset','8 caractères minimum.',true);
+      const {data,error}=await sb.auth.updateUser({password:pass});
+      if(error) return showAuth('reset',error.message,true);
+      history.replaceState(null,'',location.pathname); await enterApp(data.user);
+    }else if(authMode==='blocked'){ await sb.auth.signOut(); location.reload(); }
+  }finally{btn.disabled=false}
+});
+document.getElementById('btnLogout').onclick=async()=>{await sb.auth.signOut();location.reload()};
+
+async function enterApp(user){
+  me=user;
+  const {data:prof,error:perr}=await sb.from('ite_profiles').select('*').eq('id',user.id).maybeSingle();
+  profile=prof;
+  if(perr) return showAuth('blocked','Lecture du compte impossible : '+perr.message+(perr.code?' ('+perr.code+')':'')+'. Exécutez schema.sql dans Supabase › SQL Editor.',true);
+  if(!prof||!prof.actif) return showAuth('blocked','Votre compte n\'est pas activé. Demandez à votre administrateur de l\'activer.',true);
+  const [{data:cfg}]=await Promise.all([sb.from('ite_config').select('data').eq('id',1).maybeSingle(), isAdmin()?reloadTeam():Promise.resolve()]);
+  if(!isAdmin()) team=[prof];
+  CFG.defaults=(cfg&&cfg.data)||{};
+  await loadRemote();
+  if(!clients.length) clients=[blank()];
+  currentId=clients[0].id;
+  document.getElementById('userName').innerHTML='<b>'+esc(prof.nom||prof.email)+'</b>';
+  const role=document.getElementById('userRole'); role.textContent=prof.role==='admin'?'Admin':'Commercial'; role.className='status'+(prof.role==='admin'?' signe':'');
+  document.getElementById('userBox').hidden=false;
+  document.getElementById('tab-admin').hidden=!isAdmin();
+  document.getElementById('ownerWrap').hidden=!isAdmin();
+  renderRepFilter(); renderFilters(); fillForm(); renderList(); resetDel();
+  document.getElementById('authScreen').hidden=true;
+  document.querySelector('.wrap').hidden=false;
+}
+document.addEventListener('visibilitychange',async()=>{
+  if(MODE!=='cloud'||document.hidden||!profile||timers.size) return;
+  const keep=currentId; if(!(await loadRemote())) return;
+  const unsaved=[]; if(!clients.length) unsaved.push(blank());
+  clients=clients.concat(unsaved);
+  currentId=clients.some(c=>c.id===keep)?keep:clients[0].id;
+  fillForm(); renderList(); if(!document.getElementById('pane-sheet').hidden) renderSheet(); if(!document.getElementById('pane-admin').hidden) renderAdmin();
+});
+window.addEventListener('beforeunload',e=>{if(timers.size){timers.forEach((t,id)=>{const c=clients.find(x=>x.id===id); if(c) saveNow(c)}); e.preventDefault()}});
+
+function loadScript(src){return new Promise((ok,ko)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=ko;document.head.appendChild(s)})}
+async function boot(){
+  let conf=null;
+  if(!inIframe&&/^https?:$/.test(location.protocol)){
+    /* 1) config.js à la racine (version simple, sans fonctions serveur) */
+    try{await loadScript('/config.js')}catch(e){}
+    const C=window.ITE_CONFIG||{};
+    if(C.url&&C.anonKey&&!/xxxx/.test(C.url)) conf={url:C.url,anon:C.anonKey,mail:false,api:false};
+    /* 2) sinon fonctions Vercel /api (version complète) */
+    else try{const r=await fetch('/api/config',{cache:'no-store'}); const j=await r.json().catch(()=>null);
+      if(r.ok&&j&&j.url) conf=Object.assign(j,{api:true}); else if(r.status===503&&j) conf={erreur:j.erreur};}catch(e){}
+    if(!conf&&C.url!==undefined) conf={erreur:'Le fichier config.js ne contient pas encore l\'adresse et la clé anon de Supabase.'};
+  }
+  if(conf&&conf.erreur){document.querySelector('.wrap').hidden=true;return showAuth('config',conf.erreur+((window.ITE_CONFIG)?' Renseignez-les dans config.js (sur GitHub : ouvrir le fichier, crayon « Edit », puis « Commit changes »). Vercel republie tout seul.':' Ajoutez SUPABASE_URL, SUPABASE_ANON_KEY et SUPABASE_SERVICE_ROLE_KEY dans Vercel puis redéployez.'),true)}
+  if(conf){
+    try{await loadScript('/supabase-2.119.0.js')}catch(e){try{await loadScript('/vendor/supabase-2.119.0.js')}catch(e2){}}
+    if(window.supabase){
+      MODE='cloud'; CFG.mail=!!conf.mail; CFG.api=!!conf.api;
+      document.querySelector('.wrap').hidden=true;
+      document.querySelectorAll('.local-only').forEach(e=>e.hidden=false);
+      sb=window.supabase.createClient(conf.url,conf.anon);
+      sb.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY'){document.querySelector('.wrap').hidden=true;showAuth('reset','Choisissez votre nouveau mot de passe.')}});
+      if(/type=recovery/.test(location.hash)) return;
+      const {data:{session}}=await sb.auth.getSession();
+      if(!session) return showAuth('login');
+      return enterApp(session.user);
+    }
+  }
+  /* Mode local : fiches enregistrées dans ce navigateur */
+  clients=load();
+  if(!clients.length){clients=[sample()];persist();}
+  currentId=clients[0].id;
+  renderFilters(); fillForm(); renderList();
+}
+
+let tt; function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),2200)}
+
+boot();
+window.__compute=compute;
+})();
+</script>
+
+</body>
+</html>
