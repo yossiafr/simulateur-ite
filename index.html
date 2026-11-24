@@ -518,7 +518,7 @@ body.pm .sheet-head h2{font-size:30px} body.pm .ribbon{font-size:22px} body.pm .
           <fieldset class="no-tp">
             <legend>Aides & patrimoine</legend>
             <div class="fields">
-              <label>Prime CEE<div class="in"><input id="cee" data-k="cee" type="number" min="0" step="50"><span class="u">€</span></div></label>
+              <label class="full">Prime CEE <small>laisser vide pour le calcul auto</small><div class="in"><input id="cee" data-k="cee" type="number" min="0" step="10" placeholder="auto"><span class="u">€</span></div><span class="calc-hint" id="ceeHint"></span></label>
               <label>Aide région<div class="in"><input id="aideRegion" data-k="aideRegion" type="number" min="0" step="50"><span class="u">€</span></div></label>
               <label>Valeur actuelle du bien<div class="in"><input id="valeurBien" data-k="valeurBien" type="number" min="0" step="1000"><span class="u">€</span></div></label>
               <label>Plus-value estimée<div class="in"><input id="tauxPV" data-k="tauxPV" type="number" min="0" max="30" step="0.5"><span class="u">%</span></div></label>
@@ -612,6 +612,11 @@ const isIdf=cp=>/^(75|77|78|91|92|93|94|95)\d{3}$/.test(String(cp||'').trim());
 function couleurFoyer(c){const rfr=+c.rfr, np=Math.round(+c.nbPers); if(!(rfr>0)||!(np>=1)) return null;
   const idf=isIdf(c.cp), T=idf?PLAF.idf:PLAF.aut, S=idf?PLAF.idfSup:PLAF.autSup, lim=np<=5?T[np-1]:T[4].map((v,i)=>v+S[i]*(np-5));
   const k=rfr<=lim[0]?0:rfr<=lim[1]?1:rfr<=lim[2]?2:3; return {k,idf,lim,np,nom:COUL[k][0],txt:COUL[k][1],col:COUL[k][2]}}
+function ceeAuto(c){const f=couleurFoyer(c), m2=n(c.surfaceMurs); if(!f||!(m2>0)) return null; const e=ent(), t=f.k<2?n(e.ceeBJ):n(e.ceeVR); return {val:Math.round(t*m2*100)/100,t,m2,f}}
+const ceeVal=c=>c.cee!==''&&c.cee!=null?n(c.cee):((ceeAuto(c)||{}).val||0);
+function ceeHint(){const c=cur(), el=document.getElementById('ceeHint'); if(!c||!el) return; const a=ceeAuto(c);
+  el.textContent=a?`Calcul auto : ${eur(a.t)}/m² × ${a.m2.toLocaleString("fr-FR")} m² = ${eur(a.val)} (foyer ${a.f.nom})`+(c.cee!==''&&c.cee!=null?` · valeur forcée utilisée : ${eur(n(c.cee))}`:''):'Calcul auto dès que la couleur du foyer et la surface de murs sont connues';
+  document.getElementById('cee').placeholder=a?String(Math.round(a.val)):'auto'}
 function renderFoyer(){const c=cur(); if(!c) return; const f=couleurFoyer(c), box=document.getElementById('foyerCoul');
   box.innerHTML=f?`<div class="fc" style="--fc:${f.col}"><b class="pill">Foyer ${f.nom}</b><b>${f.txt}</b><span>${f.k<3?`RFR ≤ ${eur(f.lim[f.k])} pour ${f.np} pers.`:`RFR > ${eur(f.lim[2])} pour ${f.np} pers.`} · barème 2026 ${f.idf?'Île-de-France':'hors Île-de-France'}${!c.cp?' (code postal à saisir)':''}</span></div>`
     :'<p class="hint" style="margin:0">Saisissez le revenu fiscal de référence et le nombre de personnes : la couleur du foyer (bleu, jaune, violet, rose) se calcule seule.</p>';
@@ -672,13 +677,13 @@ function compute(d){
   const h=n(d.hausse)/100, mois=diff+duree;
   let ecoGlobale=0, ecoDiff=0;
   for(let m=0;m<mois;m++){const v=ecoMens*Math.pow(1+h,Math.floor(m/12));ecoGlobale+=v;if(m<diff)ecoDiff+=v;}
-  const aides=n(d.cee)+n(d.aideRegion);
+  const cee=ceeVal(d), aides=cee+n(d.aideRegion);
   const pv=n(d.valeurBien)*n(d.tauxPV)/100;
   const total=mens*duree;
   const ech=x=>mens>0?x/mens:0;
   const pct=x=>total>0?x/total:0;
-  return {mens,mensAuto,forced,capital,capDiff,taux:n(d.taux),duree,diff,ecoAuto,ecoMens,ecoGlobale,ecoDiff,aides,cee:n(d.cee),region:n(d.aideRegion),pv,total,
-    echEco:ech(ecoGlobale),echEcoDiff:ech(ecoDiff),echCee:ech(n(d.cee)),echRegion:ech(n(d.aideRegion)),echAides:ech(aides),echPv:ech(pv),
+  return {mens,mensAuto,forced,capital,capDiff,taux:n(d.taux),duree,diff,ecoAuto,ecoMens,ecoGlobale,ecoDiff,aides,cee,ceeAuto:ceeAuto(d),region:n(d.aideRegion),pv,total,
+    echEco:ech(ecoGlobale),echEcoDiff:ech(ecoDiff),echCee:ech(cee),echRegion:ech(n(d.aideRegion)),echAides:ech(aides),echPv:ech(pv),
     partMens:mens>0?ecoMens/mens:0, effort:mens-ecoMens,
     pEco:pct(ecoGlobale),pAid:pct(aides),pPv:pct(pv),
     couv:pct(ecoGlobale+aides+pv),couvAff:Math.min(1,pct(ecoGlobale+aides+pv)),couvCash:pct(ecoGlobale+aides),couvTotal:pct(ecoGlobale+aides+pv),reste:total-ecoGlobale-aides-pv, ok:mens>0&&duree>0};
@@ -713,7 +718,7 @@ function fillForm(){
   const c=cur(); if(!c) return;
   document.querySelectorAll('[data-k]').forEach(el=>{let v=c[el.dataset.k]??''; if(el.type==='datetime-local'&&/^\d{4}-\d{2}-\d{2}$/.test(v)) v+='T09:00'; el.value=v});
   if(isAdmin()){const s=document.getElementById('ownerSel');s.innerHTML=team.filter(p=>(p.actif&&p.role!=='telepro')||p.id===c._owner).map(p=>`<option value="${p.id}">${esc(p.nom||p.email)}${p.role==='admin'?' (admin)':p.role==='telepro'?' (télépro)':''}</option>`).join('');s.value=c._owner||me.id}
-  updateHeader(); updateHint(); renderFoyer();
+  updateHeader(); updateHint(); renderFoyer(); ceeHint();
 }
 function updateHeader(){
   const c=cur();
@@ -729,7 +734,7 @@ document.getElementById('pane-form').addEventListener('input',e=>{
   if(e.target.dataset.crk){const c=cur(), x=(c.credits||[])[+e.target.dataset.cr]; if(x){x[e.target.dataset.crk]=e.target.value; c.updated=Date.now(); persist(c); renderFoyer()} return}
   const k=e.target.dataset.k; if(!k) return;
   const c=cur(); c[k]=e.target.value; c.updated=Date.now(); persist(c);
-  updateHeader(); updateHint(); renderList(); if(['rfr','nbPers','cp','revM','revMme','coutTravaux','taux','duree','mensForce','differe'].includes(k)) renderFoyer();
+  updateHeader(); updateHint(); renderList(); if(['rfr','nbPers','cp','revM','revMme','coutTravaux','taux','duree','mensForce','differe'].includes(k)) renderFoyer(); if(['rfr','nbPers','cp','surfaceMurs','cee'].includes(k)) ceeHint();
   if(!document.getElementById('pane-sheet').hidden) renderSheet();
 });
 document.getElementById('pane-form').addEventListener('submit',e=>e.preventDefault());
@@ -1021,7 +1026,7 @@ const ENT_DEFAULT={
   nomCourt:'C.E.F.', representant:'LE GOFF SAVY', siret:'88484037200020', rge:'E-E184755', rgeDebut:'01/01/2021', rgeFin:'19/11/2027',
   prefixeClient:'CEF', prochainNumero:1,
   marque:'HIRSCH ISOLATION', reference:'GRAPHIPAN ITETH 32 120MM', epaisseur:'120', resistance:'3,85', acermi:'12/081/795',
-  prixIsolant:145, prixMO:100, tva:5.5, modePaiement:'Chèque, Virement',
+  prixIsolant:145, prixMO:100, ceeBJ:14, ceeVR:12, tva:5.5, modePaiement:'Chèque, Virement',
   mentionAides:"Ce devis est valable uniquement si les demandes d'aides locales reçoivent des accords définitifs.",
   termesCee:"Tout ou partie des travaux relatifs à ce devis ou bon de commande sont éligibles à une prime d’un montant de {prime} euros dont EDF (SIREN 552 081 317) est à l’origine dans le cadre du dispositif des Certificats d’Economies d’Energie. Le montant de cette prime ne pourra être révisé à la baisse qu’en cas de modification du volume de Certificats d’Economies d’Energie attaché à l’opération ou aux opérations d’économies d’énergie ou de la situation de précarité énergétique et ce, de manière proportionnelle. Dans le cadre de la réglementation un contrôle qualité des travaux sur site ou par contact pourra être demandé. Un refus de ce contrôle sur site ou par contact via EDF ou un prestataire d'EDF conduira au refus de cette prime par EDF.",
   pied1:'C.E.F. – 14 Avenue du Général de Gaulle, 94160 SAINT MANDE – contact@compagnons-ecologiques.fr – 01 43 68 76 01 S.A.S au capital de 51 000,00€',
@@ -1041,7 +1046,7 @@ function logementTxt(c){const age=n(c.annee)?(new Date().getFullYear()-n(c.annee
 function devisTotals(c){
   const d=c.devis; let ttc=0,ht=0;
   d.lignes.forEach(l=>{const t=n(l.qte)*n(l.pu);ttc+=t;ht+=t/(1+n(l.tva)/100)});
-  const tva=ttc-ht, region=n(c.aideRegion), cee=n(c.cee);
+  const tva=ttc-ht, region=n(c.aideRegion), cee=ceeVal(c);
   const reste=ttc-region-(d.deduireCee?cee:0);
   const taux=[...new Set(d.lignes.map(l=>n(l.tva)))];
   return {ttc,ht,tva,region,cee,reste,taux};
@@ -1121,7 +1126,7 @@ function fld(lbl,attr,val,o={}){
   const v=esc(val??'');
   if(o.area) return `<label class="${o.cls||''}">${lbl}<textarea ${attr} rows="${o.rows||2}">${v}</textarea></label>`;
   if(o.opts) return `<label class="${o.cls||''}">${lbl}<div class="in"><select ${attr}>${o.opts.map(x=>`<option ${x===val?'selected':''}>${esc(x)}</option>`).join('')}</select></div></label>`;
-  return `<label class="${o.cls||''}">${lbl}<div class="in"><input ${attr} value="${v}" ${o.type?`type="${o.type}"`:''} ${o.step?`step="${o.step}"`:''}>${o.u?`<span class="u">${o.u}</span>`:''}</div></label>`;
+  return `<label class="${o.cls||''}">${lbl}<div class="in"><input ${attr} value="${v}" ${o.ph?`placeholder="${esc(o.ph)}"`:''} ${o.type?`type="${o.type}"`:''} ${o.step?`step="${o.step}"`:''}>${o.u?`<span class="u">${o.u}</span>`:''}</div></label>`;
 }
 function renderDevis(){
   const pane=document.getElementById('pane-devis'), c=cur(); if(!c) return;
@@ -1164,7 +1169,7 @@ function renderDevis(){
     </div><div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn" type="button" id="dvAdd">+ Ajouter une ligne</button>${optSelectHtml()}</div></fieldset>
     <fieldset class="span-all"><legend>Documents joints à la suite du devis</legend><div id="dvAnnex"><p class="hint">Chargement…</p></div></fieldset>
     <fieldset class="span-all"><legend>Aides et règlement</legend><div class="fields" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
-      ${fld('Prime CEE (termes du devis)','data-c="cee"',c.cee,{type:'number',step:'0.01',u:'€'})}${fld('Aides région (déduites)','data-c="aideRegion"',c.aideRegion,{type:'number',step:'0.01',u:'€'})}
+      ${fld('Prime CEE (termes du devis)','data-c="cee"',c.cee,{type:'number',step:'0.01',u:'€',ph:(a=>a?'auto : '+a.val:'auto')(ceeAuto(c))})}${fld('Aides région (déduites)','data-c="aideRegion"',c.aideRegion,{type:'number',step:'0.01',u:'€'})}
       ${fld('Mode de paiement','data-d="modePaiement"',d.modePaiement)}
       <label style="flex-direction:row;align-items:center;gap:8px;color:var(--fg)"><input type="checkbox" data-d="deduireCee" ${d.deduireCee?'checked':''}> Déduire aussi la prime CEE du reste à régler</label>
     </div>
@@ -2133,7 +2138,7 @@ function renderAdmin(){
   </fieldset>
   <fieldset class="span-all"><legend>Tarifs de base du devis</legend>${(()=>{const e=ent(), tf=(k,l,o)=>fld(l,`data-tarif="${k}"`,e[k],o||{});
     return `<div class="fields" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
-      ${tf('prixIsolant','Prix isolant TTC',{type:'number',step:'0.01',u:'€/m²'})}${tf('prixMO','Prix main d\'œuvre TTC',{type:'number',step:'0.01',u:'€/m²'})}${tf('tva','TVA',{type:'number',step:'0.1',u:'%'})}
+      ${tf('prixIsolant','Prix isolant TTC',{type:'number',step:'0.01',u:'€/m²'})}${tf('prixMO','Prix main d\'œuvre TTC',{type:'number',step:'0.01',u:'€/m²'})}${tf('tva','TVA',{type:'number',step:'0.1',u:'%'})}${tf('ceeBJ','Prime CEE foyers bleu et jaune',{type:'number',step:'0.5',u:'€/m²'})}${tf('ceeVR','Prime CEE foyers violet et rose',{type:'number',step:'0.5',u:'€/m²'})}
       ${tf('marque','Marque de l\'isolant')}${tf('reference','Référence')}${tf('epaisseur','Épaisseur',{u:'mm'})}${tf('resistance','Résistance R',{u:'m².K/W'})}${tf('acermi','Certification ACERMI')}</div>
     <div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="btn primary" id="saveTarifs" type="button">Enregistrer les tarifs</button></div>
     <p class="hint">Utilisés pour tous les nouveaux devis, par tous les commerciaux. Les devis déjà créés gardent leurs prix (modifiables ligne par ligne).</p>`})()}</fieldset>
@@ -2153,7 +2158,7 @@ document.getElementById('pane-admin').addEventListener('change',async e=>{
 document.getElementById('pane-admin').addEventListener('click',async e=>{
   const t=e.target, tr=t.closest('tr[data-id]');
   if(t.id==='saveTarifs'){
-    const vals={}; document.querySelectorAll('#pane-admin [data-tarif]').forEach(i=>{vals[i.dataset.tarif]=['prixIsolant','prixMO','tva'].includes(i.dataset.tarif)?n(i.value):i.value.trim()});
+    const vals={}; document.querySelectorAll('#pane-admin [data-tarif]').forEach(i=>{vals[i.dataset.tarif]=['prixIsolant','prixMO','tva','ceeBJ','ceeVR'].includes(i.dataset.tarif)?n(i.value):i.value.trim()});
     if(await saveCfg(d=>Object.assign(d,{entreprise:Object.assign({},d.entreprise||{},vals)}))) toast('Tarifs enregistrés : ils s\'appliquent aux nouveaux devis');
     return;
   }
