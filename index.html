@@ -348,6 +348,17 @@ label small{font-weight:400}
 .ag-ev{position:absolute;border:0;border-left:4px solid var(--c);background:color-mix(in srgb,var(--c) 14%,var(--surface));border-radius:8px;padding:3px 6px;text-align:left;cursor:pointer;overflow:hidden;display:flex;flex-direction:column;gap:1px;font-size:11.5px;line-height:1.25;color:var(--fg)}
 .ag-ev b{font-size:12px}.ag-ev span{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ag-ev em{font-style:normal;font-weight:700}
 .ag-ev.done{opacity:.8}
+.ag-ev.aconf{border:1.5px dashed var(--c);border-left-width:4px;border-left-style:solid}
+.ag-ev.busy{cursor:default;background:repeating-linear-gradient(135deg,#eceee9 0 6px,#e3e6df 6px 12px);border-left-color:#a7ada2;color:#6b7266;pointer-events:none}
+.ag-tag{display:inline-block;font-size:10.5px;font-weight:700;color:#7a4b00;background:#fff4e0;border-radius:6px;padding:0 5px;align-self:flex-start}
+.ag-conf{background:#fff4e0;border:1px solid #f0d199;border-radius:12px;padding:12px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:12px 0}
+body.tp .no-tp{display:none!important}
+.stars{display:flex;align-items:center;gap:2px}.stars button{border:0;background:none;font-size:26px;line-height:1;color:#d5d9d0;cursor:pointer;padding:0 2px}.stars button.on{color:#e0a100}
+.ag-st{font-style:normal;color:#c58a00;font-size:11px;letter-spacing:-1px}
+.sug{display:flex;flex-direction:column;gap:6px;background:color-mix(in srgb,var(--accent,#2f8f1f) 6%,var(--surface));border:1px solid var(--line);border-radius:12px;padding:10px}
+.sug-l{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px}
+.sug-l button{text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:7px 10px;cursor:pointer;color:var(--fg);display:flex;flex-direction:column;gap:2px;font-size:13px}
+.sug-l button small{color:var(--muted);font-size:12px}.sug-l button.on{border-color:#2f8f1f;box-shadow:0 0 0 2px #2f8f1f33}.sug-l button.best{border-left:4px solid #2f8f1f}
 @media (max-width:600px){.ag-ev{padding:2px 4px;font-size:10.5px}.ag-ev b{font-size:10.5px}.ag-ev span{display:none}.ag-head span{font-size:11px;padding:6px 2px}.ag-head b{font-size:13px}}
 .ag-list{display:flex;flex-direction:column;gap:14px}.ag-dayl h3{font-size:14px;text-transform:capitalize;margin:0 0 6px}
 .ag-row{width:100%;display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:10px;align-items:center;text-align:left;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--c);border-radius:12px;padding:10px 12px;margin-bottom:6px;cursor:pointer;color:var(--fg)}
@@ -411,7 +422,7 @@ body.pm .sheet-head h2{font-size:30px} body.pm .ribbon{font-size:22px} body.pm .
       <div class="filters" id="filters"></div>
       <div class="in" id="repFilterWrap" hidden style="margin-bottom:10px"><select id="repFilter" aria-label="Filtrer par commercial"></select></div>
       <ul class="clients" id="clientList"></ul>
-      <div class="side-actions local-only">
+      <div class="side-actions local-only no-tp">
         <button class="btn small" id="btnExportCsv" type="button">Export CSV</button>
         <button class="btn small" id="btnExportJson" type="button">Sauvegarde</button>
         <label class="btn small" style="flex-direction:row;color:var(--fg)">Restaurer<input type="file" id="fileImport" accept=".json,application/json" hidden></label>
@@ -424,15 +435,15 @@ body.pm .sheet-head h2{font-size:30px} body.pm .ribbon{font-size:22px} body.pm .
         <span class="saved" id="savedInfo"></span>
         <button class="btn" id="btnDup" type="button">Dupliquer</button>
         <span id="delWrap"><button class="btn danger" id="btnDel" type="button">Supprimer</button></span>
-        <button class="btn local-only" id="btnPrint" type="button">Imprimer / PDF</button>
-        <button class="btn primary" id="btnMail" type="button">Envoyer par e-mail</button>
+        <button class="btn local-only no-tp" id="btnPrint" type="button">Imprimer / PDF</button>
+        <button class="btn primary no-tp" id="btnMail" type="button">Envoyer par e-mail</button>
       </div>
       <div class="tabs" role="tablist">
         <button role="tab" id="tab-form" aria-selected="true" aria-controls="pane-form" type="button">Fiche client</button>
-        <button role="tab" id="tab-sheet" aria-selected="false" aria-controls="pane-sheet" type="button">Synthèse client</button>
-        <button role="tab" id="tab-photos" aria-selected="false" aria-controls="pane-photos" type="button">Photos &amp; métrage</button>
+        <button role="tab" class="no-tp" id="tab-sheet" aria-selected="false" aria-controls="pane-sheet" type="button">Synthèse client</button>
+        <button role="tab" class="no-tp" id="tab-photos" aria-selected="false" aria-controls="pane-photos" type="button">Photos &amp; métrage</button>
         <button role="tab" id="tab-carte" aria-selected="false" aria-controls="pane-carte" type="button">Carte</button>
-        <button role="tab" id="tab-devis" aria-selected="false" aria-controls="pane-devis" type="button">Devis</button>
+        <button role="tab" class="no-tp" id="tab-devis" aria-selected="false" aria-controls="pane-devis" type="button">Devis</button>
  <button role="tab" id="tab-agenda" aria-selected="false" aria-controls="pane-agenda" type="button">Agenda</button>
         <button role="tab" id="tab-admin" aria-selected="false" aria-controls="pane-admin" type="button" hidden>Administration</button>
       </div>
@@ -473,7 +484,7 @@ body.pm .sheet-head h2{font-size:30px} body.pm .ribbon{font-size:22px} body.pm .
             <p class="hint">Repère : les murs représentent 20 à 25 % des pertes de chaleur d'une maison non isolée (ADEME). Ajustez le taux selon le logement.</p>
           </fieldset>
 
-          <fieldset>
+          <fieldset class="no-tp">
             <legend>Financement</legend>
             <div class="fields">
               <label>Montant des travaux TTC<div class="in"><input id="coutTravaux" data-k="coutTravaux" type="number" min="0" step="100"><span class="u">€</span></div></label>
@@ -484,7 +495,7 @@ body.pm .sheet-head h2{font-size:30px} body.pm .ribbon{font-size:22px} body.pm .
             </div>
           </fieldset>
 
-          <fieldset>
+          <fieldset class="no-tp">
             <legend>Aides & patrimoine</legend>
             <div class="fields">
               <label>Prime CEE<div class="in"><input id="cee" data-k="cee" type="number" min="0" step="50"><span class="u">€</span></div></label>
@@ -559,6 +570,8 @@ let MODE='local', sb=null, me=null, profile=null, team=[], CFG={mail:false,defau
 let clients=[], currentId=null, filter='all', repFilter='all';
 const known=new Set(), timers=new Map();
 const isAdmin=()=>MODE==='cloud'&&!!profile&&profile.role==='admin';
+const isTp=()=>MODE==='cloud'&&!!profile&&profile.role==='telepro';
+const ROLES={admin:'Admin',commercial:'Commercial',telepro:'Télépro'};
 const DEF_KEYS=['tauxEco','taux','duree','differe','tauxPV','hausse'];
 function blank(){const d={};DEF_KEYS.forEach(k=>{if(CFG.defaults[k]!=null&&CFG.defaults[k]!=='')d[k]=CFG.defaults[k]});
   return Object.assign({},DEFAULTS,d,{id:uid(),created:Date.now(),updated:Date.now(),_owner:me?me.id:undefined})}
@@ -650,7 +663,7 @@ function renderList(){
     .sort((a,b)=>b.updated-a.updated);
   const ul=document.getElementById('clientList');
   ul.innerHTML=items.length?items.map(c=>{const r=compute(c);return `<li><button type="button" data-id="${c.id}" aria-current="${c.id===currentId}">
-    <span class="n">${esc(fullName(c))}</span><span class="p num">${r.ok?pctf(r.couvAff):'–'}</span>
+    <span class="n">${esc(fullName(c))}</span><span class="p num no-tp">${r.ok?pctf(r.couvAff):'–'}</span>
     <span class="s"><span class="status ${c.statut}">${STATUTS[c.statut]||''}</span> ${esc(c.ville||'')}${isAdmin()&&c._owner?' · '+esc(ownerName(c._owner)):''}</span></button></li>`}).join('')
     :'<li class="empty">Aucun client ne correspond.</li>';
 }
@@ -659,7 +672,7 @@ function renderList(){
 function fillForm(){
   const c=cur(); if(!c) return;
   document.querySelectorAll('[data-k]').forEach(el=>{let v=c[el.dataset.k]??''; if(el.type==='datetime-local'&&/^\d{4}-\d{2}-\d{2}$/.test(v)) v+='T09:00'; el.value=v});
-  if(isAdmin()){const s=document.getElementById('ownerSel');s.innerHTML=team.filter(p=>p.actif||p.id===c._owner).map(p=>`<option value="${p.id}">${esc(p.nom||p.email)}${p.role==='admin'?' (admin)':''}</option>`).join('');s.value=c._owner||me.id}
+  if(isAdmin()){const s=document.getElementById('ownerSel');s.innerHTML=team.filter(p=>(p.actif&&p.role!=='telepro')||p.id===c._owner).map(p=>`<option value="${p.id}">${esc(p.nom||p.email)}${p.role==='admin'?' (admin)':p.role==='telepro'?' (télépro)':''}</option>`).join('');s.value=c._owner||me.id}
   updateHeader(); updateHint();
 }
 function updateHeader(){
@@ -760,6 +773,7 @@ function ico(k){
 /* ===== Navigation ===== */
 function select(id){currentId=id; fillForm(); renderList(); if(!document.getElementById('pane-sheet').hidden) renderSheet(); if(!document.getElementById('pane-devis').hidden) renderDevis(); phSel=null; phDraft=[]; phView='photo'; if(!document.getElementById('pane-photos').hidden) renderPhotos(); if(!document.getElementById('pane-carte').hidden) renderCarte(); resetDel();}
 function setTab(t){
+  if(isTp()&&['sheet','photos','devis','admin'].includes(t)) t='form';
   ['form','sheet','photos','carte','devis','agenda','admin'].forEach(k=>{document.getElementById('tab-'+k).setAttribute('aria-selected',k===t);document.getElementById('pane-'+k).hidden=k!==t});
   if(t==='sheet') renderSheet();
   if(t==='admin') renderAdmin();
@@ -1812,19 +1826,21 @@ document.getElementById('pane-carte').addEventListener('click',e=>{const b=e.tar
 const RES={a_venir:['À venir','#6b7766'],vendu:['Vendu','#2f8f1f'],devis:['Devis à envoyer','#c58a00'],rappeler:['À rappeler','#1f4aa8'],reporte:['Reporté','#7a5bb5'],absent:['Client absent','#b5541b'],refus:['Pas intéressé','#b3261e']};
 const RES_STATUT={vendu:'signe',devis:'devis',refus:'perdu',rappeler:'rdv',reporte:'rdv',absent:'rdv'};
 const REP_COLORS=['#2f8f1f','#1f4aa8','#c0392b','#8e44ad','#d68910','#16a085','#5d6d7e','#a04000'];
-const RKEY='ite-rdv'; let RDV=null, agView='semaine';
+const RKEY='ite-rdv'; let RDV=null, OCC=[], agView='semaine';
+const AC='_aconf', repKey=r=>r.commercial||AC;
 let agHidden=new Set((()=>{try{return JSON.parse(localStorage.getItem('ite-ag-hidden')||'[]')}catch(e){return[]}})());
 const saveHidden=()=>{try{localStorage.setItem('ite-ag-hidden',JSON.stringify([...agHidden]))}catch(e){}};
-const agShown=()=>team.filter(p=>p.actif&&!agHidden.has(p.id));
-const agDefaultRep=()=>{const v=agShown(); return isAdmin()&&v.length===1?v[0].id:myId()};
+const reps=()=>team.filter(p=>p.actif&&p.role!=='telepro');
+const agShown=()=>reps().filter(p=>!agHidden.has(p.id));
+const agDefaultRep=()=>{if(isTp()) return null; const v=agShown(); return isAdmin()&&v.length===1?v[0].id:myId()};
 const dayStart=d=>{const x=new Date(d); x.setHours(0,0,0,0); return x};
 const mondayOf=d=>{const x=dayStart(d); x.setDate(x.getDate()-((x.getDay()+6)%7)); return x};
 let agStart=mondayOf(new Date());
 const addDays=(d,k)=>{const x=new Date(d); x.setDate(x.getDate()+k); return x};
 const hhmm=d=>new Date(d).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
 const dLong=d=>new Date(d).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
-const repName=id=>{const p=team.find(t=>t.id===id); return p?(p.nom||p.email):(MODE==='local'?'Moi':'')};
-const repColor=id=>{const i=team.findIndex(t=>t.id===id); return REP_COLORS[(i<0?0:i)%REP_COLORS.length]};
+const repName=id=>{if(!id) return 'À confirmer'; const p=team.find(t=>t.id===id); return p?(p.nom||p.email):(MODE==='local'?'Moi':'')};
+const repColor=id=>{if(!id) return '#9a7a2a'; const i=reps().findIndex(t=>t.id===id); return REP_COLORS[(i<0?0:i)%REP_COLORS.length]};
 const myId=()=>MODE==='cloud'?me.id:'local';
 async function loadRdv(force){
   if(RDV&&!force) return RDV;
@@ -1832,31 +1848,37 @@ async function loadRdv(force){
     const {data,error}=await sb.from('ite_rdv').select('*').gte('debut',from).order('debut');
     if(error){RDV=[]; toast(/ite_rdv/.test(error.message||'')?'Agenda : exécutez mise-a-jour-devis.sql dans Supabase':'Agenda indisponible : '+error.message); return RDV}
     RDV=data||[];
+    if(isTp()){const o=await sb.rpc('ite_rdv_occupes',{p_from:from}); OCC=o.error?[]:(o.data||[])}
   } else {try{RDV=JSON.parse(localStorage.getItem(RKEY)||'[]')}catch(e){RDV=[]}}
   return RDV;
 }
 function saveLocalRdv(){try{localStorage.setItem(RKEY,JSON.stringify(RDV))}catch(e){}}
 async function upsertRdv(r,isNew){
-  const row={id:r.id,commercial:r.commercial,client_id:r.client_id||null,debut:r.debut,duree:+r.duree||90,titre:r.titre||'',adresse:r.adresse||'',commentaire:r.commentaire||'',resultat:r.resultat||'a_venir',compte_rendu:r.compte_rendu||''};
+  const row={id:r.id,commercial:r.commercial||null,client_id:r.client_id||null,debut:r.debut,duree:+r.duree||90,titre:r.titre||'',adresse:r.adresse||'',commentaire:r.commentaire||'',resultat:r.resultat||'a_venir',compte_rendu:r.compte_rendu||''};
+  row.note=+r.note||null; row.lat=r.lat??null; row.lon=r.lon??null;
+  if(MODE==='cloud'){row.cp=r.cp||''; row.ville=r.ville||''}
   if(MODE==='cloud'){const q=isNew?sb.from('ite_rdv').insert(row):sb.from('ite_rdv').update(row).eq('id',r.id); const {error}=await q; if(error){toast('RDV non enregistré : '+error.message);return false}}
   const i=RDV.findIndex(x=>x.id===r.id); if(i<0) RDV.push(Object.assign({},row)); else RDV[i]=Object.assign(RDV[i],row);
   RDV.sort((a,b)=>a.debut.localeCompare(b.debut)); if(MODE!=='cloud') saveLocalRdv(); return true;
 }
 async function deleteRdv(id){if(MODE==='cloud'){const {error}=await sb.from('ite_rdv').delete().eq('id',id); if(error) return toast(error.message)} RDV=RDV.filter(x=>x.id!==id); if(MODE!=='cloud') saveLocalRdv()}
-const visibleRdv=()=>(RDV||[]).filter(r=>!isAdmin()||!agHidden.has(r.commercial));
-const aStatuer=()=>visibleRdv().filter(r=>r.resultat==='a_venir'&&new Date(r.debut).getTime()+(+r.duree||90)*60000<Date.now());
+const visibleRdv=()=>(RDV||[]).filter(r=>!isAdmin()||!agHidden.has(repKey(r)));
+const aConfirmer=()=>isAdmin()?(RDV||[]).filter(r=>!r.commercial&&new Date(r.debut).getTime()>Date.now()-864e5):[];
+const aStatuer=()=>isTp()?[]:visibleRdv().filter(r=>r.commercial&&r.resultat==='a_venir'&&new Date(r.debut).getTime()+(+r.duree||90)*60000<Date.now());
 function renderAgenda(){
   const pane=document.getElementById('pane-agenda');
   if(!RDV){pane.innerHTML='<p class="hint">Chargement de l\'agenda…</p>'; loadRdv().then(renderAgenda); return}
-  const end=addDays(agStart,4), late=aStatuer();
+  const end=addDays(agStart,4), late=aStatuer(), conf=aConfirmer();
   const title=agStart.getMonth()===end.getMonth()?`${agStart.getDate()} – ${end.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})}`:`${agStart.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})} – ${end.toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'})}`;
   pane.innerHTML=`<div class="ag">
     <div class="ag-bar"><div class="ag-nav"><button class="btn small" type="button" data-ag="prev" aria-label="Semaine précédente">◀</button><button class="btn small" type="button" data-ag="today">Aujourd'hui</button><button class="btn small" type="button" data-ag="next" aria-label="Semaine suivante">▶</button><h2>${title}</h2></div>
       <div class="ag-nav">
         <span class="seg sm">${[['semaine','Semaine'],['liste','Liste']].map(([k,l])=>`<button type="button" class="${agView===k?'on':''}" data-agview="${k}">${l}</button>`).join('')}</span>
         <button class="btn primary" type="button" data-ag="new">+ Nouveau RDV</button></div></div>
-    ${isAdmin()?`<div class="ag-reps"><span class="hint" style="margin:0">Afficher :</span>${team.filter(p=>p.actif).map(p=>`<label class="ag-rep" style="--c:${repColor(p.id)}"><input type="checkbox" data-agrep="${p.id}" ${agHidden.has(p.id)?'':'checked'}><i></i>${esc(p.nom||p.email)}<small>(${(RDV||[]).filter(r=>r.commercial===p.id&&new Date(r.debut)>=agStart&&new Date(r.debut)<addDays(agStart,5)).length})</small></label>`).join('')}
+    ${isAdmin()?`<div class="ag-reps"><span class="hint" style="margin:0">Afficher :</span>${[...reps().map(p=>[p.id,p.nom||p.email]),[AC,'À confirmer']].map(([id,nm])=>`<label class="ag-rep" style="--c:${repColor(id===AC?null:id)}"><input type="checkbox" data-agrep="${id}" ${agHidden.has(id)?'':'checked'}><i></i>${esc(nm)}<small>(${(RDV||[]).filter(r=>repKey(r)===id&&new Date(r.debut)>=agStart&&new Date(r.debut)<addDays(agStart,5)).length})</small></label>`).join('')}
       <button class="linkbtn" type="button" data-ag="all">Tous</button><button class="linkbtn" type="button" data-ag="none">Aucun</button></div>`:''}
+    ${conf.length?`<div class="ag-late"><b>${conf.length} RDV à confirmer</b>${conf.slice(0,8).map(r=>`<button type="button" class="ag-chip" data-rdv="${r.id}" style="--c:${repColor(null)}">${new Date(r.debut).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})} ${hhmm(r.debut)} · ${esc(r.titre||'RDV')}</button>`).join('')}</div>`:''}
+    ${isTp()?'<p class="hint" style="margin:0">Vos RDV sont en couleur. Les créneaux en gris sont pris par les autres télépros (code postal et ville seulement). L\'administrateur confirme chaque RDV et choisit le commercial.</p>':''}
     ${late.length?`<div class="ag-late"><b>${late.length} RDV à statuer</b>${late.slice(0,8).map(r=>`<button type="button" class="ag-chip" data-rdv="${r.id}" style="--c:${repColor(r.commercial)}">${new Date(r.debut).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})} ${hhmm(r.debut)} · ${esc(r.titre||'RDV')}</button>`).join('')}</div>`:''}
     ${agView==='semaine'?weekHtml():listHtml()}
     ${agView==='semaine'&&visibleRdv().some(r=>{const d=new Date(r.debut);return d>=addDays(agStart,5)&&d<addDays(agStart,7)})?'<p class="hint" style="margin:0">Des RDV sont prévus ce week-end : voir la vue Liste.</p>':''}
@@ -1864,11 +1886,12 @@ function renderAgenda(){
 }
 const H0=7,H1=21,HP=46;
 function weekHtml(){
-  const days=[...Array(5)].map((_,i)=>addDays(agStart,i)), today=dayStart(new Date()).getTime(), R=visibleRdv();
+  const days=[...Array(5)].map((_,i)=>addDays(agStart,i)), today=dayStart(new Date()).getTime(), R=visibleRdv().concat(isTp()?OCC.map(o=>Object.assign({_occ:true,resultat:'a_venir'},o)):[]);
   const col=d=>{const ev=R.filter(r=>dayStart(r.debut).getTime()===d.getTime()).map(r=>({r,s:new Date(r.debut),e:new Date(new Date(r.debut).getTime()+(+r.duree||90)*60000)}));
     ev.forEach((x,i)=>{x.lane=0; while(ev.slice(0,i).some(y=>y.lane===x.lane&&y.e>x.s&&y.s<x.e)) x.lane++}); const lanes=Math.max(1,...ev.map(x=>x.lane+1));
     return ev.map(({r,s,lane})=>{const top=Math.max(0,(s.getHours()+s.getMinutes()/60-H0)*HP), h=Math.max(22,(+r.duree||90)/60*HP-2), st=RES[r.resultat]||RES.a_venir;
-      return `<button type="button" class="ag-ev${r.resultat!=='a_venir'?' done':''}" data-rdv="${r.id}" style="top:${top}px;height:${h}px;left:calc(${lane*100/lanes}% + 2px);width:calc(${100/lanes}% - 4px);--c:${repColor(r.commercial)}"><b>${hhmm(r.debut)} ${esc(r.titre||'RDV')}</b>${r.adresse?`<span>${esc(r.adresse)}</span>`:''}${r.resultat!=='a_venir'?`<em style="color:${st[1]}">${st[0]}</em>`:''}</button>`}).join('')};
+      if(r._occ) return `<div class="ag-ev busy" style="top:${top}px;height:${h}px;left:calc(${lane*100/lanes}% + 2px);width:calc(${100/lanes}% - 4px)" title="Créneau pris par un autre télépro"><b>${hhmm(r.debut)} ${esc([r.cp,r.ville].filter(Boolean).join(' ')||'Pris')}</b></div>`;
+      return `<button type="button" class="ag-ev${r.resultat!=='a_venir'?' done':''}${r.commercial||MODE!=='cloud'?'':' aconf'}" data-rdv="${r.id}" style="top:${top}px;height:${h}px;left:calc(${lane*100/lanes}% + 2px);width:calc(${100/lanes}% - 4px);--c:${repColor(MODE==='cloud'?r.commercial:'local')}"><b>${hhmm(r.debut)} ${esc(r.titre||'RDV')}</b>${r.note?`<i class="ag-st" aria-label="${r.note} étoiles">${'★'.repeat(r.note)}</i>`:''}${MODE==='cloud'&&!r.commercial?'<i class="ag-tag">À confirmer</i>':''}${r.adresse?`<span>${esc(r.adresse)}</span>`:''}${r.resultat!=='a_venir'?`<em style="color:${st[1]}">${st[0]}</em>`:''}</button>`}).join('')};
   return `<div class="ag-week"><div class="ag-head"><span></span>${days.map(d=>`<span class="${d.getTime()===today?'today':''}">${d.toLocaleDateString('fr-FR',{weekday:'short'})} <b>${d.getDate()}</b></span>`).join('')}</div>
     <div class="ag-body" style="height:${(H1-H0)*HP}px"><div class="ag-hours">${[...Array(H1-H0)].map((_,i)=>`<span style="top:${i*HP}px">${H0+i}h</span>`).join('')}</div>
     ${days.map(d=>`<div class="ag-day${d.getTime()===today?' today':''}" data-day="${d.toISOString()}">${col(d)}</div>`).join('')}</div></div>`;
@@ -1878,7 +1901,7 @@ function listHtml(){
   if(!R.length) return `<div class="dv-empty"><p class="hint" style="margin:0">Aucun RDV sur ces deux semaines.</p></div>`;
   const by={}; R.forEach(r=>{const k=dayStart(r.debut).toISOString(); (by[k]=by[k]||[]).push(r)});
   return `<div class="ag-list">${Object.entries(by).map(([k,L])=>`<div class="ag-dayl"><h3>${dLong(k)}</h3>${L.map(r=>{const st=RES[r.resultat]||RES.a_venir;
-    return `<button type="button" class="ag-row" data-rdv="${r.id}" style="--c:${repColor(r.commercial)}"><span class="t">${hhmm(r.debut)}</span><span class="m"><b>${esc(r.titre||'RDV')}</b>${r.adresse?`<small>${esc(r.adresse)}</small>`:''}${isAdmin()?`<small>${esc(repName(r.commercial))}</small>`:''}</span><span class="st" style="color:${st[1]}">${st[0]}</span></button>`}).join('')}</div>`).join('')}</div>`;
+    return `<button type="button" class="ag-row" data-rdv="${r.id}" style="--c:${repColor(MODE==='cloud'?r.commercial:'local')}"><span class="t">${hhmm(r.debut)}</span><span class="m"><b>${esc(r.titre||'RDV')}${r.note?` <i class="ag-st">${'★'.repeat(r.note)}</i>`:''}</b>${r.adresse?`<small>${esc(r.adresse)}</small>`:''}${isAdmin()?`<small>${esc(repName(r.commercial))}</small>`:''}</span><span class="st" style="color:${r.commercial||MODE!=='cloud'?st[1]:'#9a7a2a'}">${r.commercial||MODE!=='cloud'?st[0]:'À confirmer'}</span></button>`}).join('')}</div>`).join('')}</div>`;
 }
 /* Fenêtre RDV */
 function agModal(html){let m=document.getElementById('rdvModal'); if(!m){m=document.createElement('div'); m.className='modal-bg'; m.id='rdvModal'; document.body.appendChild(m);
@@ -1887,10 +1910,10 @@ function agModal(html){let m=document.getElementById('rdvModal'); if(!m){m=docum
 const isoLocal=d=>{const x=new Date(d); return [x.getFullYear(),String(x.getMonth()+1).padStart(2,'0'),String(x.getDate()).padStart(2,'0')].join('-')};
 function rdvForm(r){
   const isNew=!r.id, d=new Date(r.debut), canPick=isAdmin(), cid=r.client_id||'';
-  const reps=team.filter(p=>p.actif||p.id===r.commercial);
+  const reps=team.filter(p=>(p.actif&&p.role!=='telepro')||p.id===r.commercial);
   return `<h2>${isNew?'Nouveau rendez-vous':'Modifier le rendez-vous'}</h2><input type="hidden" id="rvId" value="${esc(r.id||'')}">
   <div class="fields">
-    ${canPick?`<label>Commercial<div class="in"><select id="rvRep">${reps.map(p=>`<option value="${p.id}" ${p.id===r.commercial?'selected':''}>${esc(p.nom||p.email)}</option>`).join('')}</select></div></label>`:''}
+    ${canPick?`<label>Commercial<div class="in"><select id="rvRep">${!isNew&&!r.commercial?'<option value="">À confirmer</option>':''}${reps.map(p=>`<option value="${p.id}" ${p.id===r.commercial?'selected':''}>${esc(p.nom||p.email)}</option>`).join('')}</select></div></label>`:''}
     <label>Date<div class="in"><input id="rvDate" type="date" value="${isoLocal(d)}"></div></label>
     <label>Heure<div class="in"><input id="rvTime" type="time" step="900" value="${hhmm(d)}"></div></label>
     <label>Durée<div class="in"><select id="rvDur">${[30,45,60,90,120,180].map(m=>`<option value="${m}" ${+r.duree===m?'selected':''}>${m<60?m+' min':(m/60+' h').replace('.',',').replace(',5 h',' h 30')}</option>`).join('')}</select></div></label>
@@ -1899,29 +1922,73 @@ function rdvForm(r){
       <label>Nom<div class="in"><input id="rvNom"></div></label><label>Prénom<div class="in"><input id="rvPrenom"></div></label>
       <label>Téléphone<div class="in"><input id="rvTel" inputmode="tel"></div></label><label>Adresse<div class="in"><input id="rvAdr"></div></label>
       <label>Code postal<div class="in"><input id="rvCp" inputmode="numeric"></div></label><label>Ville<div class="in"><input id="rvVille"></div></label></div>
+    <div class="full sug"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn small" type="button" data-rv="sug">📍 Proposer les meilleurs créneaux</button><span class="hint" style="margin:0">selon les RDV déjà placés près de chez le client</span></div><div id="rvSug"></div></div>
+    <div class="full"><span style="font-size:13px;font-weight:600">Qualité du RDV</span><div class="stars" id="rvNote">${[1,2,3,4].map(k=>`<button type="button" data-note="${k}" class="${(+r.note||0)>=k?'on':''}" aria-label="${k} étoile${k>1?'s':''} : ${NOTE_TXT[k]}" title="${NOTE_TXT[k]}">★</button>`).join('')}<span class="hint" id="rvNoteTxt" style="margin:0 0 0 8px">${NOTE_TXT[r.note]||'Cliquez pour noter'}</span></div><input type="hidden" id="rvNoteVal" value="${esc(r.note||'')}"></div>
+    ${isTp()?'<p class="hint full" style="margin:0">L\'administrateur confirmera ce RDV et choisira le commercial.</p>':''}
     <label class="full">Commentaire pour le commercial<textarea id="rvCom" rows="3" placeholder="Accès, besoin du client, chauffage, personnes présentes…">${esc(r.commentaire||'')}</textarea></label>
   </div>
   <div class="acts">${isNew?'':`<span id="rvDelWrap" style="margin-right:auto"><button class="btn danger" type="button" data-rv="del">Supprimer</button></span>`}<button class="btn" type="button" data-rv="close">Annuler</button><button class="btn primary" type="button" data-rv="save">Enregistrer le RDV</button></div>`;
 }
-function clientOpts(rep,cid){const cl=clients.filter(c=>MODE==='local'||(known.has(c.id)&&(!isAdmin()||c._owner===rep)));
+function clientOpts(rep,cid){const cl=clients.filter(c=>MODE==='local'||(known.has(c.id)&&(!isAdmin()||!rep||c._owner===rep||c.id===cid)));
   return `<option value="">+ Nouveau client</option>${cl.map(c=>`<option value="${c.id}" ${c.id===cid?'selected':''}>${esc(fullName(c))}${c.ville?' – '+esc(c.ville):''}</option>`).join('')}`}
+const NOTE_TXT={1:'Pas terrible',2:'Moyen',3:'Bon',4:'Très bon'};
+const GEO=new Map();
+async function geo(q){q=String(q||'').trim(); if(q.length<3) return null; if(GEO.has(q)) return GEO.get(q); let p=null;
+  for(const u of [`https://data.geopf.fr/geocodage/search?index=address&limit=1&q=${encodeURIComponent(q)}`,`https://api-adresse.data.gouv.fr/search/?limit=1&q=${encodeURIComponent(q)}`]){
+    try{const r=await fetch(u); if(!r.ok) continue; const f=((await r.json()).features||[])[0]; if(f&&f.geometry) p={lat:f.geometry.coordinates[1],lon:f.geometry.coordinates[0]}; break}catch(e){}}
+  GEO.set(q,p); return p}
+const kmVol=(a,b)=>{const t=x=>x*Math.PI/180, dl=t(b.lat-a.lat), dn=t(b.lon-a.lon), h=Math.sin(dl/2)**2+Math.cos(t(a.lat))*Math.cos(t(b.lat))*Math.sin(dn/2)**2; return 12742*Math.asin(Math.sqrt(h))};
+const kmRoute=a=>Math.round(kmVol(...a)*1.3), minTrajet=k=>Math.round(k/55*60)+5;
+const SLOTS=[[9,0],[10,30],[14,0],[15,30],[17,0]];
+async function rdvPos(r){if(r.lat&&r.lon) return {lat:r.lat,lon:r.lon}; const c=r.client_id&&clients.find(x=>x.id===r.client_id); if(c&&c.lat&&c.lon) return {lat:c.lat,lon:c.lon};
+  return geo(r.adresse||[r.cp,r.ville].filter(Boolean).join(' '))}
+async function suggest(){
+  const box=document.getElementById('rvSug'), v=id=>(document.getElementById(id)||{}).value||'';
+  const cid=v('rvClient'), c=cid&&clients.find(x=>x.id===cid), dur=+v('rvDur')||90, me_=v('rvId');
+  box.innerHTML='<p class="hint" style="margin:0">Calcul des distances…</p>';
+  let pos=c&&c.lat&&c.lon?{lat:c.lat,lon:c.lon}:null;
+  if(!pos) pos=await geo(c?[c.adresse,c.cp,c.ville].filter(Boolean).join(' '):[v('rvAdr'),v('rvCp'),v('rvVille')].filter(Boolean).join(' '));
+  if(!pos){box.innerHTML='<p class="hint" style="margin:0">Indiquez d\'abord l\'adresse du client (au moins le code postal et la ville).</p>'; return}
+  await loadRdv(); const now=Date.now(), lim=now+16*864e5;
+  const pool=(RDV||[]).concat(OCC||[]).filter(r=>r.id!==me_&&new Date(r.debut).getTime()>now-864e5&&new Date(r.debut).getTime()<lim&&(r.resultat||'a_venir')!=='reporte');
+  const P=await Promise.all(pool.map(async r=>({r,s:new Date(r.debut).getTime(),e:new Date(r.debut).getTime()+(+r.duree||90)*6e4,p:await rdvPos(r).catch(()=>null)})));
+  const cands=[]; let d=dayStart(new Date()); d=addDays(d,1);
+  for(let i=0;i<16;i++,d=addDays(d,1)){ if(d.getDay()===0||d.getDay()===6) continue;
+    const day=P.filter(x=>dayStart(x.s).getTime()===d.getTime());
+    for(const [h,mn] of SLOTS){const s=new Date(d); s.setHours(h,mn,0,0); const S=s.getTime(), E=S+dur*6e4; if(S<now) continue;
+      let ok=true, best=null;
+      for(const x of day){const k=x.p?kmRoute([pos,x.p]):null, gap=(k!=null?minTrajet(k):30)*6e4;
+        if(S<x.e+gap&&E+gap>x.s){ok=false; break}
+        if(k!=null&&(!best||k<best.k)) best={k,x}}
+      if(ok) cands.push({S,best,n:day.length})}}
+  const near=cands.filter(c=>c.best&&c.best.k<=40).sort((a,b)=>a.best.k-b.best.k||a.S-b.S), out=[], perDay={};
+  for(const c of near){const k=dayStart(c.S).getTime(); if((perDay[k]=(perDay[k]||0)+1)>2) continue; out.push(c); if(out.length>=4) break}
+  for(const c of cands.filter(c=>!c.n)){if(out.length>=6) break; const k=dayStart(c.S).getTime(); if(perDay[k]) continue; if(new Date(c.S).getHours()!==10&&new Date(c.S).getHours()!==14) continue; perDay[k]=1; out.push(c)}
+  if(!out.length){box.innerHTML='<p class="hint" style="margin:0">Aucun créneau libre trouvé sur les deux prochaines semaines.</p>'; return}
+  const lieu=x=>x.r.ville||(clients.find(y=>y.id===x.r.client_id)||{}).ville||x.r.cp||'';
+  box.innerHTML=`<div class="sug-l">${out.map((c,i)=>`<button type="button" data-sug="${new Date(c.S).toISOString()}" class="${c.best&&i===0?'best':''}"><b>${dLong(c.S)} · ${hhmm(c.S)}</b><small>${c.best?`≈ ${c.best.k} km (${minTrajet(c.best.k)} min) du RDV de ${hhmm(c.best.x.s)}${lieu(c.best.x)?' à '+esc(lieu(c.best.x)):''}`:'Aucun RDV ce jour-là pour l\'instant'}</small></button>`).join('')}</div>
+    <p class="hint" style="margin:0">Distances estimées par la route (vol d'oiseau × 1,3, moyenne 55 km/h). Cliquez un créneau pour le choisir.</p>`;
+}
 function rdvClientToggle(){document.getElementById('rvNew').hidden=!!document.getElementById('rvClient').value}
 function rdvDetail(r){
   const c=clients.find(x=>x.id===r.client_id), st=RES[r.resultat]||RES.a_venir, fin=new Date(new Date(r.debut).getTime()+(+r.duree||90)*60000);
-  const tel=c&&c.tel, addr=r.adresse||(c?[c.adresse,c.cp,c.ville].filter(Boolean).join(' '):'');
+  const tel=c&&c.tel, addr=r.adresse||(c?[c.adresse,c.cp,c.ville].filter(Boolean).join(' '):''), wait=MODE==='cloud'&&!r.commercial;
   return `<input type="hidden" id="rvId" value="${r.id}"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start"><div><h2>${esc(r.titre||'Rendez-vous')}</h2>
-    <p class="hint" style="margin:4px 0 0;font-size:13px">${dLong(r.debut)} · ${hhmm(r.debut)} – ${hhmm(fin)}${MODE==='cloud'?' · '+esc(repName(r.commercial)):''}</p></div><span class="status" style="background:${st[1]}22;color:${st[1]}">${st[0]}</span></div>
+    ${r.note?`<p style="margin:2px 0 0"><i class="ag-st" style="font-size:16px">${'★'.repeat(r.note)}${'☆'.repeat(4-r.note)}</i> <span class="hint" style="margin:0">${NOTE_TXT[r.note]}</span></p>`:''}<p class="hint" style="margin:4px 0 0;font-size:13px">${dLong(r.debut)} · ${hhmm(r.debut)} – ${hhmm(fin)}${MODE==='cloud'&&!isTp()?' · '+esc(repName(r.commercial)):''}</p></div>${wait?'<span class="status" style="background:#fff4e0;color:#7a4b00">À confirmer</span>':isTp()&&r.resultat==='a_venir'?'<span class="status" style="background:#2f8f1f22;color:#2f8f1f">Confirmé</span>':`<span class="status" style="background:${st[1]}22;color:${st[1]}">${st[0]}</span>`}</div>
   <div class="ag-info">${tel?`<a class="btn small" href="tel:${esc(tel.replace(/\s/g,''))}">📞 ${esc(tel)}</a>`:''}${addr?`<a class="btn small" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}">📍 Itinéraire</a><a class="btn small" target="_blank" rel="noopener" href="https://waze.com/ul?q=${encodeURIComponent(addr)}&navigate=yes">🚗 Waze</a><span class="hint" style="margin:0">${esc(addr)}</span>`:''}</div>
   ${r.commentaire?`<div class="ag-com"><b>Commentaire</b><p>${esc(r.commentaire).replace(/\n/g,'<br>')}</p></div>`:''}
-  <fieldset class="ag-res"><legend>Résultat du RDV</legend><div class="ag-resb">${Object.entries(RES).filter(([k])=>k!=='a_venir').map(([k,[l,col]])=>`<button type="button" class="${r.resultat===k?'on':''}" data-res="${k}" style="--c:${col}">${l}</button>`).join('')}</div>
+  ${wait&&isAdmin()?`<div class="ag-conf"><label style="flex:1;min-width:180px">Commercial qui fera le RDV<div class="in"><select id="rvConfRep"><option value="">Choisir…</option>${reps().map(p=>`<option value="${p.id}">${esc(p.nom||p.email)}</option>`).join('')}</select></div></label><button class="btn primary" type="button" data-rv="confirm">Confirmer le RDV</button><p class="hint" style="margin:0;flex-basis:100%">Le commercial choisi verra le RDV dans son agenda et la fiche client lui sera attribuée.</p></div>`:''}
+  ${wait||isTp()?'<!--':''}<fieldset class="ag-res"><legend>Résultat du RDV</legend><div class="ag-resb">${Object.entries(RES).filter(([k])=>k!=='a_venir').map(([k,[l,col]])=>`<button type="button" class="${r.resultat===k?'on':''}" data-res="${k}" style="--c:${col}">${l}</button>`).join('')}</div>
     <label>Compte rendu<textarea id="rvCr" rows="4" placeholder="Ce qui a été dit, prochaine étape, date de rappel…">${esc(r.compte_rendu||'')}</textarea></label>
-    <p class="hint" style="margin:0">Le statut de la fiche client suit le résultat (Vendu → Signé, Devis → Devis envoyé, Pas intéressé → Perdu) et le compte rendu est ajouté à ses notes.</p></fieldset>
-  <div class="acts"><button class="btn" type="button" data-rv="edit" style="margin-right:auto">Modifier le RDV</button>${c?`<button class="btn" type="button" data-rv="fiche">Ouvrir la fiche client</button>`:''}<button class="btn" type="button" data-rv="close">Fermer</button><button class="btn primary" type="button" data-rv="statuer">Enregistrer le résultat</button></div>`;
+    <p class="hint" style="margin:0">Le statut de la fiche client suit le résultat (Vendu → Signé, Devis → Devis envoyé, Pas intéressé → Perdu) et le compte rendu est ajouté à ses notes.</p></fieldset>${wait||isTp()?'-->':''}
+  <div class="acts">${isTp()&&!wait?'<span style="margin-right:auto"></span>':'<button class="btn" type="button" data-rv="edit" style="margin-right:auto">Modifier le RDV</button>'}${c?`<button class="btn" type="button" data-rv="fiche">Ouvrir la fiche client</button>`:''}<button class="btn${wait||isTp()?' primary':''}" type="button" data-rv="close">Fermer</button>${wait||isTp()?'':'<button class="btn primary" type="button" data-rv="statuer">Enregistrer le résultat</button>'}</div>`;
 }
 let rvRes=null;
 async function agModalClick(e){
   const m=document.getElementById('rdvModal'), b=e.target.closest('button'); if(!b) return;
   const id=document.getElementById('rvId')?.value, r=(RDV||[]).find(x=>x.id===id);
+  if(b.dataset.note){const k=+b.dataset.note, v=document.getElementById('rvNoteVal'), nv=+v.value===k?'':k; v.value=nv; m.querySelectorAll('[data-note]').forEach(x=>x.classList.toggle('on',+x.dataset.note<=+nv)); document.getElementById('rvNoteTxt').textContent=NOTE_TXT[nv]||'Cliquez pour noter'; return}
+  if(b.dataset.sug){const d=new Date(b.dataset.sug); document.getElementById('rvDate').value=isoLocal(d); document.getElementById('rvTime').value=hhmm(d); m.querySelectorAll('[data-sug]').forEach(x=>x.classList.toggle('on',x===b)); return}
   if(b.dataset.res){rvRes=b.dataset.res; m.querySelectorAll('[data-res]').forEach(x=>x.classList.toggle('on',x===b)); return}
   const a=b.dataset.rv; if(!a) return;
   if(a==='close'){m.hidden=true; return}
@@ -1929,6 +1996,14 @@ async function agModalClick(e){
   if(a==='fiche'){m.hidden=true; select(r.client_id); setTab('form'); return}
   if(a==='del'){document.getElementById('rvDelWrap').innerHTML='<span class="confirm">Supprimer ce RDV ? <button class="btn danger small" type="button" data-rv="delYes">Oui</button></span>'; return}
   if(a==='delYes'){await deleteRdv(id); m.hidden=true; renderAgenda(); toast('RDV supprimé'); return}
+  if(a==='sug'){b.disabled=true; try{await suggest()}finally{b.disabled=false} return}
+  if(a==='confirm'){
+    const rep=document.getElementById('rvConfRep').value; if(!rep) return toast('Choisissez le commercial');
+    b.disabled=true; const ok=await upsertRdv(Object.assign({},r,{commercial:rep}),false); b.disabled=false; if(!ok) return;
+    const c=clients.find(x=>x.id===r.client_id);
+    if(c&&c._owner!==rep&&known.has(c.id)){const {error}=await sb.from('ite_clients').update({owner:rep}).eq('id',c.id); if(error) toast('Fiche non attribuée : '+error.message); else {c._owner=rep; renderList(); if(c.id===currentId) fillForm()}}
+    m.hidden=true; renderAgenda(); toast('RDV confirmé pour '+repName(rep)); return;
+  }
   if(a==='statuer'){
     const res=rvRes||r.resultat, cr=document.getElementById('rvCr').value.trim();
     if(res==='a_venir') return toast('Choisissez le résultat du RDV');
@@ -1942,16 +2017,19 @@ async function agModalClick(e){
   if(a==='save'){
     const date=document.getElementById('rvDate').value, time=document.getElementById('rvTime').value||'09:00';
     if(!date) return toast('Indiquez la date');
-    const rep=document.getElementById('rvRep')?.value||(r&&r.commercial)||myId();
+    const rp=document.getElementById('rvRep'), rep=isTp()?null:rp?(rp.value||null):((r&&r.commercial)||myId());
+    if(isAdmin()&&!rep&&(!r||r.commercial)) return toast('Choisissez le commercial');
     const debut=new Date(date+'T'+time).toISOString(), duree=+document.getElementById('rvDur').value;
     let cid=document.getElementById('rvClient').value, c=clients.find(x=>x.id===cid);
     if(!cid){
       const nom=document.getElementById('rvNom').value.trim(); if(!nom) return toast('Indiquez le nom du client');
       c=blank(); Object.assign(c,{nom,prenom:document.getElementById('rvPrenom').value.trim(),tel:fmtTel(document.getElementById('rvTel').value),adresse:document.getElementById('rvAdr').value.trim(),cp:document.getElementById('rvCp').value.trim(),ville:document.getElementById('rvVille').value.trim(),statut:'rdv',dateRdv:date+'T'+time});
-      if(MODE==='cloud'){const {error}=await sb.from('ite_clients').insert({id:c.id,data:payload(c),owner:rep}); if(error) return toast('Client non créé : '+error.message); known.add(c.id); c._owner=rep}
+      if(MODE==='cloud'){const {error}=await sb.from('ite_clients').insert({id:c.id,data:payload(c),owner:rep||myId()}); if(error) return toast('Client non créé : '+error.message); known.add(c.id); c._owner=rep||myId()}
       clients.push(c); if(MODE!=='cloud') persist(c); renderList(); cid=c.id;
     } else if(c){c.dateRdv=date+'T'+time; if(['prospect',''].includes(c.statut||'')) c.statut='rdv'; c.updated=Date.now(); persist(c); renderList()}
-    const isNew=!r, row=Object.assign({},r||{id:newId(),resultat:'a_venir',compte_rendu:''},{commercial:rep,client_id:cid,debut,duree,titre:c?fullName(c):'RDV',adresse:c?[c.adresse,c.cp,c.ville].filter(Boolean).join(' '):'',commentaire:document.getElementById('rvCom').value.trim()});
+    let pos=c&&c.lat&&c.lon?{lat:c.lat,lon:c.lon}:null;
+    if(!pos&&c){pos=await geo([c.adresse,c.cp,c.ville].filter(Boolean).join(' ')).catch(()=>null); if(pos&&c.adresse){c.lat=pos.lat; c.lon=pos.lon; persist(c)}}
+    const isNew=!r, row=Object.assign({},r||{id:newId(),resultat:'a_venir',compte_rendu:''},{note:+document.getElementById('rvNoteVal').value||null,lat:pos?pos.lat:null,lon:pos?pos.lon:null,commercial:rep,client_id:cid,debut,duree,titre:c?fullName(c):'RDV',adresse:c?[c.adresse,c.cp,c.ville].filter(Boolean).join(' '):'',cp:c?c.cp||'':'',ville:c?c.ville||'':'',commentaire:document.getElementById('rvCom').value.trim()});
     b.disabled=true; const ok=await upsertRdv(row,isNew); b.disabled=false; if(!ok) return;
     m.hidden=true; agStart=mondayOf(new Date(debut)); renderAgenda(); toast(isNew?'RDV ajouté à l\'agenda':'RDV modifié');
   }
@@ -1964,8 +2042,8 @@ agPane.addEventListener('click',e=>{
   if(b&&b.dataset.ag){const a=b.dataset.ag;
     if(a==='prev'||a==='next'){agStart=addDays(agStart,(a==='prev'?-7:7)); renderAgenda(); return}
     if(a==='today'){agStart=mondayOf(new Date()); renderAgenda(); return}
-    if(a==='all'||a==='none'){agHidden=new Set(a==='all'?[]:team.map(p=>p.id)); saveHidden(); renderAgenda(); return}
-    if(a==='new'){const d=new Date(); d.setDate(d.getDate()+1); d.setHours(9,0,0,0); agModal(rdvForm({debut:d.toISOString(),duree:90,commercial:agDefaultRep(),client_id:currentId&&cur()&&(!isAdmin()||cur()._owner===myId())?currentId:''})); return}}
+    if(a==='all'||a==='none'){agHidden=new Set(a==='all'?[]:[...team.map(p=>p.id),AC]); saveHidden(); renderAgenda(); return}
+    if(a==='new'){const d=new Date(); d.setDate(d.getDate()+1); d.setHours(9,0,0,0); agModal(rdvForm({debut:d.toISOString(),duree:90,commercial:agDefaultRep(),client_id:currentId&&cur()&&known.has(currentId)&&(!isAdmin()||cur()._owner===myId())?currentId:''})); return}}
   const day=e.target.closest('.ag-day'); if(day&&!b){const rect=day.getBoundingClientRect(), y=e.clientY-rect.top, h=H0+Math.floor(y/HP*2)/2, d=new Date(day.dataset.day); d.setHours(Math.floor(h),(h%1)*60,0,0);
     agModal(rdvForm({debut:d.toISOString(),duree:90,commercial:agDefaultRep(),client_id:''}))}
 });
@@ -1973,7 +2051,7 @@ agPane.addEventListener('change',e=>{const id=e.target.dataset.agrep; if(id){e.t
 document.getElementById('btnRdvAg').onclick=async()=>{const c=cur(); if(!c) return; await loadRdv(); setTab('agenda');
   let d=c.dateRdv?new Date(/T/.test(c.dateRdv)?c.dateRdv:c.dateRdv+'T09:00'):null; if(!d||isNaN(d)){d=new Date(); d.setDate(d.getDate()+1); d.setHours(9,0,0,0)}
   const ex=(RDV||[]).find(r=>r.client_id===c.id&&r.resultat==='a_venir'); if(ex){rvRes=null; agModal(rdvDetail(ex)); return}
-  agStart=mondayOf(d); renderAgenda(); agModal(rdvForm({debut:d.toISOString(),duree:90,commercial:c._owner||myId(),client_id:known.has(c.id)||MODE==='local'?c.id:''}))};
+  agStart=mondayOf(d); renderAgenda(); agModal(rdvForm({debut:d.toISOString(),duree:90,commercial:isTp()?null:(c._owner||myId()),client_id:known.has(c.id)||MODE==='local'?c.id:''}))};
 
 /* ===== Administration ===== */
 function renderAdmin(){
@@ -1983,10 +2061,10 @@ function renderAdmin(){
   const signes=id=>clients.filter(c=>c._owner===id&&known.has(c.id)&&c.statut==='signe').length;
   const f=(k,l,u,st)=>`<label>${l}<div class="in"><input id="def-${k}" data-def="${k}" type="number" step="${st}" value="${esc(d[k])}"><span class="u">${u}</span></div></label>`;
   pane.innerHTML=`<div class="grid">
-  <fieldset class="span-all"><legend>Commerciaux</legend>
+  <fieldset class="span-all"><legend>Comptes (commerciaux, télépros, admin)</legend>
     <div class="table-wrap"><table class="tbl"><thead><tr><th>Nom</th><th>E-mail</th><th>Rôle</th><th class="num">Clients</th><th class="num">Signés</th><th>Accès</th>${CFG.api?'<th>Mot de passe</th>':''}</tr></thead><tbody>
     ${team.map(p=>`<tr data-id="${p.id}" class="${p.actif?'':'off'}"><td><input type="text" data-act="nom" aria-label="Nom" value="${esc(p.nom)}" placeholder="Nom à saisir" style="width:150px">${p.id===me.id?' (vous)':''}</td><td>${esc(p.email)}</td>
-      <td><select data-act="role" aria-label="Rôle" ${p.id===me.id?'disabled':''}><option value="commercial" ${p.role!=='admin'?'selected':''}>Commercial</option><option value="admin" ${p.role==='admin'?'selected':''}>Admin</option></select></td>
+      <td><select data-act="role" aria-label="Rôle" ${p.id===me.id?'disabled':''}>${Object.entries({commercial:'Commercial',telepro:'Télépro',admin:'Admin'}).map(([k,l])=>`<option value="${k}" ${(p.role||'commercial')===k?'selected':''}>${l}</option>`).join('')}</select></td>
       <td class="num">${cnt(p.id)}</td><td class="num">${signes(p.id)}</td>
       <td><label style="flex-direction:row;align-items:center;gap:6px;color:var(--fg)"><input type="checkbox" data-act="actif" ${p.actif?'checked':''} ${p.id===me.id?'disabled':''}>${p.actif?'Actif':'Désactivé'}</label></td>
       ${CFG.api?'<td class="pwd"><button class="btn small" data-act="pwd" type="button">Changer</button></td>':''}</tr>`).join('')}
@@ -1995,11 +2073,11 @@ function renderAdmin(){
       <label>Nom du commercial<div class="in"><input id="nuNom" autocomplete="off"></div></label>
       <label>E-mail<div class="in"><input id="nuEmail" type="email" autocomplete="off"></div></label>
       <label>Mot de passe provisoire <small>8 caractères min.</small><div class="in"><input id="nuPass" type="text" autocomplete="off"></div></label>
-      <label>Rôle<div class="in"><select id="nuRole"><option value="commercial">Commercial</option><option value="admin">Admin</option></select></div></label>
+      <label>Rôle<div class="in"><select id="nuRole"><option value="commercial">Commercial</option><option value="telepro">Télépro</option><option value="admin">Admin</option></select></div></label>
       <div class="full" style="display:flex;justify-content:flex-end"><button class="btn primary" type="submit">Créer le compte</button></div>
     </form>
-    <p class="hint">Communiquez au commercial son e-mail et son mot de passe provisoire. Il pourra le changer avec « Mot de passe oublié ». Un commercial ne voit que ses propres clients. Un compte désactivé ne peut plus se connecter à ses fiches.</p>`
-    :`<p class="hint"><b>Ajouter un commercial :</b> dans Supabase › Authentication › Users › Add user › Create new user, saisissez son e-mail et un mot de passe provisoire, cochez « Auto Confirm User ». Revenez ici : il apparaît dans la liste, désactivé. Saisissez son nom, cochez « Actif », puis communiquez-lui son e-mail et son mot de passe. Il pourra le changer avec « Mot de passe oublié ».<br>Un commercial ne voit que ses propres clients. Un compte désactivé ne peut plus se connecter à ses fiches.</p>`}
+    <p class="hint">Communiquez au commercial son e-mail et son mot de passe provisoire. Il pourra le changer avec « Mot de passe oublié ». Un commercial ne voit que ses propres clients. Un télépro crée des clients et place des RDV, sans accès au financement, aux aides, aux photos ni aux devis ; vous confirmez ses RDV dans l'agenda en choisissant le commercial. Un compte désactivé ne peut plus se connecter à ses fiches.</p>`
+    :`<p class="hint"><b>Ajouter un commercial :</b> dans Supabase › Authentication › Users › Add user › Create new user, saisissez son e-mail et un mot de passe provisoire, cochez « Auto Confirm User ». Revenez ici : il apparaît dans la liste, désactivé. Saisissez son nom, cochez « Actif », puis communiquez-lui son e-mail et son mot de passe. Il pourra le changer avec « Mot de passe oublié ».<br>Un commercial ne voit que ses propres clients. Un télépro crée des clients et place des RDV, sans accès au financement, aux aides, aux photos ni aux devis ; vous confirmez ses RDV dans l'agenda en choisissant le commercial. Un compte désactivé ne peut plus se connecter à ses fiches.</p>`}
   </fieldset>
   <fieldset class="span-all"><legend>Réglages par défaut des nouvelles fiches</legend>
     <div class="fields" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
@@ -2125,7 +2203,8 @@ async function enterApp(user){
   if(!clients.length) clients=[blank()];
   currentId=clients[0].id;
   document.getElementById('userName').innerHTML='<b>'+esc(prof.nom||prof.email)+'</b>';
-  const role=document.getElementById('userRole'); role.textContent=prof.role==='admin'?'Admin':'Commercial'; role.className='status'+(prof.role==='admin'?' signe':'');
+  document.body.classList.toggle('tp',prof.role==='telepro');
+  const role=document.getElementById('userRole'); role.textContent=ROLES[prof.role]||'Commercial'; role.className='status'+(prof.role==='admin'?' signe':'');
   document.getElementById('userBox').hidden=false;
   document.getElementById('tab-admin').hidden=!isAdmin();
   document.getElementById('ownerWrap').hidden=!isAdmin();
