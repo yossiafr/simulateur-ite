@@ -2004,6 +2004,11 @@ async function geo(q){q=String(q||'').trim(); if(q.length<3) return null; if(GEO
 const kmVol=(a,b)=>{const t=x=>x*Math.PI/180, dl=t(b.lat-a.lat), dn=t(b.lon-a.lon), h=Math.sin(dl/2)**2+Math.cos(t(a.lat))*Math.cos(t(b.lat))*Math.sin(dn/2)**2; return 12742*Math.asin(Math.sqrt(h))};
 const kmRoute=a=>Math.round(kmVol(...a)*1.3), minTrajet=k=>Math.round(k/55*60)+5;
 const SLOTS=[[9,0],[10,30],[14,0],[15,30],[17,0]];
+const ROUTE=new Map();
+async function routeIGN(a,b){const k=[a.lat,a.lon,b.lat,b.lon].map(x=>(+x).toFixed(4)).join(','); if(ROUTE.has(k)) return ROUTE.get(k); let r=null;
+  try{const u=`https://data.geopf.fr/navigation/itineraire?resource=bdtopo-osrm&profile=car&optimization=fastest&start=${b.lon},${b.lat}&end=${a.lon},${a.lat}&distanceUnit=kilometer&timeUnit=minute&getSteps=false&getBbox=false&geometryFormat=geojson`;
+    const res=await fetch(u); if(res.ok){const j=await res.json(); if(j&&j.distance!=null&&j.duration!=null) r={km:Math.round(+j.distance*10)/10,min:Math.max(1,Math.round(+j.duration))}}}catch(e){}
+  if(r) ROUTE.set(k,r); return r}
 async function rdvPos(r){if(r.lat&&r.lon) return {lat:r.lat,lon:r.lon}; const c=r.client_id&&clients.find(x=>x.id===r.client_id); if(c&&c.lat&&c.lon) return {lat:c.lat,lon:c.lon};
   return geo(r.adresse||[r.cp,r.ville].filter(Boolean).join(' '))}
 async function suggest(){
@@ -2016,22 +2021,26 @@ async function suggest(){
   await loadRdv(); const now=Date.now(), lim=now+16*864e5;
   const pool=(RDV||[]).concat(OCC||[]).filter(r=>r.id!==me_&&new Date(r.debut).getTime()>now-864e5&&new Date(r.debut).getTime()<lim&&(r.resultat||'a_venir')!=='reporte');
   const P=await Promise.all(pool.map(async r=>({r,s:new Date(r.debut).getTime(),e:new Date(r.debut).getTime()+(+r.duree||90)*6e4,p:await rdvPos(r).catch(()=>null)})));
+  box.innerHTML='<p class="hint" style="margin:0">Calcul des trajets par la route…</p>';
+  const near=P.filter(x=>x.p).map(x=>(x.est=kmRoute([pos,x.p]),x)).filter(x=>x.est<=80).sort((a,b)=>a.est-b.est).slice(0,25);
+  await Promise.all(near.map(async x=>{const rt=await routeIGN(pos,x.p); if(rt){x.km=rt.km; x.min=rt.min; x.real=true}}));
+  P.forEach(x=>{if(x.p&&!x.real){x.km=x.est??kmRoute([pos,x.p]); x.min=minTrajet(x.km)}});
   const cands=[]; let d=dayStart(new Date()); d=addDays(d,1);
   for(let i=0;i<16;i++,d=addDays(d,1)){ if(d.getDay()===0||d.getDay()===6) continue;
     const day=P.filter(x=>dayStart(x.s).getTime()===d.getTime());
     for(const [h,mn] of SLOTS){const s=new Date(d); s.setHours(h,mn,0,0); const S=s.getTime(), E=S+dur*6e4; if(S<now) continue;
       let ok=true, best=null;
-      for(const x of day){const k=x.p?kmRoute([pos,x.p]):null, gap=(k!=null?minTrajet(k):30)*6e4;
+      for(const x of day){const k=x.p?x.km:null, gap=(k!=null?x.min+10:30)*6e4;
         if(S<x.e+gap&&E+gap>x.s){ok=false; break}
-        if(k!=null&&(!best||k<best.k)) best={k,x}}
+        if(k!=null&&(!best||x.min<best.x.min)) best={k,x}}
       if(ok) cands.push({S,best,n:day.length})}}
-  const near=cands.filter(c=>c.best&&c.best.k<=40).sort((a,b)=>a.best.k-b.best.k||a.S-b.S), out=[], perDay={};
-  for(const c of near){const k=dayStart(c.S).getTime(); if((perDay[k]=(perDay[k]||0)+1)>2) continue; out.push(c); if(out.length>=4) break}
+  const close=cands.filter(c=>c.best&&c.best.x.min<=45).sort((a,b)=>a.best.x.min-b.best.x.min||a.S-b.S), out=[], perDay={};
+  for(const c of close){const k=dayStart(c.S).getTime(); if((perDay[k]=(perDay[k]||0)+1)>2) continue; out.push(c); if(out.length>=4) break}
   for(const c of cands.filter(c=>!c.n)){if(out.length>=6) break; const k=dayStart(c.S).getTime(); if(perDay[k]) continue; if(new Date(c.S).getHours()!==10&&new Date(c.S).getHours()!==14) continue; perDay[k]=1; out.push(c)}
   if(!out.length){box.innerHTML='<p class="hint" style="margin:0">Aucun créneau libre trouvé sur les deux prochaines semaines.</p>'; return}
   const lieu=x=>x.r.ville||(clients.find(y=>y.id===x.r.client_id)||{}).ville||x.r.cp||'';
-  box.innerHTML=`<div class="sug-l">${out.map((c,i)=>`<button type="button" data-sug="${new Date(c.S).toISOString()}" class="${c.best&&i===0?'best':''}"><b>${dLong(c.S)} · ${hhmm(c.S)}</b><small>${c.best?`≈ ${c.best.k} km (${minTrajet(c.best.k)} min) du RDV de ${hhmm(c.best.x.s)}${lieu(c.best.x)?' à '+esc(lieu(c.best.x)):''}`:'Aucun RDV ce jour-là pour l\'instant'}</small></button>`).join('')}</div>
-    <p class="hint" style="margin:0">Distances estimées par la route (vol d'oiseau × 1,3, moyenne 55 km/h). Cliquez un créneau pour le choisir.</p>`;
+  box.innerHTML=`<div class="sug-l">${out.map((c,i)=>`<button type="button" data-sug="${new Date(c.S).toISOString()}" class="${c.best&&i===0?'best':''}"><b>${dLong(c.S)} · ${hhmm(c.S)}</b><small>${c.best?`${c.best.x.real?'':'≈ '}${String(c.best.k).replace('.',',')} km · ${c.best.x.min} min ${c.best.x.real?'par la route':'(estimation)'} du RDV de ${hhmm(c.best.x.s)}${lieu(c.best.x)?' à '+esc(lieu(c.best.x)):''}`:'Aucun RDV ce jour-là pour l\'instant'}</small></button>`).join('')}</div>
+    <p class="hint" style="margin:0">${P.some(x=>x.real)?'Distances et temps de trajet calculés par la route (itinéraire IGN, gratuit).':'Distances estimées (vol d\'oiseau × 1,3, 55 km/h) : le calcul d\'itinéraire n\'a pas répondu.'} 10 min de marge sont gardées entre deux RDV. Cliquez un créneau pour le choisir.</p>`;
 }
 function rdvPdf(r){
   const c=clients.find(x=>x.id===r.client_id)||{}, f=couleurFoyer(c), fin=new Date(new Date(r.debut).getTime()+(+r.duree||90)*60000), cr=Array.isArray(c.credits)?c.credits:[];
