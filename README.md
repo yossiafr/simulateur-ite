@@ -58,6 +58,8 @@ Sans réglage, l'onglet Carte utilise la vue Street View publique de Google. Si 
 
 Un RDV pris par un télépro reste « À confirmer » (pointillés dans l'agenda de l'admin, bandeau « RDV à confirmer »). L'admin l'ouvre, choisit le commercial et clique « Confirmer le RDV » : le RDV passe dans l'agenda du commercial et la fiche client lui est attribuée. Le télépro voit alors son RDV « Confirmé », sans pouvoir le modifier.
 
+Fiche RDV en PDF (admin) : dans un RDV, bouton « 📄 Fiche RDV (PDF) ». Une page A4 avec en tête le commercial, la date et l'heure, puis le client, ses coordonnées, le logement, le foyer fiscal et sa couleur, les revenus et crédits, le commentaire du RDV et les notes. La note en étoiles n'y figure pas, pour pouvoir la remettre au commercial. Dans la fenêtre d'impression, choisir « Enregistrer au format PDF ».
+
 En prenant un RDV, le bouton « Proposer les meilleurs créneaux » cherche sur les deux semaines suivantes les créneaux libres les plus proches des RDV déjà placés (distance estimée par la route : vol d'oiseau × 1,3, 55 km/h de moyenne, temps de trajet réservé entre deux RDV). Les adresses sont localisées avec la Base Adresse Nationale (gratuite). Le télépro note le RDV de 1 étoile (pas terrible) à 4 étoiles (très bon). La note n'est visible que par l'admin et le télépro qui a pris le RDV, jamais par le commercial (table séparée protégée par la base).
 
 Ces droits sont appliqués par la base elle-même (Row Level Security), pas seulement par l'écran.
