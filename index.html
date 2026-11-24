@@ -16,13 +16,8 @@
   --on-green:#ffffff; --warn:#b5541b; --bad:#b3261e;
   --display:"Montserrat",system-ui,-apple-system,"Segoe UI",sans-serif;
   --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --r:14px;
+  --r:14px; color-scheme:light;
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#111a0e; --surface:#1a2715; --surface-2:#22331c; --line:#2f4627;
-  --fg:#e6f0de; --muted:#9fb193;
-  --green:#4fb83a; --green-deep:#2f7d20; --lime:#b6dd55; --lime-soft:#2c3f1f;
-  --on-green:#ffffff; --warn:#e58a4f; --bad:#ef7a72; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#111a0e; --surface:#1a2715; --surface-2:#22331c; --line:#2f4627;
   --fg:#e6f0de; --muted:#9fb193;
@@ -85,9 +80,6 @@ aside input[type=search]{width:100%;padding:8px 10px;border:1px solid var(--line
 .status.devis{background:#fff1d6;color:#8a5a00}
 .status.signe{background:var(--green);color:var(--on-green)}
 .status.perdu{background:#f6dede;color:#8f2a24}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .status.rdv{background:#1f3550;color:#bcd6f7}
-:root:not([data-theme="light"]) .status.devis{background:#4a3a12;color:#f3d48a}
-:root:not([data-theme="light"]) .status.perdu{background:#4a1f1c;color:#f3b1ab}}
 :root[data-theme="dark"] .status.rdv{background:#1f3550;color:#bcd6f7}
 :root[data-theme="dark"] .status.devis{background:#4a3a12;color:#f3d48a}
 :root[data-theme="dark"] .status.perdu{background:#4a1f1c;color:#f3b1ab}
@@ -105,7 +97,6 @@ main{display:flex;flex-direction:column;gap:18px;min-width:0}
 @media (max-width:700px){.grid{grid-template-columns:minmax(0,1fr)}}
 fieldset{border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:14px 16px 16px;margin:0;min-width:0}
 legend{font-family:var(--display);font-weight:800;font-size:14px;padding:0 6px;color:var(--green-deep)}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) legend{color:var(--lime)}}
 :root[data-theme="dark"] legend{color:var(--lime)}
 .fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 12px}
 .fields .full{grid-column:1/-1}
@@ -147,7 +138,6 @@ label small{font-weight:400}
 .box .val{font-family:var(--display);font-weight:800;font-size:18px;white-space:nowrap}
 .cover{background:var(--lime-soft);border-radius:999px;padding:6px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:700;font-size:13px}
 .cover b{font-family:var(--display);font-size:20px;color:var(--green-deep)}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .cover b{color:var(--lime)}}
 :root[data-theme="dark"] .cover b{color:var(--lime)}
 .pv-badge{background:var(--lime);color:#1d2a17;border-radius:999px;padding:4px 14px;font-family:var(--display);font-weight:900;font-size:22px;width:max-content}
 .foot{font-size:11px;color:var(--muted);font-style:italic;margin:0}
@@ -316,9 +306,16 @@ label small{font-weight:400}
   header.top .title, aside, .toolbar, .tabs, #pane-form, .no-print{display:none!important}
   .app{display:block} .wrap{padding:0;max-width:none}
   #pane-sheet{display:block!important}
-  .sheet{border:0;padding:0;gap:12px}
+  .sheet{border:0;padding:0 4px;gap:12px}
   .steps{grid-template-columns:repeat(4,1fr)} .three{grid-template-columns:repeat(3,1fr)} .band{grid-template-columns:1fr 1fr 1.4fr} .details{grid-template-columns:repeat(4,1fr)}
+  body:not(.print-devis) .wrap{zoom:var(--pz,1)}
 }
+/* Mesure de la synthèse à la largeur d'une page A4 paysage (pour la faire tenir sur une page) */
+body.pm .wrap{width:1062px!important;max-width:none;padding:0;position:absolute;left:-20000px;top:0}
+body.pm header.top .title, body.pm aside, body.pm .toolbar, body.pm .tabs, body.pm #pane-form, body.pm .no-print, body.pm .userbox{display:none!important}
+body.pm .app{display:block} body.pm #pane-sheet{display:block!important}
+body.pm .sheet{border:0;padding:0 4px;gap:12px}
+body.pm .steps{grid-template-columns:repeat(4,1fr)} body.pm .three{grid-template-columns:repeat(3,1fr)} body.pm .band{grid-template-columns:1fr 1fr 1.4fr} body.pm .details{grid-template-columns:repeat(4,1fr)}
 </style>
 
 </head>
@@ -708,7 +705,14 @@ document.getElementById('delWrap').addEventListener('click',e=>{
   else if(id==='delNo') resetDel();
   else if(id==='delYes'){(async()=>{if(!(await removeRemote(currentId))) return resetDel(); clients=clients.filter(c=>c.id!==currentId); if(!clients.length) clients.push(blank()); persist(); select(clients[0].id); toast('Fiche supprimée')})()}
 });
-document.getElementById('btnPrint').onclick=()=>{document.body.classList.remove('print-devis');setTab('sheet');setTimeout(()=>window.print(),50)};
+function fitSheet(){
+  if(document.body.classList.contains('print-devis')) return;
+  const w=document.querySelector('.wrap'), B=document.body; w.style.removeProperty('--pz');
+  B.classList.add('pm'); const h=w.scrollHeight; B.classList.remove('pm');
+  const k=Math.min(1,715/h); if(k<1) w.style.setProperty('--pz',k.toFixed(3));
+}
+window.addEventListener('beforeprint',fitSheet);
+document.getElementById('btnPrint').onclick=()=>{document.body.classList.remove('print-devis');setTab('sheet');setTimeout(()=>{fitSheet();window.print()},50)};
 
 /* ===== Export / import (fichier local) ===== */
 function download(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
