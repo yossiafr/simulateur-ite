@@ -1,0 +1,906 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Simulateur autofinancement ITE</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: fiche client à gauche (liste CRM), formulaire + synthèse « infographie » à droite */
+:root{
+  --bg:#f3f7ee; --surface:#ffffff; --surface-2:#eef5e6; --line:#d6e3c9;
+  --fg:#1d2a17; --muted:#5d6b55;
+  --green:#2f8f1f; --green-deep:#1e6312; --lime:#c9ea6a; --lime-soft:#e8f6c4;
+  --on-green:#ffffff; --warn:#b5541b; --bad:#b3261e;
+  --display:"Montserrat",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111a0e; --surface:#1a2715; --surface-2:#22331c; --line:#2f4627;
+  --fg:#e6f0de; --muted:#9fb193;
+  --green:#4fb83a; --green-deep:#2f7d20; --lime:#b6dd55; --lime-soft:#2c3f1f;
+  --on-green:#ffffff; --warn:#e58a4f; --bad:#ef7a72; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111a0e; --surface:#1a2715; --surface-2:#22331c; --line:#2f4627;
+  --fg:#e6f0de; --muted:#9fb193;
+  --green:#4fb83a; --green-deep:#2f7d20; --lime:#b6dd55; --lime-soft:#2c3f1f;
+  --on-green:#ffffff; --warn:#e58a4f; --bad:#ef7a72; color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--bg);color:var(--fg)}
+body{font-family:var(--body);font-size:14px;line-height:1.45}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--lime);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+
+.wrap{max-width:1320px;margin:0 auto;padding-block:18px 40px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+header.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.brand svg{flex:none}
+.brand .name{font-family:var(--display);font-weight:800;line-height:1.05;font-size:15px;letter-spacing:.02em;text-transform:uppercase}
+.brand .name b{color:var(--green);display:block;font-size:19px}
+.brand .flag{display:flex;height:3px;width:90px;margin-top:4px}
+.brand .flag i{flex:1}
+.top .title{margin-left:auto;font-family:var(--display);font-weight:700;color:var(--muted);font-size:13px;letter-spacing:.06em;text-transform:uppercase}
+
+.app{display:grid;grid-template-columns:280px minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:900px){.app{grid-template-columns:minmax(0,1fr)}}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 14px;cursor:pointer;font-weight:600}
+.btn:hover{border-color:var(--green)}
+.btn.primary{background:var(--green);border-color:var(--green);color:var(--on-green)}
+.btn.primary:hover{background:var(--green-deep)}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--bad)}
+.btn.small{padding:5px 10px;font-size:12.5px}
+
+/* Sidebar */
+aside.list{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+@media (max-width:900px){aside.list{position:static}}
+aside .head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+aside h2{font-size:15px}
+aside input[type=search]{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);margin-bottom:8px}
+.filters{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
+.chipf{border:1px solid var(--line);background:transparent;border-radius:999px;padding:3px 9px;font-size:12px;cursor:pointer}
+.chipf[aria-pressed=true]{background:var(--green);color:var(--on-green);border-color:var(--green)}
+.clients{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;max-height:60vh;overflow:auto}
+.clients button{width:100%;text-align:left;border:1px solid transparent;background:transparent;border-radius:10px;padding:8px 10px;cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 8px}
+.clients button:hover{background:var(--surface-2)}
+.clients button[aria-current=true]{background:var(--lime-soft);border-color:var(--lime)}
+.clients .n{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.clients .s{font-size:12px;color:var(--muted);grid-column:1}
+.clients .p{grid-row:1/3;grid-column:2;align-self:center;font-family:var(--display);font-weight:800;color:var(--green)}
+.empty{color:var(--muted);font-size:13px;padding:10px 4px}
+.side-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;border-top:1px solid var(--line);padding-top:12px}
+
+.status{display:inline-block;font-size:11px;font-weight:600;border-radius:999px;padding:1px 8px;background:var(--surface-2);color:var(--muted)}
+.status.rdv{background:#e3eefc;color:#1f4f8f}
+.status.devis{background:#fff1d6;color:#8a5a00}
+.status.signe{background:var(--green);color:var(--on-green)}
+.status.perdu{background:#f6dede;color:#8f2a24}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .status.rdv{background:#1f3550;color:#bcd6f7}
+:root:not([data-theme="light"]) .status.devis{background:#4a3a12;color:#f3d48a}
+:root:not([data-theme="light"]) .status.perdu{background:#4a1f1c;color:#f3b1ab}}
+:root[data-theme="dark"] .status.rdv{background:#1f3550;color:#bcd6f7}
+:root[data-theme="dark"] .status.devis{background:#4a3a12;color:#f3d48a}
+:root[data-theme="dark"] .status.perdu{background:#4a1f1c;color:#f3b1ab}
+
+/* Form */
+main{display:flex;flex-direction:column;gap:18px;min-width:0}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.toolbar h1{font-size:22px;margin-right:auto}
+.saved{font-size:12px;color:var(--muted)}
+.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px;width:max-content;max-width:100%}
+.tabs button{border:0;background:transparent;border-radius:999px;padding:7px 16px;cursor:pointer;font-weight:600;color:var(--muted)}
+.tabs button[aria-selected=true]{background:var(--green);color:var(--on-green)}
+
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media (max-width:700px){.grid{grid-template-columns:minmax(0,1fr)}}
+fieldset{border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:14px 16px 16px;margin:0;min-width:0}
+legend{font-family:var(--display);font-weight:800;font-size:14px;padding:0 6px;color:var(--green-deep)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) legend{color:var(--lime)}}
+:root[data-theme="dark"] legend{color:var(--lime)}
+.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 12px}
+.fields .full{grid-column:1/-1}
+label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:600;color:var(--muted);min-width:0}
+label small{font-weight:400}
+.in{position:relative;display:flex}
+.in input,.in select,label textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);font-weight:500;min-width:0}
+.in input[type=number]{text-align:right;padding-right:34px}
+.in .u{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:12.5px;pointer-events:none}
+.in input:focus,.in select:focus,label textarea:focus{border-color:var(--green);outline:none;box-shadow:0 0 0 3px var(--lime-soft)}
+.hint{font-size:12px;color:var(--muted);margin:8px 0 0}
+.calc-hint{font-size:12px;color:var(--green);font-weight:600}
+
+/* ===== Synthèse (infographie) ===== */
+.sheet{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:22px;display:flex;flex-direction:column;gap:18px;overflow:hidden}
+.sheet-head{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start;justify-content:space-between}
+.sheet-head h2{font-size:clamp(20px,3vw,30px);font-weight:900;line-height:1.1}
+.ribbon{display:inline-block;margin-top:8px;background:linear-gradient(180deg,var(--green),var(--green-deep));color:var(--on-green);font-family:var(--display);font-style:italic;font-weight:800;font-size:clamp(16px,2.2vw,22px);padding:6px 22px;border-radius:999px}
+.who{text-align:right;font-size:13px;color:var(--muted)}
+.who strong{display:block;color:var(--fg);font-size:16px;font-family:var(--display)}
+
+.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:760px){.steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.step{background:var(--surface-2);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.step .k{display:flex;align-items:center;gap:8px;font-family:var(--display);font-weight:800;font-size:14px}
+.step .k i{flex:none;width:26px;height:26px;border-radius:50%;background:var(--green);color:var(--on-green);display:grid;place-items:center;font-style:normal;font-size:14px}
+.step p{margin:0;font-size:12.5px;color:var(--muted)}
+.step.hot{background:linear-gradient(160deg,var(--green),var(--green-deep));color:var(--on-green)}
+.step.hot p{color:var(--on-green);opacity:.92}
+.step.hot .k i{background:var(--on-green);color:var(--green-deep)}
+.step .big{font-family:var(--display);font-weight:900;font-size:20px}
+.pill{display:inline-block;background:#f8d9d6;color:#9c2a20;font-weight:700;font-size:12px;border-radius:999px;padding:2px 10px;width:max-content}
+
+.three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:stretch}
+@media (max-width:820px){.three{grid-template-columns:minmax(0,1fr)}}
+.box{border:1px solid var(--line);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0;position:relative}
+.box h3{font-size:16px;font-weight:800;display:flex;align-items:center;gap:8px}
+.box .row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:13px}
+.box .val{font-family:var(--display);font-weight:800;font-size:18px;white-space:nowrap}
+.cover{background:var(--lime-soft);border-radius:999px;padding:6px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:700;font-size:13px}
+.cover b{font-family:var(--display);font-size:20px;color:var(--green-deep)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .cover b{color:var(--lime)}}
+:root[data-theme="dark"] .cover b{color:var(--lime)}
+.pv-badge{background:var(--lime);color:#1d2a17;border-radius:999px;padding:4px 14px;font-family:var(--display);font-weight:900;font-size:22px;width:max-content}
+.foot{font-size:11px;color:var(--muted);font-style:italic;margin:0}
+
+.band{background:linear-gradient(160deg,var(--green),var(--green-deep));color:var(--on-green);border-radius:18px;padding:16px 18px;display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:18px;align-items:center}
+@media (max-width:820px){.band{grid-template-columns:minmax(0,1fr)}}
+.band .cell{display:flex;flex-direction:column;gap:6px;min-width:0}
+.band .lbl{font-family:var(--display);font-weight:700;font-size:13px;opacity:.95}
+.band .money{background:#fff;color:#1d2a17;border-radius:999px;padding:6px 16px;font-family:var(--display);font-weight:900;font-size:22px;width:max-content;max-width:100%}
+.band .pct{font-family:var(--display);font-weight:900;font-size:clamp(34px,5vw,48px);line-height:1;color:var(--lime)}
+.band .pct-sub{font-size:13px}
+.band .pct-sub b{color:var(--lime)}
+
+.meter{display:flex;flex-direction:column;gap:8px}
+.meter .bar{display:flex;height:22px;border-radius:999px;overflow:hidden;background:var(--surface-2);border:1px solid var(--line);position:relative}
+.meter .bar span{height:100%}
+.seg-eco{background:var(--green)} .seg-aid{background:var(--lime)} .seg-pv{background:repeating-linear-gradient(45deg,var(--lime-soft),var(--lime-soft) 6px,var(--lime) 6px,var(--lime) 8px)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:5px}
+.meter .mark{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--fg);opacity:.6}
+
+.details{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:820px){.details{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kv{background:var(--surface-2);border-radius:12px;padding:10px 12px;min-width:0}
+.kv span{display:block;font-size:11.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.kv b{font-family:var(--display);font-size:17px}
+.note{font-size:11.5px;color:var(--muted);margin:0}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:8px 16px;border-radius:999px;font-weight:600;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+.toast{z-index:60}
+.userbox{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px}
+.userbox b{font-family:var(--display)}
+.auth{position:fixed;inset:0;z-index:40;background:var(--bg);display:flex;align-items:flex-start;justify-content:center;overflow:auto;
+  padding-block:calc(10vh + env(safe-area-inset-top,0px)) 24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.auth-card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:24px;width:min(400px,100%);display:flex;flex-direction:column;gap:12px}
+.auth-card h2{font-size:20px}
+.auth-card .brand{margin-bottom:4px}
+.auth-msg{margin:0;font-size:13px;color:var(--muted)}
+.auth-msg.err{color:var(--bad);font-weight:600}
+.linkbtn{background:none;border:0;color:var(--green);font-weight:600;cursor:pointer;padding:4px;align-self:center}
+.table-wrap{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--line)}
+.tbl td{padding:8px;border-bottom:1px solid var(--line);vertical-align:middle}
+.tbl select,.tbl input[type=password],.tbl input[type=text]{padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
+.tbl tr.off td{opacity:.55}
+.span-all{grid-column:1/-1}
+.modal-bg{position:fixed;inset:0;background:rgba(10,20,6,.55);z-index:50;display:flex;align-items:flex-start;justify-content:center;overflow:auto;
+  padding-block:calc(24px + env(safe-area-inset-top,0px)) 24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.modal{background:var(--surface);border:1px solid var(--line);border-radius:18px;width:min(760px,100%);padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.modal h2{font-size:18px}
+.modal .steps-mail{margin:0;padding-left:20px;color:var(--muted);font-size:13px}
+.modal .acts{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+.mail-preview{border:1px solid var(--line);border-radius:12px;background:#ffffff;max-height:52vh;overflow:auto;padding:12px}
+.confirm{display:flex;gap:6px;align-items:center;font-size:12.5px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* Impression : uniquement la synthèse */
+@media print{
+  @page{size:A4 landscape;margin:8mm}
+  :root{--bg:#fff;--surface:#fff;--surface-2:#eef5e6;--fg:#1d2a17;--muted:#4f5c48;--line:#d6e3c9;--lime-soft:#e8f6c4;--lime:#c9ea6a;--green:#2f8f1f;--green-deep:#1e6312;color-scheme:light}
+  body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  header.top .title, aside, .toolbar, .tabs, #pane-form, .no-print{display:none!important}
+  .app{display:block} .wrap{padding:0;max-width:none}
+  #pane-sheet{display:block!important}
+  .sheet{border:0;padding:0;gap:12px}
+  .steps{grid-template-columns:repeat(4,1fr)} .three{grid-template-columns:repeat(3,1fr)} .band{grid-template-columns:1fr 1fr 1.4fr} .details{grid-template-columns:repeat(4,1fr)}
+}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <svg width="46" height="46" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="26" r="20" fill="none" stroke="var(--green)" stroke-width="4" stroke-dasharray="96 30" stroke-linecap="round"/><path d="M12 27 24 16l12 11v11H12z" fill="var(--green)"/><rect x="21" y="29" width="6" height="6" rx="1" fill="var(--on-green)"/><path d="M28 14c2-8 10-10 14-10-1 6-4 12-12 12" fill="var(--lime)" stroke="var(--green)" stroke-width="1.5"/></svg>
+      <div>
+        <div class="name" id="brandName">Les Compagnons <b>Écologiques</b> Français</div>
+        <div class="flag" aria-hidden="true"><i style="background:#1f4fa3"></i><i style="background:#eee"></i><i style="background:#d0302b"></i></div>
+      </div>
+    </div>
+    <div class="title">Simulateur d'autofinancement ITE</div>
+    <div class="userbox" id="userBox" hidden><span id="userName"></span><span class="status" id="userRole"></span><button class="btn small" id="btnLogout" type="button">Déconnexion</button></div>
+  </header>
+
+  <div class="app">
+    <aside class="list">
+      <div class="head"><h2>Clients</h2><button class="btn primary small" id="btnNew" type="button">+ Nouveau</button></div>
+      <input type="search" id="search" placeholder="Rechercher nom, ville, tél…" aria-label="Rechercher un client">
+      <div class="filters" id="filters"></div>
+      <div class="in" id="repFilterWrap" hidden style="margin-bottom:10px"><select id="repFilter" aria-label="Filtrer par commercial"></select></div>
+      <ul class="clients" id="clientList"></ul>
+      <div class="side-actions local-only">
+        <button class="btn small" id="btnExportCsv" type="button">Export CSV</button>
+        <button class="btn small" id="btnExportJson" type="button">Sauvegarde</button>
+        <label class="btn small" style="flex-direction:row;color:var(--fg)">Restaurer<input type="file" id="fileImport" accept=".json,application/json" hidden></label>
+      </div>
+    </aside>
+
+    <main>
+      <div class="toolbar">
+        <h1 id="clientTitle">Nouveau client</h1>
+        <span class="saved" id="savedInfo"></span>
+        <button class="btn" id="btnDup" type="button">Dupliquer</button>
+        <span id="delWrap"><button class="btn danger" id="btnDel" type="button">Supprimer</button></span>
+        <button class="btn local-only" id="btnPrint" type="button">Imprimer / PDF</button>
+        <button class="btn primary" id="btnMail" type="button">Envoyer par e-mail</button>
+      </div>
+      <div class="tabs" role="tablist">
+        <button role="tab" id="tab-form" aria-selected="true" aria-controls="pane-form" type="button">Fiche client</button>
+        <button role="tab" id="tab-sheet" aria-selected="false" aria-controls="pane-sheet" type="button">Synthèse client</button>
+        <button role="tab" id="tab-admin" aria-selected="false" aria-controls="pane-admin" type="button" hidden>Administration</button>
+      </div>
+
+      <form id="pane-form" autocomplete="off">
+        <div class="grid">
+          <fieldset>
+            <legend>Client</legend>
+            <div class="fields">
+              <label>Nom<div class="in"><input id="nom" data-k="nom"></div></label>
+              <label>Prénom<div class="in"><input id="prenom" data-k="prenom"></div></label>
+              <label>Téléphone<div class="in"><input id="tel" data-k="tel" inputmode="tel"></div></label>
+              <label>E-mail<div class="in"><input id="email" data-k="email" type="email"></div></label>
+              <label class="full">Adresse<div class="in"><input id="adresse" data-k="adresse"></div></label>
+              <label>Code postal<div class="in"><input id="cp" data-k="cp" inputmode="numeric"></div></label>
+              <label>Ville<div class="in"><input id="ville" data-k="ville"></div></label>
+              <label>Statut<div class="in"><select id="statut" data-k="statut">
+                <option value="prospect">Prospect</option><option value="rdv">RDV fixé</option><option value="devis">Devis envoyé</option><option value="signe">Signé</option><option value="perdu">Perdu</option></select></div></label>
+              <label>Date du RDV<div class="in"><input id="dateRdv" data-k="dateRdv" type="date"></div></label>
+              <label class="full">Notes<textarea id="notes" data-k="notes" rows="2"></textarea></label>
+              <label class="full" id="ownerWrap" hidden>Commercial responsable<div class="in"><select id="ownerSel"></select></div></label>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Logement & énergie</legend>
+            <div class="fields">
+              <label>Type<div class="in"><select id="typeLogement" data-k="typeLogement"><option>Maison individuelle</option><option>Maison mitoyenne</option><option>Appartement</option></select></div></label>
+              <label>Année de construction<div class="in"><input id="annee" data-k="annee" type="number" min="1800" max="2030"></div></label>
+              <label>Surface habitable<div class="in"><input id="surface" data-k="surface" type="number" min="0"><span class="u">m²</span></div></label>
+              <label>Surface de murs à isoler<div class="in"><input id="surfaceMurs" data-k="surfaceMurs" type="number" min="0"><span class="u">m²</span></div></label>
+              <label>DPE actuel<div class="in"><select id="dpe" data-k="dpe"><option value="">—</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option></select></div></label>
+              <label>Énergie de chauffage<div class="in"><select id="energie" data-k="energie"><option>Gaz</option><option>Fioul</option><option>Électricité</option><option>Pompe à chaleur</option><option>Bois / granulés</option><option>Propane</option></select></div></label>
+              <label>Facture de chauffage annuelle<div class="in"><input id="factureAn" data-k="factureAn" type="number" min="0" step="10"><span class="u">€/an</span></div></label>
+              <label>Économie due à l'ITE<div class="in"><input id="tauxEco" data-k="tauxEco" type="number" min="0" max="80" step="1"><span class="u">%</span></div></label>
+              <label class="full">Économie mensuelle (forcer une valeur) <small>laisser vide pour le calcul auto</small><div class="in"><input id="ecoForce" data-k="ecoForce" type="number" min="0" step="1" placeholder="auto"><span class="u">€/mois</span></div><span class="calc-hint" id="ecoHint"></span></label>
+            </div>
+            <p class="hint">Repère : les murs représentent 20 à 25 % des pertes de chaleur d'une maison non isolée (ADEME). Ajustez le taux selon le logement.</p>
+          </fieldset>
+
+          <fieldset>
+            <legend>Financement</legend>
+            <div class="fields">
+              <label>Montant des travaux TTC<div class="in"><input id="coutTravaux" data-k="coutTravaux" type="number" min="0" step="100"><span class="u">€</span></div></label>
+              <label>Taux d'intérêt annuel<div class="in"><input id="taux" data-k="taux" type="number" min="0" max="25" step="0.1"><span class="u">%</span></div></label>
+              <label>Durée du financement<div class="in"><input id="duree" data-k="duree" type="number" min="1" step="1"><span class="u">mois</span></div></label>
+              <label>Différé avant 1ʳᵉ échéance<div class="in"><input id="differe" data-k="differe" type="number" min="0" max="24" step="1"><span class="u">mois</span></div></label>
+              <label class="full">Mensualité (forcer une valeur) <small>laisser vide pour le calcul auto</small><div class="in"><input id="mensForce" data-k="mensForce" type="number" min="0" step="1" placeholder="auto"><span class="u">€/mois</span></div><span class="calc-hint" id="mensHint"></span></label>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Aides & patrimoine</legend>
+            <div class="fields">
+              <label>Prime CEE<div class="in"><input id="cee" data-k="cee" type="number" min="0" step="50"><span class="u">€</span></div></label>
+              <label>Aide région<div class="in"><input id="aideRegion" data-k="aideRegion" type="number" min="0" step="50"><span class="u">€</span></div></label>
+              <label>Valeur actuelle du bien<div class="in"><input id="valeurBien" data-k="valeurBien" type="number" min="0" step="1000"><span class="u">€</span></div></label>
+              <label>Plus-value estimée<div class="in"><input id="tauxPV" data-k="tauxPV" type="number" min="0" max="30" step="0.5"><span class="u">%</span></div></label>
+              <label class="full">Hausse annuelle du prix de l'énergie<div class="in"><input id="hausse" data-k="hausse" type="number" min="0" max="15" step="0.5"><span class="u">%/an</span></div></label>
+            </div>
+            <p class="hint">Plus-value : +10 % en moyenne après ITE (Notaires de France, transactions 2024). Écart de valeur selon le DPE, réalisable à la revente.</p>
+          </fieldset>
+        </div>
+      </form>
+
+      <section id="pane-sheet" hidden></section>
+      <section id="pane-admin" hidden></section>
+    </main>
+  </div>
+</div>
+<div class="modal-bg" id="mailModal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mailTitle">
+    <h2 id="mailTitle">Envoyer la simulation par e-mail</h2>
+    <div class="fields">
+      <label>Destinataire<div class="in"><input id="mailTo" type="email" placeholder="e-mail du client"></div></label>
+      <label>Objet<div class="in"><input id="mailSubject"></div></label>
+      <label class="full">Votre signature <small>(mémorisée)</small><textarea id="mailSig" rows="2" placeholder="Prénom Nom · Conseiller · 06 …"></textarea></label>
+    </div>
+    <ol class="steps-mail" id="mailSteps">
+      <li>« Copier et ouvrir ma messagerie » copie le récapitulatif mis en page et ouvre un nouveau message au client.</li>
+      <li>Dans le corps du message, faites <b>Coller</b> (Ctrl+V ou Cmd+V), puis envoyez.</li>
+    </ol>
+    <div class="mail-preview" id="mailPreview"></div>
+    <div class="acts">
+      <button class="btn" id="mailClose" type="button">Fermer</button>
+      <button class="btn" id="mailCopy" type="button">Copier seulement</button>
+      <button class="btn" id="mailGo" type="button">Copier et ouvrir ma messagerie</button>
+      <button class="btn primary" id="mailSend" type="button" hidden>Envoyer au client</button>
+    </div>
+  </div>
+</div>
+<div class="auth" id="authScreen" hidden>
+  <form class="auth-card" id="authForm" novalidate>
+    <div class="brand">
+      <svg width="40" height="40" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="26" r="20" fill="none" stroke="var(--green)" stroke-width="4" stroke-dasharray="96 30" stroke-linecap="round"/><path d="M12 27 24 16l12 11v11H12z" fill="var(--green)"/><rect x="21" y="29" width="6" height="6" rx="1" fill="var(--on-green)"/><path d="M28 14c2-8 10-10 14-10-1 6-4 12-12 12" fill="var(--lime)" stroke="var(--green)" stroke-width="1.5"/></svg>
+      <div class="name">Simulateur <b>ITE</b></div>
+    </div>
+    <h2 id="authTitle">Connexion</h2>
+    <p class="auth-msg" id="authMsg"></p>
+    <label id="lblEmail">E-mail<div class="in"><input id="authEmail" type="email" autocomplete="username"></div></label>
+    <label id="lblPass">Mot de passe<div class="in"><input id="authPass" type="password" autocomplete="current-password"></div></label>
+    <button class="btn primary" id="authSubmit" type="submit">Se connecter</button>
+    <button class="linkbtn" id="authAlt" type="button">Mot de passe oublié ?</button>
+  </form>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+const KEY='ite-crm-v1';
+const DEFAULTS={nom:'',prenom:'',tel:'',email:'',adresse:'',cp:'',ville:'',statut:'prospect',dateRdv:'',notes:'',
+  typeLogement:'Maison individuelle',annee:'',surface:'',surfaceMurs:'',dpe:'',energie:'Gaz',factureAn:'',tauxEco:25,ecoForce:'',
+  coutTravaux:'',mensForce:'',taux:6,duree:120,differe:6,cee:'',aideRegion:'',valeurBien:'',tauxPV:10,hausse:0};
+const STATUTS={prospect:'Prospect',rdv:'RDV fixé',devis:'Devis envoyé',signe:'Signé',perdu:'Perdu'};
+const inIframe=(()=>{try{return window.self!==window.top}catch(e){return true}})();
+if(inIframe) document.querySelectorAll('.local-only').forEach(e=>e.hidden=true);
+
+let MODE='local', sb=null, me=null, profile=null, team=[], CFG={mail:false,defaults:{}};
+let clients=[], currentId=null, filter='all', repFilter='all';
+const known=new Set(), timers=new Map();
+const isAdmin=()=>MODE==='cloud'&&!!profile&&profile.role==='admin';
+const DEF_KEYS=['tauxEco','taux','duree','differe','tauxPV','hausse'];
+function blank(){const d={};DEF_KEYS.forEach(k=>{if(CFG.defaults[k]!=null&&CFG.defaults[k]!=='')d[k]=CFG.defaults[k]});
+  return Object.assign({},DEFAULTS,d,{id:uid(),created:Date.now(),updated:Date.now(),_owner:me?me.id:undefined})}
+const ownerName=id=>{const p=team.find(t=>t.id===id);return p?(p.nom||p.email):''};
+
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function sample(){return Object.assign({},DEFAULTS,{id:uid(),created:Date.now(),updated:Date.now(),
+  nom:'Exemple',prenom:'Client',tel:'06 00 00 00 00',ville:'Montauban',cp:'82000',statut:'rdv',
+  annee:1978,surface:110,surfaceMurs:140,dpe:'F',energie:'Gaz',factureAn:2400,tauxEco:25,
+  coutTravaux:22000,mensForce:'',taux:6,duree:120,differe:6,cee:4500,aideRegion:1000,valeurBien:220000,tauxPV:10,hausse:0,
+  notes:'Fiche d\'exemple : remplacez par les données de votre client.'})}
+function migrate(c){if('mensualite' in c){delete c.mensualite} if(c.taux==null)c.taux=6;if(c.mensForce==null)c.mensForce='';if(c.aideRegion==null){c.aideRegion=c.autresAides||'';delete c.autresAides}return c}
+function load(){try{const r=JSON.parse(localStorage.getItem(KEY)||'[]');if(!Array.isArray(r))return[];r.forEach(migrate);return r}catch(e){return[]}}
+/* Enregistrement : navigateur (mode local) ou base Supabase (mode en ligne) */
+function persist(c){
+  if(MODE==='local'){try{localStorage.setItem(KEY,JSON.stringify(clients))}catch(e){} return}
+  if(c) queueSave(c);
+}
+function payload(c){const d=Object.assign({},c);delete d._owner;delete d.id;return d}
+function setSaved(t){const el=document.getElementById('savedInfo');if(el)el.textContent=t}
+function queueSave(c){clearTimeout(timers.get(c.id));setSaved('Enregistrement…');timers.set(c.id,setTimeout(()=>saveNow(c),600))}
+async function saveNow(c){
+  clearTimeout(timers.get(c.id)); timers.delete(c.id);
+  let error;
+  if(known.has(c.id)) ({error}=await sb.from('ite_clients').update({data:payload(c)}).eq('id',c.id));
+  else {({error}=await sb.from('ite_clients').insert({id:c.id,data:payload(c)})); if(!error){known.add(c.id);c._owner=c._owner||me.id}}
+  if(error){setSaved('Non enregistré');toast('Enregistrement impossible : '+error.message);return false}
+  if(c.id===currentId) updateHeader();
+  return true;
+}
+async function removeRemote(id){
+  if(MODE!=='cloud'||!known.has(id)) return true;
+  const {error}=await sb.from('ite_clients').delete().eq('id',id);
+  if(error){toast('Suppression impossible : '+error.message);return false}
+  known.delete(id); return true;
+}
+async function loadRemote(){
+  const {data,error}=await sb.from('ite_clients').select('id,owner,data,updated_at').order('updated_at',{ascending:false});
+  if(error){toast('Chargement impossible : '+error.message);return false}
+  known.clear();
+  clients=data.map(r=>{known.add(r.id);return migrate(Object.assign({},DEFAULTS,r.data,{id:r.id,_owner:r.owner,updated:Date.parse(r.updated_at)}))});
+  return true;
+}
+const cur=()=>clients.find(c=>c.id===currentId);
+const n=v=>{const x=parseFloat(String(v).replace(',','.'));return isFinite(x)?x:0};
+
+/* ===== Calcul ===== */
+function compute(d){
+  const duree=Math.max(0,Math.round(n(d.duree))), diff=Math.max(0,Math.round(n(d.differe)));
+  const capital=n(d.coutTravaux), ti=n(d.taux)/100/12;
+  const capDiff=capital*Math.pow(1+ti,diff); /* intérêts du différé capitalisés */
+  const mensAuto=duree>0?(ti>0?capDiff*ti/(1-Math.pow(1+ti,-duree)):capDiff/duree):0;
+  const forced=d.mensForce!==''&&d.mensForce!=null;
+  const mens=forced?n(d.mensForce):mensAuto;
+  const ecoAuto=n(d.factureAn)*n(d.tauxEco)/100/12;
+  const ecoMens=d.ecoForce!==''&&d.ecoForce!=null?n(d.ecoForce):ecoAuto;
+  const h=n(d.hausse)/100, mois=diff+duree;
+  let ecoGlobale=0, ecoDiff=0;
+  for(let m=0;m<mois;m++){const v=ecoMens*Math.pow(1+h,Math.floor(m/12));ecoGlobale+=v;if(m<diff)ecoDiff+=v;}
+  const aides=n(d.cee)+n(d.aideRegion);
+  const pv=n(d.valeurBien)*n(d.tauxPV)/100;
+  const total=mens*duree;
+  const ech=x=>mens>0?x/mens:0;
+  const pct=x=>total>0?x/total:0;
+  return {mens,mensAuto,forced,capital,capDiff,taux:n(d.taux),duree,diff,ecoAuto,ecoMens,ecoGlobale,ecoDiff,aides,cee:n(d.cee),region:n(d.aideRegion),pv,total,
+    echEco:ech(ecoGlobale),echEcoDiff:ech(ecoDiff),echCee:ech(n(d.cee)),echRegion:ech(n(d.aideRegion)),echAides:ech(aides),echPv:ech(pv),
+    partMens:mens>0?ecoMens/mens:0, effort:mens-ecoMens,
+    pEco:pct(ecoGlobale),pAid:pct(aides),pPv:pct(pv),
+    couv:pct(ecoGlobale+aides+pv),couvAff:Math.min(1,pct(ecoGlobale+aides+pv)),couvCash:pct(ecoGlobale+aides),couvTotal:pct(ecoGlobale+aides+pv),reste:total-ecoGlobale-aides-pv, ok:mens>0&&duree>0};
+}
+
+/* ===== Format ===== */
+const eur=v=>new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(Math.round(v||0));
+const pctf=v=>new Intl.NumberFormat('fr-FR',{maximumFractionDigits:0}).format((v||0)*100)+' %';
+const ech1=v=>new Intl.NumberFormat('fr-FR',{maximumFractionDigits:1}).format(v||0);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fullName=c=>[c.prenom,c.nom].filter(Boolean).join(' ')||'Client sans nom';
+const plural=(v,w)=>w+(v>=2?'s':'');
+
+/* ===== Liste ===== */
+function renderFilters(){
+  const f=document.getElementById('filters');
+  f.innerHTML=[['all','Tous'],...Object.entries(STATUTS)].map(([k,l])=>`<button type="button" class="chipf" data-f="${k}" aria-pressed="${filter===k}">${l}</button>`).join('');
+}
+function renderList(){
+  const q=document.getElementById('search').value.trim().toLowerCase();
+  const items=clients.filter(c=>(filter==='all'||c.statut===filter)&&(repFilter==='all'||c._owner===repFilter)&&(!q||[c.nom,c.prenom,c.ville,c.tel,c.email,c.cp].join(' ').toLowerCase().includes(q)))
+    .sort((a,b)=>b.updated-a.updated);
+  const ul=document.getElementById('clientList');
+  ul.innerHTML=items.length?items.map(c=>{const r=compute(c);return `<li><button type="button" data-id="${c.id}" aria-current="${c.id===currentId}">
+    <span class="n">${esc(fullName(c))}</span><span class="p num">${r.ok?pctf(r.couvAff):'–'}</span>
+    <span class="s"><span class="status ${c.statut}">${STATUTS[c.statut]||''}</span> ${esc(c.ville||'')}${isAdmin()&&c._owner?' · '+esc(ownerName(c._owner)):''}</span></button></li>`}).join('')
+    :'<li class="empty">Aucun client ne correspond.</li>';
+}
+
+/* ===== Formulaire ===== */
+function fillForm(){
+  const c=cur(); if(!c) return;
+  document.querySelectorAll('[data-k]').forEach(el=>{el.value=c[el.dataset.k]??''});
+  if(isAdmin()){const s=document.getElementById('ownerSel');s.innerHTML=team.filter(p=>p.actif||p.id===c._owner).map(p=>`<option value="${p.id}">${esc(p.nom||p.email)}${p.role==='admin'?' (admin)':''}</option>`).join('');s.value=c._owner||me.id}
+  updateHeader(); updateHint();
+}
+function updateHeader(){
+  const c=cur();
+  document.getElementById('clientTitle').textContent=fullName(c);
+  document.getElementById('savedInfo').textContent='Enregistré '+new Date(c.updated).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'});
+}
+function updateHint(){
+  const r=compute(cur());
+  document.getElementById('mensHint').textContent=r.capital>0?`Calcul auto à ${ech1(r.taux)} % : ${eur(r.mensAuto)} / mois sur ${r.duree} mois · coût du crédit ${eur(r.mensAuto*r.duree-r.capital)}`:'Saisissez le montant des travaux pour calculer la mensualité';
+  document.getElementById('ecoHint').textContent=`Calcul auto : ${eur(r.ecoAuto)} / mois`+(r.mens>0?` · utilisé : ${eur(r.ecoMens)} soit ${pctf(r.partMens)} de la mensualité`:'');
+}
+document.getElementById('pane-form').addEventListener('input',e=>{
+  const k=e.target.dataset.k; if(!k) return;
+  const c=cur(); c[k]=e.target.value; c.updated=Date.now(); persist(c);
+  updateHeader(); updateHint(); renderList();
+  if(!document.getElementById('pane-sheet').hidden) renderSheet();
+});
+document.getElementById('pane-form').addEventListener('submit',e=>e.preventDefault());
+
+/* ===== Synthèse ===== */
+function renderSheet(){
+  const c=cur(), r=compute(c);
+  const total=Math.max(1,r.couvTotal);
+  const w=x=>(x/total*100).toFixed(2)+'%';
+  const mark=(1/total*100).toFixed(2)+'%';
+  document.getElementById('pane-sheet').innerHTML=`
+  <div class="sheet">
+    <div class="sheet-head">
+      <div><h2>Isolation de votre maison :</h2><div class="ribbon">un besoin qui s'autofinance</div></div>
+      <div class="who"><strong>${esc(fullName(c))}</strong>${esc([c.adresse,[c.cp,c.ville].filter(Boolean).join(' ')].filter(Boolean).join(', '))}<br>
+        ${esc([c.typeLogement,c.surface?c.surface+' m²':'',c.annee?'construit en '+c.annee:'',c.dpe?'DPE '+c.dpe:'',c.energie].filter(Boolean).join(' · '))}<br>
+        Étude du ${new Date().toLocaleDateString('fr-FR')}</div>
+    </div>
+
+    <div class="steps">
+      <div class="step"><div class="k"><i>1</i>Travaux d'isolation</div><span class="pill">Aucun acompte</span><p>Isolation thermique par l'extérieur${c.surfaceMurs?' · '+esc(c.surfaceMurs)+' m² de murs':''}</p></div>
+      <div class="step"><div class="k"><i>2</i>Fin de chantier</div><p>Déblocage des fonds par la banque</p></div>
+      <div class="step hot"><div class="k"><i>3</i>Pendant ${r.diff} mois</div><div class="big">${r.diff} mois de différé</div><p>Vous cumulez ${eur(r.ecoDiff)} d'économies de chauffage et vos aides (${eur(r.aides)})</p></div>
+      <div class="step"><div class="k"><i>4</i>1ʳᵉ échéance</div><div class="big">${r.diff} mois après</div><p>la fin des travaux</p></div>
+    </div>
+
+    <div class="three">
+      <div class="box">
+        <h3>${ico('flame')}Économies de chauffage</h3>
+        <div class="row"><span>Économie mensuelle estimée</span><span class="val num">${eur(r.ecoMens)}</span></div>
+        <div class="row"><span>Sur la durée (${r.diff+r.duree} mois)</span><span class="val num">${eur(r.ecoGlobale)}</span></div>
+        <div class="cover"><span>Couvre environ</span><b class="num">${ech1(r.echEco)}</b><span>${plural(r.echEco,'échéance')}</span></div>
+        <p class="foot">Soit ${pctf(r.partMens)} de chaque mensualité.</p>
+      </div>
+      <div class="box">
+        <h3>${ico('coins')}Aides (CEE + région)</h3>
+        <div class="row"><span>Prime CEE</span><span class="val num">${eur(r.cee)}</span></div>
+        <div class="row"><span>Aide région</span><span class="val num">${eur(r.region)}</span></div>
+        <div class="cover"><span>Couvre environ</span><b class="num">${ech1(r.echAides)}</b><span>${plural(r.echAides,'échéance')}</span></div>
+      </div>
+      <div class="box">
+        <h3>${ico('house')}Plus-value immobilière estimée</h3>
+        <div class="row"><span class="pv-badge num">+${ech1(n(c.tauxPV))} %</span><span style="font-size:12px;color:var(--muted)">en moyenne<br>(après ITE)*</span></div>
+        <div class="row"><span>Sur un bien de ${eur(n(c.valeurBien))}</span><span class="val num">${eur(r.pv)}</span></div>
+        <div class="cover"><span>Équivalent à</span><b class="num">${ech1(r.echPv)}</b><span>${plural(r.echPv,'échéance')}</span></div>
+      </div>
+    </div>
+    <p class="foot">*Notaires de France, transactions 2024. Écart de valeur selon le DPE, non garanti par l'ITE seule. Plus-value réalisable à la revente.</p>
+
+    <div class="band">
+      <div class="cell"><span class="lbl">Votre mensualité (financement)</span><span class="money num">${eur(r.mens)}</span><span class="pct-sub">${r.duree} échéances · ${eur(r.total)} au total${r.forced?'':` (crédit de ${eur(r.capital)} à ${ech1(r.taux)} %)`}</span></div>
+      <div class="cell"><span class="lbl">Économie globale générée sur la durée du financement (${ech1((r.diff+r.duree)/12)} ans)</span><span class="money num">${eur(r.ecoGlobale)}</span></div>
+      <div class="cell"><span class="lbl">Votre projet est couvert à</span><span class="pct num">${pctf(r.couvAff)}</span>
+        <span class="pct-sub"><b>${pctf(r.couvCash)}</b> par les économies d'énergie et les aides (${eur(r.ecoGlobale+r.aides)}), complété par la valorisation de votre patrimoine (${eur(r.pv)}*), pour ${eur(r.total)} payés au total.</span></div>
+    </div>
+
+    <div class="meter">
+      <div class="bar" role="img" aria-label="Répartition de la couverture du financement">
+        <span class="seg-eco" style="width:${w(r.pEco)}"></span><span class="seg-aid" style="width:${w(r.pAid)}"></span><span class="seg-pv" style="width:${w(r.pPv)}"></span>
+        ${r.couv>1?`<span class="mark" style="left:${mark}" title="100 % du financement"></span>`:''}
+      </div>
+      <div class="legend"><span><i class="seg-eco"></i>Économies ${pctf(r.pEco)}</span><span><i class="seg-aid"></i>Aides ${pctf(r.pAid)}</span>
+        <span><i class="seg-pv"></i>Plus-value estimée* ${pctf(r.pPv)}</span>${r.couv>1?'<span>Trait vertical : 100 % du montant payé</span>':`<span>Reste à couvrir : ${eur(r.reste)}</span>`}</div>
+    </div>
+
+    <div class="details">
+      <div class="kv"><span>Effort réel par mois</span><b class="num">${eur(Math.max(0,r.effort))}</b></div>
+      <div class="kv"><span>Montant des travaux</span><b class="num">${eur(n(c.coutTravaux))}</b></div>
+      <div class="kv"><span>Facture chauffage actuelle</span><b class="num">${eur(n(c.factureAn))}/an</b></div>
+      <div class="kv"><span>Économie retenue</span><b class="num">${c.ecoForce!==''&&c.ecoForce!=null?'saisie manuelle':ech1(n(c.tauxEco))+' %'}</b></div>
+    </div>
+    <p class="note">Simulation indicative et non contractuelle. Économies estimées à partir de la facture de chauffage déclarée${n(c.hausse)?` et d'une hausse de l'énergie de ${ech1(n(c.hausse))} %/an`:', à prix de l\'énergie constant'}. Montant des aides sous réserve d'éligibilité.</p>
+  </div>`;
+}
+function ico(k){
+  const p={flame:'<path d="M12 2c1 4 6 6 6 12a6 6 0 0 1-12 0c0-3 2-5 3-6 0 3 2 4 3 4-2-4 0-8 0-10z" fill="var(--green)"/>',
+    coins:'<ellipse cx="9" cy="8" rx="6" ry="2.5" fill="var(--lime)" stroke="var(--green)"/><path d="M3 8v4c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5V8" fill="var(--lime)" stroke="var(--green)"/><path d="M9 14.5v3c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5v-6c0-1.4-2.7-2.5-6-2.5" fill="none" stroke="var(--green)"/>',
+    house:'<path d="M3 12 12 4l9 8v8H3z" fill="none" stroke="var(--green)" stroke-width="2"/><path d="m8 16 3-3 2 2 5-5" fill="none" stroke="var(--green)" stroke-width="2"/>'}[k];
+  return `<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">${p}</svg>`;
+}
+
+/* ===== Navigation ===== */
+function select(id){currentId=id; fillForm(); renderList(); if(!document.getElementById('pane-sheet').hidden) renderSheet(); resetDel();}
+function setTab(t){
+  ['form','sheet','admin'].forEach(k=>{document.getElementById('tab-'+k).setAttribute('aria-selected',k===t);document.getElementById('pane-'+k).hidden=k!==t});
+  if(t==='sheet') renderSheet();
+  if(t==='admin') renderAdmin();
+}
+document.getElementById('tab-admin').onclick=()=>setTab('admin');
+document.getElementById('tab-form').onclick=()=>setTab('form');
+document.getElementById('tab-sheet').onclick=()=>setTab('sheet');
+document.getElementById('clientList').addEventListener('click',e=>{const b=e.target.closest('[data-id]'); if(b) select(b.dataset.id)});
+document.getElementById('filters').addEventListener('click',e=>{const b=e.target.closest('[data-f]'); if(!b) return; filter=b.dataset.f; renderFilters(); renderList()});
+document.getElementById('search').addEventListener('input',renderList);
+document.getElementById('btnNew').onclick=()=>{const c=blank();clients.push(c);persist(c);select(c.id);setTab('form');document.getElementById('nom').focus()};
+document.getElementById('btnDup').onclick=()=>{const c=Object.assign({},cur(),{id:uid(),created:Date.now(),updated:Date.now()});c.nom=(c.nom||'')+' (copie)';if(MODE==='cloud')c._owner=me.id;clients.push(c);persist(c);select(c.id);toast('Fiche dupliquée')};
+function resetDel(){const w=document.getElementById('delWrap');w.hidden=MODE==='cloud'&&!isAdmin();w.innerHTML='<button class="btn danger" id="btnDel" type="button">Supprimer</button>'}
+document.getElementById('delWrap').addEventListener('click',e=>{
+  const id=e.target.id;
+  if(id==='btnDel'){document.getElementById('delWrap').innerHTML='<span class="confirm">Supprimer cette fiche ? <button class="btn danger small" id="delYes" type="button">Oui, supprimer</button><button class="btn small" id="delNo" type="button">Annuler</button></span>'}
+  else if(id==='delNo') resetDel();
+  else if(id==='delYes'){(async()=>{if(!(await removeRemote(currentId))) return resetDel(); clients=clients.filter(c=>c.id!==currentId); if(!clients.length) clients.push(blank()); persist(); select(clients[0].id); toast('Fiche supprimée')})()}
+});
+document.getElementById('btnPrint').onclick=()=>{setTab('sheet');setTimeout(()=>window.print(),50)};
+
+/* ===== Export / import (fichier local) ===== */
+function download(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
+document.getElementById('btnExportJson').onclick=()=>download('clients-ite-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify(clients,null,2),'application/json');
+document.getElementById('btnExportCsv').onclick=()=>{
+  const cols=[['Nom','nom'],['Prénom','prenom'],['Téléphone','tel'],['E-mail','email'],['Adresse','adresse'],['CP','cp'],['Ville','ville'],['Statut',c=>STATUTS[c.statut]],['Date RDV','dateRdv'],['DPE','dpe'],['Énergie','energie'],['Facture chauffage €/an','factureAn'],['Travaux €','coutTravaux'],['Taux %','taux'],['Mensualité €',c=>Math.round(compute(c).mens)],['Total payé €',c=>Math.round(compute(c).total)],['Durée mois','duree'],['CEE €','cee'],['Aide région €','aideRegion'],['Valeur bien €','valeurBien'],
+    ['Économie mensuelle €',c=>Math.round(compute(c).ecoMens)],['Économie globale €',c=>Math.round(compute(c).ecoGlobale)],['Projet couvert %',c=>Math.round(compute(c).couv*100)],['Couvert par économies + aides %',c=>Math.round(compute(c).couvCash*100)],['Couvert par économies seules %',c=>Math.round(compute(c).pEco*100)],['Notes','notes']];
+  if(isAdmin()) cols.unshift(['Commercial',c=>ownerName(c._owner)]);
+  const cell=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const csv='﻿'+cols.map(c=>cell(c[0])).join(';')+'\n'+clients.map(c=>cols.map(([,k])=>cell(typeof k==='function'?k(c):c[k])).join(';')).join('\n');
+  download('clients-ite-'+new Date().toISOString().slice(0,10)+'.csv',csv,'text/csv;charset=utf-8');
+};
+document.getElementById('fileImport').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const rd=new FileReader(); rd.onload=()=>{try{const arr=JSON.parse(rd.result); if(!Array.isArray(arr)) throw 0;
+    let added=0; arr.forEach(c=>{if(c&&c.id){const i=clients.findIndex(x=>x.id===c.id); const v=migrate(Object.assign({},DEFAULTS,c)); if(MODE==='cloud'){v._owner=i>=0?clients[i]._owner:me.id} if(i>=0) clients[i]=v; else {clients.push(v);added++} persist(v)}});
+    persist(); select(clients[0].id); toast(arr.length+' fiche(s) restaurée(s)')}catch(err){toast('Fichier non reconnu : choisissez une sauvegarde .json du simulateur')} e.target.value=''};
+  rd.readAsText(f);
+});
+/* ===== E-mail ===== */
+const SKEY='ite-crm-settings';
+function getSet(){try{return JSON.parse(localStorage.getItem(SKEY)||'{}')}catch(e){return{}}}
+function setSet(o){try{localStorage.setItem(SKEY,JSON.stringify(Object.assign(getSet(),o)))}catch(e){}}
+function mailHtml(c,r,sig){
+  const G='#2f8f1f',D='#1e6312',L='#e8f6c4',F='font-family:Arial,Helvetica,sans-serif;';
+  const row=(a,b,strong)=>`<tr><td style="${F}padding:7px 12px;border-bottom:1px solid #e3ecd9;color:#3d4a36;font-size:14px">${a}</td><td style="${F}padding:7px 12px;border-bottom:1px solid #e3ecd9;text-align:right;font-size:14px;${strong?'font-weight:bold;color:#1d2a17':'color:#1d2a17'}">${b}</td></tr>`;
+  const sect=(t,rows,cover)=>`<tr><td style="padding:10px 0 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #d6e3c9;border-radius:10px;border-collapse:separate">
+    <tr><td colspan="2" style="${F}padding:10px 12px 6px;font-size:16px;font-weight:bold;color:${D}">${t}</td></tr>${rows}
+    ${cover?`<tr><td colspan="2" style="padding:8px 12px 12px"><div style="${F}background:${L};border-radius:20px;padding:7px 14px;font-size:14px;color:#1d2a17">${cover}</div></td></tr>`:''}</table></td></tr>`;
+  const civ=c.nom?`Bonjour ${esc([c.prenom,c.nom].filter(Boolean).join(' '))},`:'Bonjour,';
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;margin:0 auto;background:#ffffff">
+  <tr><td style="${F}font-size:14px;color:#1d2a17;padding:0 0 12px">${civ}<br><br>Suite à notre échange, voici la simulation de financement de l'isolation par l'extérieur de votre maison${c.ville?' à '+esc(c.ville):''}.</td></tr>
+  <tr><td style="background:${G};background:linear-gradient(160deg,${G},${D});border-radius:12px;padding:16px 18px">
+    <div style="${F}color:#ffffff;font-size:13px;letter-spacing:1px;text-transform:uppercase;font-weight:bold">${esc(document.getElementById('brandName').textContent.replace(/\s+/g,' ').trim())}</div>
+    <div style="${F}color:#ffffff;font-size:22px;font-weight:bold;margin-top:4px">Isolation de votre maison : un besoin qui s'autofinance</div></td></tr>
+  ${sect('Votre financement',row('Montant des travaux',eur(r.capital))+(r.forced?'':row('Taux d\'intérêt',ech1(r.taux)+' %'))+row('Différé avant la 1<sup>re</sup> échéance',r.diff+' mois')+row('Votre mensualité',eur(r.mens)+' × '+r.duree,true)+row('Total remboursé',eur(r.total)))}
+  ${sect('Économies de chauffage',row('Économie mensuelle estimée',eur(r.ecoMens),true)+row('Économie globale sur '+ech1((r.diff+r.duree)/12)+' ans',eur(r.ecoGlobale)),`Couvre environ <b>${ech1(r.echEco)}</b> ${plural(r.echEco,'échéance')}`)}
+  ${sect('Aides',row('Prime CEE',eur(r.cee))+row('Aide région',eur(r.region)),`Couvre environ <b>${ech1(r.echAides)}</b> ${plural(r.echAides,'échéance')}`)}
+  ${sect('Plus-value immobilière estimée (+'+ech1(n(c.tauxPV))+' %)*',row('Sur un bien de '+eur(n(c.valeurBien)),eur(r.pv),true),`Équivalent à <b>${ech1(r.echPv)}</b> ${plural(r.echPv,'échéance')}, réalisable à la revente`)}
+  <tr><td style="padding:12px 0 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${D};border-radius:12px"><tr>
+    <td style="${F}padding:16px 18px;color:#ffffff;font-size:14px">Votre projet est couvert à<div style="font-size:40px;font-weight:bold;color:#c9ea6a;line-height:1.1">${pctf(r.couvAff)}</div>
+    ${pctf(r.couvCash)} par les économies d'énergie et les aides (${eur(r.ecoGlobale+r.aides)}), complété par la valorisation de votre patrimoine (${eur(r.pv)}*), pour ${eur(r.total)} payés au total.<br>Effort réel : environ ${eur(Math.max(0,r.effort))} par mois.</td></tr></table></td></tr>
+  <tr><td style="${F}font-size:11px;color:#6b7863;padding:10px 0 0;font-style:italic">*Plus-value estimée : Notaires de France, transactions 2024. Écart de valeur selon le DPE, non garanti par l'ITE seule, réalisable uniquement à la revente. Simulation indicative et non contractuelle, aides sous réserve d'éligibilité.</td></tr>
+  <tr><td style="${F}font-size:14px;color:#1d2a17;padding:14px 0 0">Je reste à votre disposition pour toute question.<br><br>Bien cordialement,<br>${esc(sig||'').replace(/\n/g,'<br>')}</td></tr></table>`;
+}
+function mailText(c,r,sig){
+  return [c.nom?`Bonjour ${[c.prenom,c.nom].filter(Boolean).join(' ')},`:'Bonjour,','',
+  'Voici la simulation de financement de l\'isolation par l\'extérieur de votre maison.','',
+  `Mensualité : ${eur(r.mens)} × ${r.duree} (total ${eur(r.total)})`,
+  `Économie de chauffage : ${eur(r.ecoMens)}/mois, soit ${eur(r.ecoGlobale)} sur la durée (${ech1(r.echEco)} échéances)`,
+  `Aides : CEE ${eur(r.cee)} + région ${eur(r.region)} (${ech1(r.echAides)} échéances)`,
+  `Plus-value estimée : ${eur(r.pv)} (${ech1(r.echPv)} échéances, à la revente)`,
+  `Votre projet est couvert à ${pctf(r.couvAff)}, dont ${pctf(r.couvCash)} par les économies et les aides et le reste par la plus-value estimée (à la revente, non garantie*).`,'*Notaires de France, transactions 2024.','','Simulation indicative et non contractuelle.','','Bien cordialement,',sig||''].join('\n');
+}
+function openMail(){
+  const c=cur();
+  document.getElementById('mailTo').value=c.email||'';
+  document.getElementById('mailSubject').value='Votre simulation isolation extérieure'+(c.nom?' – '+fullName(c):'');
+  document.getElementById('mailSig').value=getSet().sig||(profile?profile.nom:'')||'';
+  const direct=MODE==='cloud'&&CFG.mail;
+  document.getElementById('mailSend').hidden=!direct;
+  document.getElementById('mailSteps').hidden=direct;
+  refreshMail();
+  document.getElementById('mailModal').hidden=false;
+  document.getElementById('mailTo').focus();
+}
+function refreshMail(){const c=cur();document.getElementById('mailPreview').innerHTML=mailHtml(c,compute(c),document.getElementById('mailSig').value)}
+async function copyMail(){
+  const c=cur(), r=compute(c), sig=document.getElementById('mailSig').value;
+  const html=mailHtml(c,r,sig), text=mailText(c,r,sig);
+  try{ if(window.ClipboardItem&&navigator.clipboard&&navigator.clipboard.write){
+      await navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([html],{type:'text/html'}),'text/plain':new Blob([text],{type:'text/plain'})})]); return true;} }catch(e){}
+  try{ const el=document.getElementById('mailPreview'); const rg=document.createRange(); rg.selectNodeContents(el);
+      const sel=getSelection(); sel.removeAllRanges(); sel.addRange(rg); const ok=document.execCommand('copy'); sel.removeAllRanges(); if(ok) return true; }catch(e){}
+  return false;
+}
+document.getElementById('btnMail').onclick=openMail;
+document.getElementById('mailClose').onclick=()=>{document.getElementById('mailModal').hidden=true};
+document.getElementById('mailModal').addEventListener('click',e=>{if(e.target.id==='mailModal') e.currentTarget.hidden=true});
+document.addEventListener('keydown',e=>{if(e.key==='Escape') document.getElementById('mailModal').hidden=true});
+document.getElementById('mailSig').addEventListener('input',e=>{setSet({sig:e.target.value});refreshMail()});
+document.getElementById('mailTo').addEventListener('change',e=>{const c=cur(); if(!c.email&&e.target.value){c.email=e.target.value;c.updated=Date.now();persist(c);fillForm()}});
+document.getElementById('mailCopy').onclick=async()=>{toast(await copyMail()?'Récapitulatif copié : collez-le dans votre e-mail':'Copie impossible : sélectionnez l\'aperçu et copiez-le')};
+document.getElementById('mailGo').onclick=async()=>{
+  const ok=await copyMail();
+  const to=document.getElementById('mailTo').value.trim(), sub=document.getElementById('mailSubject').value;
+  location.href='mailto:'+encodeURIComponent(to).replace(/%40/g,'@')+'?subject='+encodeURIComponent(sub);
+  toast(ok?'Copié. Collez dans le message (Ctrl+V / Cmd+V)':'Copie impossible : sélectionnez l\'aperçu et copiez-le');
+};
+
+document.getElementById('mailSend').onclick=async(e)=>{
+  const btn=e.currentTarget, c=cur(), r=compute(c), sig=document.getElementById('mailSig').value;
+  const to=document.getElementById('mailTo').value.trim();
+  if(!to){toast('Renseignez l\'e-mail du client');return}
+  btn.disabled=true; btn.textContent='Envoi…';
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    const res=await fetch('/api/send-mail',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(session?session.access_token:'')},
+      body:JSON.stringify({to,subject:document.getElementById('mailSubject').value,html:mailHtml(c,r,sig),text:mailText(c,r,sig),fromName:profile?profile.nom:''})});
+    const out=await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(out.erreur||('Erreur '+res.status));
+    document.getElementById('mailModal').hidden=true; toast('E-mail envoyé à '+to);
+  }catch(err){toast('Envoi impossible : '+err.message)}
+  finally{btn.disabled=false; btn.textContent='Envoyer au client'}
+};
+
+/* ===== Administration ===== */
+function renderAdmin(){
+  const pane=document.getElementById('pane-admin'); if(!isAdmin()){pane.innerHTML='';return}
+  const d=Object.assign({tauxEco:25,taux:6,duree:120,differe:6,tauxPV:10,hausse:0},CFG.defaults);
+  const cnt=id=>clients.filter(c=>c._owner===id&&known.has(c.id)).length;
+  const signes=id=>clients.filter(c=>c._owner===id&&known.has(c.id)&&c.statut==='signe').length;
+  const f=(k,l,u,st)=>`<label>${l}<div class="in"><input id="def-${k}" data-def="${k}" type="number" step="${st}" value="${esc(d[k])}"><span class="u">${u}</span></div></label>`;
+  pane.innerHTML=`<div class="grid">
+  <fieldset class="span-all"><legend>Commerciaux</legend>
+    <div class="table-wrap"><table class="tbl"><thead><tr><th>Nom</th><th>E-mail</th><th>Rôle</th><th class="num">Clients</th><th class="num">Signés</th><th>Accès</th>${CFG.api?'<th>Mot de passe</th>':''}</tr></thead><tbody>
+    ${team.map(p=>`<tr data-id="${p.id}" class="${p.actif?'':'off'}"><td><input type="text" data-act="nom" aria-label="Nom" value="${esc(p.nom)}" placeholder="Nom à saisir" style="width:150px">${p.id===me.id?' (vous)':''}</td><td>${esc(p.email)}</td>
+      <td><select data-act="role" aria-label="Rôle" ${p.id===me.id?'disabled':''}><option value="commercial" ${p.role!=='admin'?'selected':''}>Commercial</option><option value="admin" ${p.role==='admin'?'selected':''}>Admin</option></select></td>
+      <td class="num">${cnt(p.id)}</td><td class="num">${signes(p.id)}</td>
+      <td><label style="flex-direction:row;align-items:center;gap:6px;color:var(--fg)"><input type="checkbox" data-act="actif" ${p.actif?'checked':''} ${p.id===me.id?'disabled':''}>${p.actif?'Actif':'Désactivé'}</label></td>
+      ${CFG.api?'<td class="pwd"><button class="btn small" data-act="pwd" type="button">Changer</button></td>':''}</tr>`).join('')}
+    </tbody></table></div>
+    ${CFG.api?`<form id="newUser" class="fields" style="margin-top:14px" novalidate>
+      <label>Nom du commercial<div class="in"><input id="nuNom" autocomplete="off"></div></label>
+      <label>E-mail<div class="in"><input id="nuEmail" type="email" autocomplete="off"></div></label>
+      <label>Mot de passe provisoire <small>8 caractères min.</small><div class="in"><input id="nuPass" type="text" autocomplete="off"></div></label>
+      <label>Rôle<div class="in"><select id="nuRole"><option value="commercial">Commercial</option><option value="admin">Admin</option></select></div></label>
+      <div class="full" style="display:flex;justify-content:flex-end"><button class="btn primary" type="submit">Créer le compte</button></div>
+    </form>
+    <p class="hint">Communiquez au commercial son e-mail et son mot de passe provisoire. Il pourra le changer avec « Mot de passe oublié ». Un commercial ne voit que ses propres clients. Un compte désactivé ne peut plus se connecter à ses fiches.</p>`
+    :`<p class="hint"><b>Ajouter un commercial :</b> dans Supabase › Authentication › Users › Add user › Create new user, saisissez son e-mail et un mot de passe provisoire, cochez « Auto Confirm User ». Revenez ici : il apparaît dans la liste, désactivé. Saisissez son nom, cochez « Actif », puis communiquez-lui son e-mail et son mot de passe. Il pourra le changer avec « Mot de passe oublié ».<br>Un commercial ne voit que ses propres clients. Un compte désactivé ne peut plus se connecter à ses fiches.</p>`}
+  </fieldset>
+  <fieldset class="span-all"><legend>Réglages par défaut des nouvelles fiches</legend>
+    <div class="fields" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+      ${f('tauxEco','Économie due à l\'ITE','%',1)}${f('taux','Taux d\'intérêt','%',0.1)}${f('duree','Durée','mois',1)}${f('differe','Différé','mois',1)}${f('tauxPV','Plus-value','%',0.5)}${f('hausse','Hausse énergie','%/an',0.5)}
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="btn primary" id="saveDefaults" type="button">Enregistrer les réglages</button></div>
+    <p class="hint">S'appliquent aux nouvelles fiches de tous les commerciaux. Les fiches existantes gardent leurs valeurs.</p>
+  </fieldset></div>`;
+}
+async function reloadTeam(){const {data,error}=await sb.from('ite_profiles').select('*').order('nom');if(!error)team=data;return !error}
+document.getElementById('pane-admin').addEventListener('change',async e=>{
+  const tr=e.target.closest('tr[data-id]'); if(!tr) return; const id=tr.dataset.id, act=e.target.dataset.act;
+  if(act!=='role'&&act!=='actif'&&act!=='nom') return;
+  const patch=act==='role'?{role:e.target.value}:act==='nom'?{nom:e.target.value.trim()}:{actif:e.target.checked};
+  const {error}=await sb.from('ite_profiles').update(patch).eq('id',id);
+  if(error) toast('Modification impossible : '+error.message); else toast('Compte mis à jour');
+  await reloadTeam(); renderAdmin(); renderRepFilter();
+});
+document.getElementById('pane-admin').addEventListener('click',async e=>{
+  const t=e.target, tr=t.closest('tr[data-id]');
+  if(t.id==='saveDefaults'){
+    const data={}; document.querySelectorAll('[data-def]').forEach(i=>{data[i.dataset.def]=n(i.value)});
+    const {error}=await sb.from('ite_config').update({data,updated_at:new Date().toISOString()}).eq('id',1);
+    if(error) toast('Enregistrement impossible : '+error.message); else {CFG.defaults=data; toast('Réglages enregistrés')}
+    return;
+  }
+  if(!tr) return;
+  const cell=tr.querySelector('.pwd');
+  if(t.dataset.act==='pwd'){cell.innerHTML='<input type="text" aria-label="Nouveau mot de passe" placeholder="nouveau mot de passe" style="width:150px"> <button class="btn small primary" data-act="pwdOk" type="button">OK</button>';cell.querySelector('input').focus()}
+  if(t.dataset.act==='pwdOk'){
+    const r=await adminCall({action:'password',id:tr.dataset.id,password:cell.querySelector('input').value});
+    if(r) {toast('Mot de passe modifié');renderAdmin()}
+  }
+});
+document.getElementById('pane-admin').addEventListener('submit',async e=>{
+  if(e.target.id!=='newUser') return; e.preventDefault();
+  const r=await adminCall({action:'create',nom:document.getElementById('nuNom').value,email:document.getElementById('nuEmail').value,password:document.getElementById('nuPass').value,role:document.getElementById('nuRole').value});
+  if(r){toast('Compte créé');await reloadTeam();renderAdmin();renderRepFilter()}
+});
+async function adminCall(body){
+  try{const {data:{session}}=await sb.auth.getSession();
+    const res=await fetch('/api/admin-users',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(session?session.access_token:'')},body:JSON.stringify(body)});
+    const out=await res.json().catch(()=>({})); if(!res.ok) throw new Error(out.erreur||('Erreur '+res.status)); return out;
+  }catch(err){toast(err.message);return null}
+}
+function renderRepFilter(){
+  const w=document.getElementById('repFilterWrap'); w.hidden=!isAdmin(); if(!isAdmin()) return;
+  const s=document.getElementById('repFilter');
+  s.innerHTML='<option value="all">Tous les commerciaux</option>'+team.map(p=>`<option value="${p.id}">${esc(p.nom||p.email)}</option>`).join('');
+  s.value=team.some(p=>p.id===repFilter)?repFilter:'all';
+}
+document.getElementById('repFilter').addEventListener('change',e=>{repFilter=e.target.value;renderList()});
+document.getElementById('ownerSel').addEventListener('change',async e=>{
+  const c=cur(), val=e.target.value;
+  if(!known.has(c.id)&&!(await saveNow(c))) return;
+  const {error}=await sb.from('ite_clients').update({owner:val}).eq('id',c.id);
+  if(error){toast('Réattribution impossible : '+error.message);e.target.value=c._owner;return}
+  c._owner=val; renderList(); toast('Fiche attribuée à '+ownerName(val));
+});
+
+/* ===== Connexion (mode en ligne) ===== */
+let authMode='login';
+function showAuth(mode,msg,err){
+  authMode=mode;
+  document.getElementById('authScreen').hidden=false;
+  const T={login:['Connexion','Se connecter','Mot de passe oublié ?'],forgot:['Mot de passe oublié','Recevoir le lien','Retour à la connexion'],
+    reset:['Nouveau mot de passe','Enregistrer',''],blocked:['Accès désactivé','Se déconnecter',''],config:['Configuration incomplète','',''] }[mode];
+  document.getElementById('authTitle').textContent=T[0];
+  document.getElementById('authSubmit').textContent=T[1]; document.getElementById('authSubmit').hidden=!T[1];
+  document.getElementById('authAlt').textContent=T[2]; document.getElementById('authAlt').hidden=!T[2];
+  document.getElementById('lblEmail').hidden=!(mode==='login'||mode==='forgot');
+  document.getElementById('lblPass').hidden=!(mode==='login'||mode==='reset');
+  document.getElementById('authPass').value='';
+  document.getElementById('authPass').autocomplete=mode==='reset'?'new-password':'current-password';
+  const m=document.getElementById('authMsg'); m.textContent=msg||''; m.className='auth-msg'+(err?' err':'');
+}
+document.getElementById('authAlt').onclick=()=>showAuth(authMode==='login'?'forgot':'login', authMode==='login'?'Saisissez votre e-mail : vous recevrez un lien pour choisir un nouveau mot de passe.':'');
+document.getElementById('authForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const email=document.getElementById('authEmail').value.trim(), pass=document.getElementById('authPass').value;
+  const btn=document.getElementById('authSubmit'); btn.disabled=true;
+  try{
+    if(authMode==='login'){
+      const {data,error}=await sb.auth.signInWithPassword({email,password:pass});
+      if(error) return showAuth('login',/invalid/i.test(error.message)?'E-mail ou mot de passe incorrect.':error.message,true);
+      await enterApp(data.user);
+    }else if(authMode==='forgot'){
+      const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+'/'});
+      showAuth('login',error?error.message:'Si un compte existe pour cette adresse, un e-mail vient d\'être envoyé.',!!error);
+    }else if(authMode==='reset'){
+      if(pass.length<8) return showAuth('reset','8 caractères minimum.',true);
+      const {data,error}=await sb.auth.updateUser({password:pass});
+      if(error) return showAuth('reset',error.message,true);
+      history.replaceState(null,'',location.pathname); await enterApp(data.user);
+    }else if(authMode==='blocked'){ await sb.auth.signOut(); location.reload(); }
+  }finally{btn.disabled=false}
+});
+document.getElementById('btnLogout').onclick=async()=>{await sb.auth.signOut();location.reload()};
+
+async function enterApp(user){
+  me=user;
+  const {data:prof}=await sb.from('ite_profiles').select('*').eq('id',user.id).maybeSingle();
+  profile=prof;
+  if(!prof||!prof.actif) return showAuth('blocked','Votre compte n\'est pas activé. Demandez à votre administrateur de l\'activer.',true);
+  const [{data:cfg}]=await Promise.all([sb.from('ite_config').select('data').eq('id',1).maybeSingle(), isAdmin()?reloadTeam():Promise.resolve()]);
+  if(!isAdmin()) team=[prof];
+  CFG.defaults=(cfg&&cfg.data)||{};
+  await loadRemote();
+  if(!clients.length) clients=[blank()];
+  currentId=clients[0].id;
+  document.getElementById('userName').innerHTML='<b>'+esc(prof.nom||prof.email)+'</b>';
+  const role=document.getElementById('userRole'); role.textContent=prof.role==='admin'?'Admin':'Commercial'; role.className='status'+(prof.role==='admin'?' signe':'');
+  document.getElementById('userBox').hidden=false;
+  document.getElementById('tab-admin').hidden=!isAdmin();
+  document.getElementById('ownerWrap').hidden=!isAdmin();
+  renderRepFilter(); renderFilters(); fillForm(); renderList(); resetDel();
+  document.getElementById('authScreen').hidden=true;
+  document.querySelector('.wrap').hidden=false;
+}
+document.addEventListener('visibilitychange',async()=>{
+  if(MODE!=='cloud'||document.hidden||!profile||timers.size) return;
+  const keep=currentId; if(!(await loadRemote())) return;
+  const unsaved=[]; if(!clients.length) unsaved.push(blank());
+  clients=clients.concat(unsaved);
+  currentId=clients.some(c=>c.id===keep)?keep:clients[0].id;
+  fillForm(); renderList(); if(!document.getElementById('pane-sheet').hidden) renderSheet(); if(!document.getElementById('pane-admin').hidden) renderAdmin();
+});
+window.addEventListener('beforeunload',e=>{if(timers.size){timers.forEach((t,id)=>{const c=clients.find(x=>x.id===id); if(c) saveNow(c)}); e.preventDefault()}});
+
+function loadScript(src){return new Promise((ok,ko)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=ko;document.head.appendChild(s)})}
+async function boot(){
+  let conf=null;
+  if(!inIframe&&/^https?:$/.test(location.protocol)){
+    /* 1) config.js à la racine (version simple, sans fonctions serveur) */
+    try{await loadScript('/config.js')}catch(e){}
+    const C=window.ITE_CONFIG||{};
+    if(C.url&&C.anonKey&&!/xxxx/.test(C.url)) conf={url:C.url,anon:C.anonKey,mail:false,api:false};
+    /* 2) sinon fonctions Vercel /api (version complète) */
+    else try{const r=await fetch('/api/config',{cache:'no-store'}); const j=await r.json().catch(()=>null);
+      if(r.ok&&j&&j.url) conf=Object.assign(j,{api:true}); else if(r.status===503&&j) conf={erreur:j.erreur};}catch(e){}
+    if(!conf&&C.url!==undefined) conf={erreur:'Le fichier config.js ne contient pas encore l\'adresse et la clé anon de Supabase.'};
+  }
+  if(conf&&conf.erreur){document.querySelector('.wrap').hidden=true;return showAuth('config',conf.erreur+((window.ITE_CONFIG)?' Renseignez-les dans config.js (sur GitHub : ouvrir le fichier, crayon « Edit », puis « Commit changes »). Vercel republie tout seul.':' Ajoutez SUPABASE_URL, SUPABASE_ANON_KEY et SUPABASE_SERVICE_ROLE_KEY dans Vercel puis redéployez.'),true)}
+  if(conf){
+    try{await loadScript('/supabase-2.119.0.js')}catch(e){try{await loadScript('/vendor/supabase-2.119.0.js')}catch(e2){}}
+    if(window.supabase){
+      MODE='cloud'; CFG.mail=!!conf.mail; CFG.api=!!conf.api;
+      document.querySelector('.wrap').hidden=true;
+      document.querySelectorAll('.local-only').forEach(e=>e.hidden=false);
+      sb=window.supabase.createClient(conf.url,conf.anon);
+      sb.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY'){document.querySelector('.wrap').hidden=true;showAuth('reset','Choisissez votre nouveau mot de passe.')}});
+      if(/type=recovery/.test(location.hash)) return;
+      const {data:{session}}=await sb.auth.getSession();
+      if(!session) return showAuth('login');
+      return enterApp(session.user);
+    }
+  }
+  /* Mode local : fiches enregistrées dans ce navigateur */
+  clients=load();
+  if(!clients.length){clients=[sample()];persist();}
+  currentId=clients[0].id;
+  renderFilters(); fillForm(); renderList();
+}
+
+let tt; function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),2200)}
+
+boot();
+window.__compute=compute;
+})();
+</script>
+
+</body>
+</html>
