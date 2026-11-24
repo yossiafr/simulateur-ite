@@ -89,8 +89,8 @@ main{display:flex;flex-direction:column;gap:18px;min-width:0}
 .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .toolbar h1{font-size:22px;margin-right:auto}
 .saved{font-size:12px;color:var(--muted)}
-.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px;width:max-content;max-width:100%}
-.tabs button{border:0;background:transparent;border-radius:999px;padding:7px 16px;cursor:pointer;font-weight:600;color:var(--muted)}
+.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px;width:max-content;max-width:100%}
+.tabs button{white-space:nowrap;flex:0 0 auto;border:0;background:transparent;border-radius:999px;padding:7px 16px;cursor:pointer;font-weight:600;color:var(--muted)}
 .tabs button[aria-selected=true]{background:var(--green);color:var(--on-green)}
 
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
@@ -290,6 +290,34 @@ label small{font-weight:400}
   #printRoot .annex{display:flex;page:annexe;break-before:page;width:210mm;height:296mm;align-items:center;justify-content:center;overflow:hidden}
   #printRoot .annex img{max-width:210mm;max-height:296mm;object-fit:contain}
 }
+
+/* Photos & métrage */
+.ph{display:flex;flex-direction:column;gap:14px}
+.ph-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ph-thumbs{display:flex;gap:8px;overflow-x:auto;flex:1 1 100%;padding-bottom:2px}
+.ph-th{border:2px solid var(--line);background:var(--surface);border-radius:10px;padding:3px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;flex:0 0 auto;width:96px;font-size:11px;color:var(--muted)}
+.ph-th img{width:86px;height:60px;object-fit:cover;border-radius:6px}.ph-th span{max-width:86px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ph-th.on{border-color:var(--green);color:var(--fg)}
+.ph-ed{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px;align-items:start}
+@media (max-width:900px){.ph-ed{grid-template-columns:1fr}}
+.ph-main,.ph-side{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:10px}
+.ph-cv{background:#111;border-radius:10px;overflow:hidden;line-height:0}
+.ph-cv canvas{touch-action:none;cursor:crosshair;max-width:100%}
+.seg{display:inline-flex;gap:4px;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:3px;flex-wrap:wrap}
+.seg button{border:0;background:transparent;border-radius:999px;padding:7px 12px;cursor:pointer;font-weight:600;color:var(--muted)}
+.seg.sm button{padding:5px 10px;font-size:12.5px}.seg button.on{background:var(--green);color:var(--on-green)}.seg button:disabled{opacity:.45;cursor:default}
+.ph-help{margin:0}
+.ph-res{display:flex;flex-direction:column;gap:4px;font-size:13px}
+.ph-res>div{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center}
+.ph-res>div.o span{color:#1f4aa8}.ph-res>div.t{grid-template-columns:1fr auto;border-top:1px solid var(--line);padding-top:6px;margin-top:2px}
+.ph-res b,.ph-nums b{font-family:var(--display)}.hl{color:var(--green-deep)}
+.ph-crepi{border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.ph-crepi legend{font-weight:800;font-family:var(--display);padding:0 4px}
+.sw{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.sw button{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);cursor:pointer}.sw button.on{border-color:var(--green);box-shadow:0 0 0 2px var(--green)}
+.sw input[type=color]{width:36px;height:32px;border:0;background:none;padding:0;cursor:pointer}
+.ph-tot{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 16px;display:flex;flex-direction:column;gap:10px}
+.ph-nums{display:flex;flex-wrap:wrap;gap:8px 28px;font-size:13px}.ph-nums b{font-size:17px;margin-left:6px}
 #printRoot{display:none}
 @media print{
   body.print-devis .wrap, body.print-devis .toast{display:none!important}
@@ -359,6 +387,7 @@ body.pm .steps{grid-template-columns:repeat(4,1fr)} body.pm .three{grid-template
       <div class="tabs" role="tablist">
         <button role="tab" id="tab-form" aria-selected="true" aria-controls="pane-form" type="button">Fiche client</button>
         <button role="tab" id="tab-sheet" aria-selected="false" aria-controls="pane-sheet" type="button">Synthèse client</button>
+        <button role="tab" id="tab-photos" aria-selected="false" aria-controls="pane-photos" type="button">Photos &amp; métrage</button>
         <button role="tab" id="tab-devis" aria-selected="false" aria-controls="pane-devis" type="button">Devis</button>
         <button role="tab" id="tab-admin" aria-selected="false" aria-controls="pane-admin" type="button" hidden>Administration</button>
       </div>
@@ -425,6 +454,7 @@ body.pm .steps{grid-template-columns:repeat(4,1fr)} body.pm .three{grid-template
       </form>
 
       <section id="pane-sheet" hidden></section>
+      <section id="pane-photos" hidden></section>
       <section id="pane-devis" hidden></section>
       <section id="pane-admin" hidden></section>
     </main>
@@ -681,15 +711,17 @@ function ico(k){
 }
 
 /* ===== Navigation ===== */
-function select(id){currentId=id; fillForm(); renderList(); if(!document.getElementById('pane-sheet').hidden) renderSheet(); if(!document.getElementById('pane-devis').hidden) renderDevis(); resetDel();}
+function select(id){currentId=id; fillForm(); renderList(); if(!document.getElementById('pane-sheet').hidden) renderSheet(); if(!document.getElementById('pane-devis').hidden) renderDevis(); phSel=null; phDraft=[]; phView='photo'; if(!document.getElementById('pane-photos').hidden) renderPhotos(); resetDel();}
 function setTab(t){
-  ['form','sheet','devis','admin'].forEach(k=>{document.getElementById('tab-'+k).setAttribute('aria-selected',k===t);document.getElementById('pane-'+k).hidden=k!==t});
+  ['form','sheet','photos','devis','admin'].forEach(k=>{document.getElementById('tab-'+k).setAttribute('aria-selected',k===t);document.getElementById('pane-'+k).hidden=k!==t});
   if(t==='sheet') renderSheet();
   if(t==='admin') renderAdmin();
   if(t==='devis') renderDevis();
+  if(t==='photos') renderPhotos();
   if(t==='form') fillForm();
 }
 document.getElementById('tab-devis').onclick=()=>setTab('devis');
+document.getElementById('tab-photos').onclick=()=>setTab('photos');
 document.getElementById('tab-admin').onclick=()=>setTab('admin');
 document.getElementById('tab-form').onclick=()=>setTab('form');
 document.getElementById('tab-sheet').onclick=()=>setTab('sheet');
@@ -697,7 +729,7 @@ document.getElementById('clientList').addEventListener('click',e=>{const b=e.tar
 document.getElementById('filters').addEventListener('click',e=>{const b=e.target.closest('[data-f]'); if(!b) return; filter=b.dataset.f; renderFilters(); renderList()});
 document.getElementById('search').addEventListener('input',renderList);
 document.getElementById('btnNew').onclick=()=>{const c=blank();clients.push(c);persist(c);select(c.id);setTab('form');document.getElementById('nom').focus()};
-document.getElementById('btnDup').onclick=()=>{const c=Object.assign({},cur(),{id:uid(),created:Date.now(),updated:Date.now()});c.nom=(c.nom||'')+' (copie)';delete c.devis;if(MODE==='cloud')c._owner=me.id;clients.push(c);persist(c);select(c.id);toast('Fiche dupliquée')};
+document.getElementById('btnDup').onclick=()=>{const c=Object.assign({},cur(),{id:uid(),created:Date.now(),updated:Date.now()});delete c._token;delete c._sig;delete c.metrage;if(c.devis)c.devis=JSON.parse(JSON.stringify(c.devis));c.nom=(c.nom||'')+' (copie)';delete c.devis;if(MODE==='cloud')c._owner=me.id;clients.push(c);persist(c);select(c.id);toast('Fiche dupliquée')};
 function resetDel(){const w=document.getElementById('delWrap');w.hidden=MODE==='cloud'&&!isAdmin();w.innerHTML='<button class="btn danger" id="btnDel" type="button">Supprimer</button>'}
 document.getElementById('delWrap').addEventListener('click',e=>{
   const id=e.target.id;
@@ -1054,7 +1086,7 @@ function entBlock(){
 const dvPane=document.getElementById('pane-devis');
 dvPane.addEventListener('input',e=>{
   const c=cur(), el=e.target; if(!c) return;
-  if(el.closest('.dv-mail')){if(el.id==='dmMsg') setSet({devisMsg:el.value}); refreshDm(); return}
+  if(el.closest('.dv-mail')){if(el.id==='dmMsg') setSet({devisMsg2:el.value}); refreshDm(); return}
   if(el.dataset.e!==undefined||el.closest('.ob')||el.dataset.sans!==undefined) return;
   if(c._sig) return;
   if(el.classList.contains('dvOpt')){const o=opts()[+el.value]; if(!o||!c.devis) return;
@@ -1260,6 +1292,7 @@ function optSelectHtml(){const o=opts(); return `<select class="dvOpt" aria-labe
 
 /* ===== Signature électronique simple ===== */
 const signUrl=tok=>location.origin+location.pathname.replace(/index\.html$/,'')+'?signer='+tok;
+const voirUrl=tok=>location.origin+location.pathname.replace(/index\.html$/,'')+'?voir='+tok;
 const frDateTime=iso=>{const d=new Date(iso); return d.toLocaleDateString('fr-FR')+' à '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})};
 function newToken(){const a=new Uint8Array(24); crypto.getRandomValues(a); return [...a].map(x=>x.toString(16).padStart(2,'0')).join('')}
 function sigBlockHtml(c){
@@ -1292,25 +1325,29 @@ async function signAction(id,c){
 
 /* Page publique de signature (lien envoyé au client, sans connexion) */
 let SIGN=null;
-async function signPage(tok){
+async function signPage(tok,mode){
   MODE='cloud'; document.querySelector('.wrap').hidden=true; document.getElementById('authScreen').hidden=true;
   let root=document.getElementById('signRoot'); if(!root){root=document.createElement('div'); root.id='signRoot'; root.className='sign'; document.body.insertBefore(root,document.getElementById('printRoot'))}
   root.innerHTML='<p class="hint" style="text-align:center;padding:40px">Chargement du devis…</p>';
   const {data,error}=await sb.rpc('ite_devis_public',{p_token:tok});
-  if(error||!data){root.innerHTML=`<div class="sign-card" style="margin-top:40px"><h1>Lien non valable</h1><p>Ce lien de signature n'est plus actif. Contactez votre conseiller pour en recevoir un nouveau.</p></div>`;return}
-  CFG.defaults={entreprise:data.entreprise||{}}; SIGN={tok,data}; renderSignPage();
+  if(error||!data){root.innerHTML=`<div class="sign-card" style="margin-top:40px"><h1>Lien non valable</h1><p>Ce lien n'est plus actif. Contactez votre conseiller pour en recevoir un nouveau.</p></div>`;return}
+  CFG.defaults={entreprise:data.entreprise||{}}; SIGN={tok,data,mode:mode||(SIGN&&SIGN.mode)||'signer'}; renderSignPage();
 }
 function signView(){const c=Object.assign({},SIGN.data.data), s=SIGN.data.signature; return {c:s?Object.assign(c,{devis:s.devis}):c, s}}
 function renderSignPage(){
   const root=document.getElementById('signRoot'), {c,s}=signView(), e=ent(), t=devisTotals(c), ann=SIGN.data.annexes||[];
   root.innerHTML=`<header class="sign-top"><img src="${LOGO_SRC}" alt="${esc(e.nomCourt)}"><div><h1>Devis n° ${esc(c.devis.numero)}</h1><p>${esc([c.prenom,c.nom].filter(Boolean).join(' '))} · Total TTC <b>${eur2(t.ttc)}</b> · Reste à régler <b>${eur2(t.reste)}</b></p></div></header>
-  ${s?`<section class="sign-card" id="signBox">${signedHtml(s)}</section>`:`<section class="sign-card"><p style="margin:0">Lisez votre devis${ann.length?' et ses documents joints':''} ci-dessous, puis signez en bas de la page.</p><a class="btn primary" href="#signBox">Aller à la signature</a></section>`}
+  ${s?`<section class="sign-card" id="signBox">${signedHtml(s)}</section>`:SIGN.mode==='voir'?'':`<section class="sign-card"><p style="margin:0">Lisez votre devis${ann.length?' et ses documents joints':''} ci-dessous, puis signez en bas de la page.</p><a class="btn primary" href="#signBox">Aller à la signature</a></section>`}
   <div class="dv-paper sign-paper"><div class="zoomer">${devisDocHtml(c,s)}${ann.map(a=>a.pages.map(p=>`<img class="annex-page" src="${p}" alt="${esc(a.titre)}" loading="lazy">`).join('')).join('')}</div></div>
-  ${s?'':`<section class="sign-card" id="signBox">${signFormHtml(c)}</section>`}`;
-  fitSign(); if(!s) initPad();
+  ${s?'':SIGN.mode==='voir'?`<section class="sign-card" id="signature">${askHtml(c)}</section>`:`<section class="sign-card" id="signBox">${signFormHtml(c)}</section>`}`;
+  fitSign(); if(!s&&SIGN.mode!=='voir') initPad();
+  if(location.hash==='#signature'&&!s) setTimeout(()=>document.getElementById('signature')?.scrollIntoView({block:'center'}),300);
 }
 function fitSign(){const z=document.querySelector('#signRoot .zoomer'); if(!z) return; const w=z.parentElement.clientWidth-32, k=Math.min(1,w/800); z.style.zoom=k}
 window.addEventListener('resize',()=>{if(SIGN) fitSign()});
+const maskMail=m=>{const [u,d]=String(m||'').split('@'); return d?u.slice(0,2)+'•••@'+d:''};
+function askHtml(c){return `<h2>Ce devis vous intéresse ?</h2><p style="margin:0">Demandez la signature électronique : nous vous envoyons aussitôt par e-mail${c.email?' (à '+esc(maskMail(c.email))+')':''} le lien pour signer votre devis en ligne, sans créer de compte.</p>
+  <button class="btn primary" type="button" id="sgAsk">Demander la signature électronique</button>`}
 function signedHtml(s){return `<h2>Devis signé, merci !</h2><div class="sig-ok"><img src="${s.image}" alt="Votre signature"><p>Signé électroniquement le <b>${frDateTime(s.date)}</b> par <b>${esc(s.nom)}</b>.</p></div>
   <button class="btn primary" type="button" id="sgPrint">Enregistrer le devis signé (PDF) / imprimer</button>`}
 function signFormHtml(c){return `<h2>Signer le devis</h2>
@@ -1341,6 +1378,11 @@ document.addEventListener('change',e=>{if(e.target.closest('#signBox')) checkSig
 document.addEventListener('click',async e=>{
   const b=e.target.closest('#signRoot button'); if(!b) return;
   if(b.id==='sgPrint') return signPrint();
+  if(b.id==='sgAsk'){b.disabled=true; b.textContent='Envoi…'; let ok=false;
+    try{const r=await fetch('/api/request-signature',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:SIGN.tok})}); const j=await r.json().catch(()=>({})); ok=r.ok&&j.ok}catch(e){}
+    const box=document.getElementById('signature');
+    if(ok){box.innerHTML=`<h2>C'est envoyé !</h2><p style="margin:0">Vous allez recevoir dans quelques instants${SIGN.data.data.email?' à '+esc(maskMail(SIGN.data.data.email)):''} un e-mail avec le lien pour signer votre devis. Pensez à regarder dans les courriers indésirables.</p>`; return}
+    SIGN.mode='signer'; renderSignPage(); document.getElementById('signBox').scrollIntoView({block:'start'}); return}
   if(b.id==='sgClear'){initPad(); checkSign(); return}
   if(b.id==='sgGo'){
     b.disabled=true; b.textContent='Signature en cours…';
@@ -1362,7 +1404,7 @@ async function logoPng(){
 }
 const DM_MSG=`Suite à notre échange, voici votre devis d'isolation thermique par l'extérieur.
 
-Vous pouvez le consulter en ligne, avec la fiche produit, notre attestation RGE et notre assurance décennale, puis le signer en quelques secondes depuis votre téléphone ou votre ordinateur.
+Vous pouvez le consulter en ligne, avec la fiche produit, notre attestation RGE et notre assurance décennale.
 
 Nous restons à votre disposition pour toute question.`;
 function devisMailHtml(c,msg,link,logo,docs){
@@ -1386,8 +1428,10 @@ ${row('Total TTC',eur2(t.ttc))}${t.region?row('Aides région','- '+eur2(t.region
 </table>${t.cee&&!d.deduireCee?`<p style="margin:8px 0 0;font-size:12px;color:#4f5c48">Prime CEE de ${eur2(t.cee)} versée selon les termes indiqués dans le devis.</p>`:''}
 </td></tr></table></td></tr>
 <tr><td style="padding:22px 28px 6px;text-align:center">
-<a href="${esc(link)}" style="background:#2f8f1f;color:#ffffff;text-decoration:none;font-weight:bold;font-size:16px;padding:14px 28px;border-radius:999px;display:inline-block">Consulter et signer mon devis</a>
-<p style="margin:10px 0 0;font-size:12px;color:#6b7766">Signature en ligne, sans création de compte.</p></td></tr>
+<a href="${esc(link)}" style="background:#2f8f1f;color:#ffffff;text-decoration:none;font-weight:bold;font-size:16px;padding:14px 28px;border-radius:999px;display:inline-block">Consulter mon devis</a></td></tr>
+<tr><td style="padding:18px 28px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #d6e3c9"><tr><td style="padding:16px 0 0;text-align:center">
+<p style="margin:0 0 10px;font-size:14px;line-height:1.5">Ce devis vous intéresse ? Demandez la signature électronique : vous recevrez aussitôt par e-mail le lien pour le signer en ligne.</p>
+<a href="${esc(link)}#signature" style="color:#1e6312;text-decoration:none;font-weight:bold;font-size:14px;padding:10px 20px;border-radius:999px;border:2px solid #2f8f1f;display:inline-block">Demander la signature électronique</a></td></tr></table></td></tr>
 ${docs.length?`<tr><td style="padding:14px 28px 0"><p style="margin:0 0 6px;font-size:13px;font-weight:bold">Documents joints au devis</p><ul style="margin:0;padding-left:18px;font-size:13px;color:#4f5c48;line-height:1.6">${docs.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></td></tr>`:''}
 <tr><td style="padding:20px 28px 24px"><p style="margin:0;font-size:15px;line-height:1.5">Bien cordialement,<br>${sender?`<b>${esc(sender)}</b><br>`:''}${esc(SOCIETE)}</p></td></tr>
 <tr><td style="padding:14px 28px;background:#1e6312;color:#e8f6c4;font-size:11px;line-height:1.5">${esc(e.pied1)}<br>${esc(e.pied2)}</td></tr>
@@ -1397,7 +1441,7 @@ ${docs.length?`<tr><td style="padding:14px 28px 0"><p style="margin:0 0 6px;font
 }
 function devisMailText(c,msg,link,docs){const d=c.devis,t=devisTotals(c);
   return [`Bonjour ${[d.civilite,c.nom].filter(Boolean).join(' ')},`,'',msg,'',`Devis n° ${d.numero} du ${frDate(d.date)}`,`Total TTC : ${eur2(t.ttc)}`,t.region?`Aides région : - ${eur2(t.region)}`:null,`Reste à régler : ${eur2(t.reste)}`,'',
-    `Consulter et signer mon devis : ${link}`,'',docs.length?'Documents joints : '+docs.join(', '):null,docs.length?'':null,'Bien cordialement,',profile&&profile.nom?profile.nom:null,SOCIETE].filter(x=>x!==null).join('\n')}
+    `Consulter mon devis : ${link}`,'',`Ce devis vous intéresse ? Demandez la signature électronique depuis la page du devis : ${link}#signature`,'',docs.length?'Documents joints : '+docs.join(', '):null,docs.length?'':null,'Bien cordialement,',profile&&profile.nom?profile.nom:null,SOCIETE].filter(x=>x!==null).join('\n')}
 async function dmDocs(c){return annexOn(await getAnnexes(),c.devis).map(a=>a.titre)}
 async function ensureToken(c){
   if(c._token) return true;
@@ -1412,7 +1456,7 @@ async function openDevisMail(c){
   const e=ent(), from=CFG.from||'contact@compagnons-ecologiques.fr';
   box.innerHTML=`<div class="dv-mail"><div class="fields">
     ${fld('À (e-mail du client)','id="dmTo" type="email"',c.email||'')}${fld('Objet','id="dmSub"',`Votre devis ${c.devis.numero} – ${SOCIETE}`)}
-    ${fld('Message personnalisé','id="dmMsg"',getSet().devisMsg||DM_MSG,{area:1,rows:6,cls:'full'})}</div>
+    ${fld('Message personnalisé','id="dmMsg"',getSet().devisMsg2||DM_MSG,{area:1,rows:6,cls:'full'})}</div>
     <div class="mail-preview" id="dmPrev"></div>
     <div class="ob-bar">${CFG.mail?`<button class="btn primary" type="button" id="dmSend">Envoyer depuis ${esc(from)}</button>`:''}
       <button class="btn${CFG.mail?'':' primary'}" type="button" id="dmCopy">Copier et ouvrir ma messagerie</button><button class="btn" type="button" id="dmClose">Fermer</button></div>
@@ -1420,11 +1464,11 @@ async function openDevisMail(c){
   box.hidden=false; await refreshDm(); box.scrollIntoView({behavior:'smooth',block:'start'});
 }
 async function refreshDm(){const c=cur(), p=document.getElementById('dmPrev'); if(!p||!c) return;
-  p.innerHTML=devisMailHtml(c,document.getElementById('dmMsg').value,signUrl(c._token),await logoPng(),await dmDocs(c))}
+  p.innerHTML=devisMailHtml(c,document.getElementById('dmMsg').value,voirUrl(c._token),await logoPng(),await dmDocs(c))}
 async function mailAction(id,c){
   if(id==='dvMail') return openDevisMail(c);
   if(id==='dmClose'){document.getElementById('dvMailBox').hidden=true; return}
-  const to=document.getElementById('dmTo').value.trim(), sub=document.getElementById('dmSub').value, msg=document.getElementById('dmMsg').value, link=signUrl(c._token), docs=await dmDocs(c);
+  const to=document.getElementById('dmTo').value.trim(), sub=document.getElementById('dmSub').value, msg=document.getElementById('dmMsg').value, link=voirUrl(c._token), docs=await dmDocs(c);
   if(to&&!c.email){c.email=to; persist(c)}
   const done=()=>{c.devis.envoyeLe=new Date().toISOString(); if(['prospect','rdv',''].includes(c.statut||'')) c.statut='devis'; persist(c); renderList()};
   if(id==='dmCopy'){
@@ -1460,6 +1504,191 @@ async function seedAnnexes(){
   })();
   return seeding;
 }
+
+/* ===== Photos de la maison : métrage et rendu du crépi ===== */
+const PKEY='ite-photos';
+const CREPIS=[['Blanc cassé','#ece8df'],['Ton pierre','#d9cdb4'],['Sable','#d8c29a'],['Beige rosé','#dcc3ae'],['Ocre clair','#d6b27a'],['Terre cuite','#b9765a'],['Gris perle','#c9c9c4'],['Gris anthracite','#5b5e60']];
+const PH=new Map(); let phSel=null, phTool='ref', phDraft=[], phView='photo', phSaveT=null, phDrag=null;
+const ph=()=>{const L=PH.get(currentId)||[]; return L.find(p=>p.id===phSel)||null};
+function newId(){return (crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g,()=>(Math.random()*16|0).toString(16)))}
+function localPhotos(){try{return JSON.parse(localStorage.getItem(PKEY)||'{}')}catch(e){return{}}}
+function saveLocalPhotos(){const all=localPhotos(); all[currentId]=PH.get(currentId)||[]; try{localStorage.setItem(PKEY,JSON.stringify(all));return true}catch(e){toast('Mémoire du navigateur pleine : photo non enregistrée');return false}}
+async function loadPhotos(cid){
+  if(PH.has(cid)) return PH.get(cid);
+  let L=[];
+  if(MODE==='cloud'){ if(known.has(cid)){const {data,error}=await sb.from('ite_photos').select('id,titre,image,mesures,rendu,created_at').eq('client_id',cid).order('created_at');
+      if(error){ if(!/ite_photos/.test(error.message||'')) toast('Photos indisponibles : '+error.message); else toast('Photos : exécutez mise-a-jour-devis.sql dans Supabase')} else L=data||[]}}
+  else L=localPhotos()[cid]||[];
+  L.forEach(p=>{p.mesures=p.mesures||{}}); PH.set(cid,L); return L;
+}
+async function addPhoto(c,image,titre){
+  const p={id:newId(),titre,image,mesures:{murs:[],ouvs:[]},rendu:null,created_at:new Date().toISOString()};
+  if(MODE==='cloud'){
+    if(!known.has(c.id)||timers.has(c.id)){if(!(await saveNow(c))) return null}
+    const {error}=await sb.from('ite_photos').insert({id:p.id,client_id:c.id,titre,image,mesures:p.mesures});
+    if(error){toast('Photo non enregistrée : '+error.message);return null}
+  }
+  (PH.get(c.id)||PH.set(c.id,[]).get(c.id)).push(p); if(MODE!=='cloud') saveLocalPhotos(); return p;
+}
+function queuePhoto(p,fields=['titre','mesures']){
+  if(MODE!=='cloud'){saveLocalPhotos();return}
+  clearTimeout(phSaveT); phSaveT=setTimeout(async()=>{const patch={}; fields.forEach(k=>patch[k]=p[k]);
+    const {error}=await sb.from('ite_photos').update(patch).eq('id',p.id); if(error) toast('Photo non enregistrée : '+error.message)},500);
+}
+async function deletePhoto(id){
+  if(MODE==='cloud'){const {error}=await sb.from('ite_photos').delete().eq('id',id); if(error) return toast(error.message)}
+  PH.set(currentId,(PH.get(currentId)||[]).filter(p=>p.id!==id)); if(MODE!=='cloud') saveLocalPhotos(); phSel=null; renderPhotos();
+}
+function fileToJpeg(file,max=1600,q=0.8){return new Promise((ok,ko)=>{const u=URL.createObjectURL(file), img=new Image();
+  img.onload=()=>{const k=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight)), cv=document.createElement('canvas'); cv.width=Math.round(img.naturalWidth*k); cv.height=Math.round(img.naturalHeight*k);
+    cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height); URL.revokeObjectURL(u); ok(cv.toDataURL('image/jpeg',q))}; img.onerror=()=>ko(new Error('image illisible')); img.src=u})}
+/* Calculs */
+const dist=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);
+const areaPx=P=>Math.abs(P.reduce((s,p,i)=>{const q=P[(i+1)%P.length];return s+p[0]*q[1]-q[0]*p[1]},0))/2;
+function phCalc(p){const m=p.mesures||{}, r=m.ref; if(!r||!r.a||!r.b||!n(r.m)) return null;
+  const k=n(r.m)/dist(r.a,r.b), s=P=>areaPx(P)*k*k;
+  const murs=(m.murs||[]).map(s), ouvs=(m.ouvs||[]).map(s), brute=murs.reduce((a,b)=>a+b,0), ouv=ouvs.reduce((a,b)=>a+b,0);
+  return {murs,ouvs,brute,ouv,net:Math.max(0,brute-ouv)}}
+function phTotals(){const L=PH.get(currentId)||[]; let brute=0,ouv=0,ok=0,nOuv=0; L.forEach(p=>{const r=phCalc(p); if(r){brute+=r.brute;ouv+=r.ouv;ok++;nOuv+=r.ouvs.length}}); return {brute,ouv,net:Math.max(0,brute-ouv),ok,nOuv,n:L.length}}
+const m2=v=>new Intl.NumberFormat('fr-FR',{maximumFractionDigits:1}).format(v||0)+' m²';
+/* Rendu gratuit : les murs prennent la couleur choisie en gardant ombres et relief */
+const imgCache=new Map();
+function loadImg(src){if(imgCache.has(src)) return imgCache.get(src); const pr=new Promise((ok,ko)=>{const i=new Image(); i.onload=()=>ok(i); i.onerror=ko; i.src=src}); imgCache.set(src,pr); return pr}
+async function renderCrepi(p,hex){
+  const img=await loadImg(p.image), W=img.naturalWidth, H=img.naturalHeight, m=p.mesures;
+  const cv=document.createElement('canvas'); cv.width=W; cv.height=H; const g=cv.getContext('2d'); g.drawImage(img,0,0);
+  const mk=document.createElement('canvas'); mk.width=W; mk.height=H; const mg=mk.getContext('2d');
+  const poly=(ctx,P)=>{ctx.beginPath(); P.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1])); ctx.closePath(); ctx.fill()};
+  mg.fillStyle='#fff'; (m.murs||[]).forEach(P=>poly(mg,P)); mg.globalCompositeOperation='destination-out'; (m.ouvs||[]).forEach(P=>poly(mg,P));
+  const d=g.getImageData(0,0,W,H), M=mg.getImageData(0,0,W,H).data, px=d.data, c=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16));
+  let sum=0,cnt=0; for(let i=0;i<px.length;i+=16){if(M[i+3]>128){sum+=0.299*px[i]+0.587*px[i+1]+0.114*px[i+2];cnt++}}
+  const mean=cnt?sum/cnt:128;
+  for(let i=0;i<px.length;i+=4){const a=M[i+3]/255; if(!a) continue;
+    const l=0.299*px[i]+0.587*px[i+1]+0.114*px[i+2], f=Math.max(0.4,Math.min(1.2,0.62+0.38*l/mean)), gr=(Math.random()-0.5)*10;
+    for(let j=0;j<3;j++){const v=Math.max(0,Math.min(255,c[j]*f+gr)); px[i+j]=px[i+j]*(1-a)+v*a}}
+  g.putImageData(d,0,0); return cv.toDataURL('image/jpeg',0.82);
+}
+/* Écran */
+function renderPhotos(){
+  const pane=document.getElementById('pane-photos'), c=cur(); if(!c) return;
+  const L=PH.get(c.id);
+  if(!L){pane.innerHTML='<p class="hint">Chargement des photos…</p>'; loadPhotos(c.id).then(()=>{if(cur()===c) renderPhotos()}); return}
+  if(!L.find(p=>p.id===phSel)) phSel=L.length?L[L.length-1].id:null;
+  const p=ph(), t=phTotals();
+  pane.innerHTML=`<div class="ph">
+    <div class="ph-bar"><label class="btn primary">📷 Prendre une photo<input type="file" accept="image/*" capture="environment" data-ph="add" hidden></label>
+      <label class="btn">Choisir une photo<input type="file" accept="image/*" data-ph="add" multiple hidden></label>
+      <div class="ph-thumbs">${L.map((x,i)=>`<button type="button" class="ph-th${x.id===phSel?' on':''}" data-phsel="${x.id}" aria-label="Photo ${i+1}"><img src="${x.rendu||x.image}" alt=""><span>${esc(x.titre||'Façade '+(i+1))}</span></button>`).join('')}</div></div>
+    ${p?photoEditorHtml(p,L.indexOf(p)):`<div class="dv-empty"><h2 style="font-size:18px">Photos de la maison</h2><p class="hint" style="max-width:56ch">Prenez chaque façade bien en face, en entier. Sur la photo, vous placez une mesure connue (la hauteur d'une porte, par exemple), puis vous entourez la façade et les fenêtres : l'appli calcule la surface avec et sans les ouvrants. Vous pouvez aussi montrer au client la maison avec le crépi de son choix.</p></div>`}
+    <fieldset class="ph-tot"><legend>Métrage total de la maison</legend>
+      ${t.ok?`<div class="ph-nums"><span>Murs avec ouvrants <b>${m2(t.brute)}</b></span><span>Ouvrants (${t.nOuv}) <b>- ${m2(t.ouv)}</b></span><span>Murs sans ouvrants <b class="hl">${m2(t.net)}</b></span></div>
+        <div class="ph-bar"><button class="btn primary" type="button" data-ph="use" data-v="${Math.round(t.net*10)/10}">Utiliser ${m2(t.net)} (sans ouvrants)</button><button class="btn" type="button" data-ph="use" data-v="${Math.round(t.brute*10)/10}">Utiliser ${m2(t.brute)} (avec ouvrants)</button></div>
+        <p class="hint">${t.ok<t.n?`${t.n-t.ok} photo(s) sans mesure de référence ne sont pas comptées. `:''}La surface choisie va dans « Surface de murs à isoler » de la fiche${c.devis&&!c._sig?' et dans le devis':''}. Mesure indicative : vérifiez les cotes sur place.</p>`
+      :'<p class="hint" style="margin:0">Aucune façade mesurée pour l\'instant.</p>'}</fieldset></div>`;
+  if(p) drawPhoto();
+}
+function photoEditorHtml(p,i){
+  const r=phCalc(p), m=p.mesures, ref=m.ref||{};
+  const tool=(k,l)=>`<button type="button" class="${phTool===k?'on':''}" data-phtool="${k}">${l}</button>`;
+  return `<div class="ph-ed"><div class="ph-main">
+    <div class="ph-tools seg">${tool('ref','1. Mesure connue')}${tool('mur','2. Façade')}${tool('ouv','3. Fenêtre / porte')}</div>
+    <p class="hint ph-help" id="phHelp">${phHelp()}</p>
+    <div class="ph-cv"><canvas id="phCv"></canvas></div>
+    <div class="ph-bar">${phDraft.length?`<button class="btn small" type="button" data-ph="undo">Annuler le dernier point</button>`:''}${phTool==='mur'&&phDraft.length>=3?`<button class="btn small primary" type="button" data-ph="close">Terminer la façade</button>`:''}
+      <span class="seg sm">${['photo','crepi'].map(v=>`<button type="button" class="${phView===v?'on':''}" data-phview="${v}" ${v==='crepi'&&!p.rendu?'disabled':''}>${v==='photo'?'Photo':'Avec crépi'}</button>`).join('')}</span></div>
+  </div><div class="ph-side">
+    <label>Nom de la photo<div class="in"><input data-phf="titre" value="${esc(p.titre||'Façade '+(i+1))}"></div></label>
+    <label>Longueur de la mesure connue<div class="in"><input data-phf="refm" type="number" step="0.01" value="${esc(ref.m??2.15)}"><span class="u">m</span></div></label>
+    <p class="hint" style="margin:-4px 0 0">${ref.a&&ref.b?'Mesure placée.':'Pas encore placée.'} Porte d'entrée : environ 2,15 m de haut. Le mieux est de mesurer une longueur au mètre.</p>
+    <div class="ph-res">${r?`${r.murs.map((v,k)=>`<div><span>Façade ${k+1}</span><b>${m2(v)}</b><button class="btn small danger" type="button" data-ph="delmur" data-i="${k}" aria-label="Supprimer la façade">✕</button></div>`).join('')}
+      ${r.ouvs.map((v,k)=>`<div class="o"><span>Ouvrant ${k+1}</span><b>- ${m2(v)}</b><button class="btn small danger" type="button" data-ph="delouv" data-i="${k}" aria-label="Supprimer l'ouvrant">✕</button></div>`).join('')}
+      <div class="t"><span>Avec ouvrants</span><b>${m2(r.brute)}</b></div><div class="t"><span>Sans ouvrants</span><b class="hl">${m2(r.net)}</b></div>`
+      :`<p class="hint" style="margin:0">${(m.murs||[]).length} façade(s), ${(m.ouvs||[]).length} ouvrant(s). Placez la mesure connue pour voir les surfaces.</p>`}</div>
+    <fieldset class="ph-crepi"><legend>Crépi</legend><div class="sw">${CREPIS.map(([nm,hx])=>`<button type="button" class="${m.couleur===hx?'on':''}" style="background:${hx}" data-phcol="${hx}" title="${nm}" aria-label="${nm}"></button>`).join('')}<input type="color" data-phf="couleur" value="${esc(m.couleur||'#d9cdb4')}" aria-label="Autre couleur"></div>
+      <p class="hint" style="margin:0">${esc((CREPIS.find(x=>x[1]===m.couleur)||['Couleur personnalisée'])[0])}</p>
+      <button class="btn primary" type="button" data-ph="crepi" ${(m.murs||[]).length?'':'disabled'}>Appliquer le crépi sur les façades</button>
+      ${CFG.ia?`<button class="btn" type="button" data-ph="ia" ${p.image?'':'disabled'}>Rendu réaliste par IA</button>`:''}
+      <p class="hint" style="margin:0">${(m.murs||[]).length?'Seules les façades entourées sont colorées, sans les ouvrants.':'Entourez d\'abord au moins une façade.'}</p></fieldset>
+    <span id="phDelWrap"><button class="btn small danger" type="button" data-ph="del">Supprimer la photo</button></span>
+  </div></div>`;
+}
+function phHelp(){return {ref:'Touchez les deux extrémités d\'une longueur connue (par exemple le bas et le haut de la porte), puis indiquez sa longueur réelle.',
+  mur:'Touchez les coins de la façade un par un (4 coins, ou 5 pour un pignon), puis « Terminer la façade ». Un point se déplace en le faisant glisser.',
+  ouv:'Pour chaque fenêtre ou porte, touchez deux coins opposés. Un point se déplace en le faisant glisser.'}[phTool]}
+async function drawPhoto(){
+  const p=ph(), cv=document.getElementById('phCv'); if(!p||!cv) return;
+  const img=await loadImg(phView==='crepi'&&p.rendu?p.rendu:p.image); if(ph()!==p) return;
+  const w=cv.parentElement.clientWidth||600, k=w/img.naturalWidth, dpr=Math.min(2,window.devicePixelRatio||1);
+  cv.style.width=w+'px'; cv.style.height=Math.round(img.naturalHeight*k)+'px'; cv.width=Math.round(w*dpr); cv.height=Math.round(img.naturalHeight*k*dpr);
+  const g=cv.getContext('2d'); g.setTransform(dpr*k,0,0,dpr*k,0,0); g.drawImage(img,0,0);
+  if(phView==='crepi') return;
+  const lw=2.5/k, rad=6/k, m=p.mesures;
+  const path=(P,close)=>{g.beginPath(); P.forEach((q,i)=>i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1])); if(close) g.closePath()};
+  const dots=(P,col)=>P.forEach(q=>{g.beginPath(); g.arc(q[0],q[1],rad,0,7); g.fillStyle='#fff'; g.fill(); g.lineWidth=lw; g.strokeStyle=col; g.stroke()});
+  g.lineWidth=lw;
+  (m.murs||[]).forEach(P=>{path(P,1); g.fillStyle='rgba(47,143,31,.22)'; g.fill(); g.strokeStyle='#2f8f1f'; g.stroke(); dots(P,'#2f8f1f')});
+  (m.ouvs||[]).forEach(P=>{path(P,1); g.fillStyle='rgba(31,74,168,.30)'; g.fill(); g.strokeStyle='#1f4aa8'; g.stroke(); dots(P,'#1f4aa8')});
+  if(m.ref&&m.ref.a){const P=[m.ref.a,m.ref.b||m.ref.a]; path(P); g.strokeStyle='#e0532f'; g.lineWidth=lw*1.4; g.stroke(); dots(P,'#e0532f');
+    if(m.ref.b){g.font=`bold ${15/k}px Arial`; g.fillStyle='#e0532f'; g.fillText(String(m.ref.m??'').replace('.',',')+' m',(m.ref.a[0]+m.ref.b[0])/2+10/k,(m.ref.a[1]+m.ref.b[1])/2)}}
+  if(phDraft.length){path(phDraft); g.strokeStyle='#e0a100'; g.setLineDash([8/k,6/k]); g.stroke(); g.setLineDash([]); dots(phDraft,'#e0a100')}
+}
+function phPoint(e){const cv=document.getElementById('phCv'), b=cv.getBoundingClientRect(), p=ph(); return loadImg(p.image).then(img=>{const k=b.width/img.naturalWidth; return {pt:[(e.clientX-b.left)/k,(e.clientY-b.top)/k],k}})}
+function phHit(pt,k){const p=ph(), m=p.mesures, r=12/k, all=[];
+  if(m.ref){['a','b'].forEach(s=>m.ref[s]&&all.push([m.ref,s]))}
+  (m.murs||[]).forEach(P=>P.forEach((q,i)=>all.push([P,i]))); (m.ouvs||[]).forEach(P=>P.forEach((q,i)=>all.push([P,i])));
+  phDraft.forEach((q,i)=>all.push([phDraft,i]));
+  let best=null,bd=r; all.forEach(([o,key])=>{const q=o[key]; const d=dist(q,pt); if(d<bd){bd=d;best=[o,key]}}); return best}
+function phChanged(redrawSide){const p=ph(); queuePhoto(p,['mesures']); if(redrawSide){const y=window.scrollY; renderPhotos(); window.scrollTo(0,y)} else drawPhoto()}
+const phPane=document.getElementById('pane-photos');
+phPane.addEventListener('pointerdown',async e=>{
+  if(e.target.id!=='phCv') return; e.preventDefault(); const p=ph(); if(!p) return; if(phView!=='photo'){phView='photo'; renderPhotos(); return}
+  const {pt,k}=await phPoint(e), hit=phHit(pt,k);
+  if(hit){phDrag={hit,id:e.pointerId}; e.target.setPointerCapture(e.pointerId); return}
+  const m=p.mesures;
+  if(phTool==='ref'){ if(!m.ref||m.ref.b){m.ref={a:pt,m:(m.ref&&m.ref.m)||2.15}; drawPhoto(); return} m.ref.b=pt; phChanged(true); return}
+  if(phTool==='mur'){ if(phDraft.length>=3&&dist(pt,phDraft[0])<14/k){m.murs=(m.murs||[]).concat([phDraft]); phDraft=[]; phChanged(true); return} phDraft.push(pt); if(phDraft.length===1||phDraft.length===3) renderPhotos(); else drawPhoto(); return}
+  if(phTool==='ouv'){ if(!phDraft.length){phDraft=[pt]; renderPhotos(); return} const a=phDraft[0]; m.ouvs=(m.ouvs||[]).concat([[a,[pt[0],a[1]],pt,[a[0],pt[1]]]]); phDraft=[]; phChanged(true)}
+});
+phPane.addEventListener('pointermove',async e=>{if(!phDrag||e.target.id!=='phCv') return; const {pt}=await phPoint(e); const [o,key]=phDrag.hit; o[key]=pt; drawPhoto()});
+phPane.addEventListener('pointerup',e=>{if(!phDrag) return; phDrag=null; phChanged(true)});
+phPane.addEventListener('click',async e=>{
+  const b=e.target.closest('button'); if(!b) return; const c=cur(), p=ph();
+  if(b.dataset.phsel){phSel=b.dataset.phsel; phDraft=[]; phView='photo'; renderPhotos(); return}
+  if(b.dataset.phtool){phTool=b.dataset.phtool; phDraft=[]; renderPhotos(); return}
+  if(b.dataset.phview){phView=b.dataset.phview; renderPhotos(); return}
+  if(b.dataset.phcol&&p){p.mesures.couleur=b.dataset.phcol; queuePhoto(p,['mesures']); renderPhotos(); return}
+  const a=b.dataset.ph; if(!a) return;
+  if(a==='use'){const v=String(b.dataset.v); c.surfaceMurs=v;
+    if(c.devis&&!c._sig){const old=n(c.devis.surface); c.devis.lignes.forEach(l=>{if(n(l.qte)===old&&old>0&&/m²|m2|U/i.test(l.unite))l.qte=v}); c.devis.surface=v; syncDevis(c)}
+    c.metrage=phTotals(); c.updated=Date.now(); persist(c); fillForm(); renderList(); toast(`Surface de ${v.replace('.',',')} m² reportée${c.devis&&!c._sig?' dans la fiche et le devis':' dans la fiche'}`); return}
+  if(!p) return;
+  if(a==='undo'){phDraft.pop(); renderPhotos(); return}
+  if(a==='close'){p.mesures.murs=(p.mesures.murs||[]).concat([phDraft]); phDraft=[]; phChanged(true); return}
+  if(a==='delmur'){p.mesures.murs.splice(+b.dataset.i,1); phChanged(true); return}
+  if(a==='delouv'){p.mesures.ouvs.splice(+b.dataset.i,1); phChanged(true); return}
+  if(a==='del'){document.getElementById('phDelWrap').innerHTML='<span class="confirm">Supprimer cette photo ? <button class="btn danger small" type="button" data-ph="delYes">Oui</button></span>'; return}
+  if(a==='delYes') return deletePhoto(p.id);
+  if(a==='crepi'){if(!p.mesures.couleur) p.mesures.couleur='#d9cdb4'; b.disabled=true; b.textContent='Calcul…';
+    p.rendu=await renderCrepi(p,p.mesures.couleur); queuePhoto(p,['mesures','rendu']); phView='crepi'; renderPhotos(); return}
+  if(a==='ia'){b.disabled=true; b.textContent='Rendu IA en cours (20 à 40 s)…';
+    try{const {data:{session}}=await sb.auth.getSession(); const col=p.mesures.couleur||'#d9cdb4';
+      const r=await fetch('/api/rendu-ia',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(session?session.access_token:'')},body:JSON.stringify({image:p.image,couleur:col,nom:(CREPIS.find(x=>x[1]===col)||['enduit'])[0]})});
+      const j=await r.json().catch(()=>({})); if(!r.ok||!j.image) throw new Error(j.erreur||('Erreur '+r.status));
+      const img=await loadImg(j.image), k=Math.min(1,1600/Math.max(img.naturalWidth,img.naturalHeight)), cv=document.createElement('canvas'); cv.width=Math.round(img.naturalWidth*k); cv.height=Math.round(img.naturalHeight*k); cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
+      p.rendu=cv.toDataURL('image/jpeg',0.82); queuePhoto(p,['rendu']); phView='crepi'; renderPhotos();
+    }catch(err){toast('Rendu IA impossible : '+err.message); renderPhotos()} return}
+});
+phPane.addEventListener('input',e=>{const p=ph(), f=e.target.dataset.phf; if(!p||!f) return;
+  if(f==='titre'){p.titre=e.target.value; queuePhoto(p,['titre']); return}
+  if(f==='refm'){p.mesures.ref=Object.assign(p.mesures.ref||{},{m:e.target.value}); queuePhoto(p,['mesures']); drawPhoto(); clearTimeout(phPane._t); phPane._t=setTimeout(()=>{const y=window.scrollY; renderPhotos(); window.scrollTo(0,y); const i=phPane.querySelector('[data-phf=refm]'); if(i){i.focus(); i.setSelectionRange?.(99,99)}},700); return}
+});
+phPane.addEventListener('change',async e=>{const p=ph();
+  if(e.target.dataset.phf==='couleur'&&p){p.mesures.couleur=e.target.value; queuePhoto(p,['mesures']); renderPhotos(); return}
+  if(e.target.dataset.ph!=='add') return; const c=cur(), files=[...e.target.files]; e.target.value='';
+  for(const f of files){try{toast('Préparation de la photo…'); const img=await fileToJpeg(f); const L=await loadPhotos(c.id); const np=await addPhoto(c,img,'Façade '+(L.length+1)); if(np){phSel=np.id; phTool='ref'; phDraft=[]; phView='photo'}}catch(err){toast('Photo illisible : '+err.message)}}
+  renderPhotos();
+});
+window.addEventListener('resize',()=>{if(!phPane.hidden) drawPhoto()});
 
 /* ===== Administration ===== */
 function renderAdmin(){
@@ -1626,7 +1855,8 @@ async function boot(){
     try{await loadScript('/config.js')}catch(e){}
     const C=window.ITE_CONFIG||{};
     if(C.url&&C.anonKey&&!/xxxx/.test(C.url)){conf={url:C.url,anon:C.anonKey,mail:false,api:false};
-      if(!new URLSearchParams(location.search).get('signer')) try{const r=await fetch('/api/send-mail',{cache:'no-store'}); const j=r.ok?await r.json():null; if(j&&j.mail){conf.mail=true; conf.from=j.from}}catch(e){}}
+      if(!/[?&](signer|voir)=/.test(location.search)) try{const r=await fetch('/api/send-mail',{cache:'no-store'}); const j=r.ok?await r.json():null; if(j&&j.mail){conf.mail=true; conf.from=j.from}}catch(e){}
+      if(!/[?&](signer|voir)=/.test(location.search)) try{const r=await fetch('/api/rendu-ia',{cache:'no-store'}); const j=r.ok?await r.json():null; if(j&&j.ia) conf.ia=true}catch(e){}}
     /* 2) sinon fonctions Vercel /api (version complète) */
     else try{const r=await fetch('/api/config',{cache:'no-store'}); const j=await r.json().catch(()=>null);
       if(r.ok&&j&&j.url) conf=Object.assign(j,{api:true}); else if(r.status===503&&j) conf={erreur:j.erreur};}catch(e){}
@@ -1636,11 +1866,11 @@ async function boot(){
   if(conf){
     try{await loadScript('/supabase-2.119.0.js')}catch(e){try{await loadScript('/vendor/supabase-2.119.0.js')}catch(e2){}}
     if(window.supabase){
-      MODE='cloud'; CFG.mail=!!conf.mail; CFG.api=!!conf.api; CFG.from=conf.from||'';
+      MODE='cloud'; CFG.mail=!!conf.mail; CFG.api=!!conf.api; CFG.from=conf.from||''; CFG.ia=!!conf.ia;
       document.querySelector('.wrap').hidden=true;
       document.querySelectorAll('.local-only').forEach(e=>e.hidden=false);
       sb=window.supabase.createClient(conf.url,conf.anon);
-      const tok=new URLSearchParams(location.search).get('signer'); if(tok) return signPage(tok);
+      const Q=new URLSearchParams(location.search), tok=Q.get('signer')||Q.get('voir'); if(tok) return signPage(tok,Q.get('voir')?'voir':'signer');
       sb.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY'){document.querySelector('.wrap').hidden=true;showAuth('reset','Choisissez votre nouveau mot de passe.')}});
       if(/type=recovery/.test(location.hash)) return;
       const {data:{session}}=await sb.auth.getSession();
@@ -1648,7 +1878,7 @@ async function boot(){
       return enterApp(session.user);
     }
   }
-  if(new URLSearchParams(location.search).get('signer')){document.querySelector('.wrap').hidden=true; return showAuth('config','Ce lien de signature s\'ouvre uniquement sur le site en ligne.',true)}
+  if(/[?&](signer|voir)=/.test(location.search)){document.querySelector('.wrap').hidden=true; return showAuth('config','Ce lien de signature s\'ouvre uniquement sur le site en ligne.',true)}
   /* Mode local : fiches enregistrées dans ce navigateur */
   clients=load();
   if(!clients.length){clients=[sample()];persist();}
