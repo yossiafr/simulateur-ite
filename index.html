@@ -353,6 +353,21 @@ label small{font-weight:400}
 .ag-tag{display:inline-block;font-size:10.5px;font-weight:700;color:#7a4b00;background:#fff4e0;border-radius:6px;padding:0 5px;align-self:flex-start}
 .ag-conf{background:#fff4e0;border:1px solid #f0d199;border-radius:12px;padding:12px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:12px 0}
 body.tp .no-tp{display:none!important}
+.dbl{background:#fdecea;border:1px solid #f1b8b2;border-radius:12px;padding:10px 12px;font-size:13px;color:#7a1f17}.dbl b{color:#b3261e}.dbl ul{margin:4px 0 0;padding-left:18px}
+.relb{display:inline-block;font-size:11px;margin-left:4px}
+.dos{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.dos-t{border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:8px}
+.dos-t h3{margin:0;font-size:14px;display:flex;justify-content:space-between;gap:6px;align-items:center}.dos-t h3 .ok{color:#2f8f1f;font-size:12px}.dos-t h3 .ko{color:#b5541b;font-size:12px}
+.dos-items{display:flex;flex-wrap:wrap;gap:8px}.dos-it{position:relative;width:92px}.dos-it button.v{width:92px;height:92px;border:1px solid var(--line);border-radius:10px;background:#f4f6f1 center/cover no-repeat;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:30px;padding:0}
+.dos-it small{display:block;font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.dos-it .x{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:#b3261e;cursor:pointer;font-size:12px;line-height:1;padding:0}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:12px 0}
+.kpi{border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:12px}.kpi span{display:block;font-size:12px;color:var(--muted)}.kpi b{font-size:24px;font-variant-numeric:tabular-nums}.kpi small{display:block;font-size:11.5px;color:var(--muted)}
+.dash h3{margin:18px 0 8px;font-size:15px}.dash .tbl td.num,.dash .tbl th.num{text-align:right;font-variant-numeric:tabular-nums}
+.bar{display:inline-block;height:8px;border-radius:4px;background:#2f8f1f;vertical-align:middle;margin-right:6px}
+#tourMap{height:62vh;min-height:360px;border-radius:var(--r);border:1px solid var(--line);z-index:0}
+.tour-days{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.tour-pin{background:var(--c);color:#fff;border:2px solid #fff;border-radius:14px;padding:1px 7px;font:700 11px/16px Arial,sans-serif;white-space:nowrap;box-shadow:0 1px 4px #0005;transform:translate(-50%,-50%);display:inline-block}
+.tour-pin.busy{background:#9aa095}.tour-home{font-size:20px;transform:translate(-50%,-60%);display:inline-block;filter:drop-shadow(0 1px 2px #0006)}
 .foyer{grid-template-columns:repeat(4,minmax(0,1fr))}@media (max-width:760px){.foyer{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .fc{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-radius:12px;padding:10px 12px;background:color-mix(in srgb,var(--fc) 12%,var(--surface));border:1px solid color-mix(in srgb,var(--fc) 45%,transparent)}
 .fc b.pill{background:var(--fc);color:#fff;border-radius:999px;padding:3px 12px;font-size:14px}.fc span{font-size:13px;color:var(--muted)}
@@ -461,12 +476,14 @@ body.pm .sheet-head h2{font-size:30px} body.pm .ribbon{font-size:22px} body.pm .
       </div>
       <div class="tabs" role="tablist">
         <button role="tab" id="tab-form" aria-selected="true" aria-controls="pane-form" type="button">Fiche client</button>
-        <button role="tab" class="no-tp" id="tab-sheet" aria-selected="false" aria-controls="pane-sheet" type="button">Synthèse client</button>
-        <button role="tab" class="no-tp" id="tab-photos" aria-selected="false" aria-controls="pane-photos" type="button">Photos &amp; métrage</button>
+        <button role="tab" class="no-tp" id="tab-sheet" aria-selected="false" aria-controls="pane-sheet" type="button">Synthèse</button>
+        <button role="tab" class="no-tp" id="tab-photos" aria-selected="false" aria-controls="pane-photos" type="button">Photos</button>
         <button role="tab" id="tab-carte" aria-selected="false" aria-controls="pane-carte" type="button">Carte</button>
         <button role="tab" class="no-tp" id="tab-devis" aria-selected="false" aria-controls="pane-devis" type="button">Devis</button>
+        <button role="tab" class="no-tp" id="tab-dossier" aria-selected="false" aria-controls="pane-dossier" type="button">Dossier</button>
  <button role="tab" id="tab-agenda" aria-selected="false" aria-controls="pane-agenda" type="button">Agenda</button>
-        <button role="tab" id="tab-admin" aria-selected="false" aria-controls="pane-admin" type="button" hidden>Administration</button>
+        <button role="tab" id="tab-dash" aria-selected="false" aria-controls="pane-dash" type="button" hidden>Tableau de bord</button>
+        <button role="tab" id="tab-admin" aria-selected="false" aria-controls="pane-admin" type="button" hidden>Admin</button>
       </div>
 
       <form id="pane-form" autocomplete="off">
@@ -484,6 +501,8 @@ body.pm .sheet-head h2{font-size:30px} body.pm .ribbon{font-size:22px} body.pm .
               <label>Statut<div class="in"><select id="statut" data-k="statut">
                 <option value="prospect">Prospect</option><option value="rdv">RDV fixé</option><option value="devis">Devis envoyé</option><option value="signe">Signé</option><option value="perdu">Perdu</option></select></div></label>
               <label>Date et heure du RDV<div class="in"><input id="dateRdv" data-k="dateRdv" type="datetime-local" step="900"></div><button class="linkbtn" id="btnRdvAg" type="button" style="align-self:flex-start;font-size:12.5px">📅 Planifier dans l'agenda</button></label>
+              <label>Date de rappel<div class="in"><input id="dateRappel" data-k="dateRappel" type="date"></div><span class="calc-hint" id="relHint"></span></label>
+              <div class="full" id="dblWarn" hidden></div>
               <label class="full">Notes<textarea id="notes" data-k="notes" rows="2"></textarea></label>
               <label class="full" id="ownerWrap" hidden>Commercial responsable<div class="in"><select id="ownerSel"></select></div></label>
             </div>
@@ -549,6 +568,8 @@ body.pm .sheet-head h2{font-size:30px} body.pm .ribbon{font-size:22px} body.pm .
       <section id="pane-carte" hidden></section>
       <section id="pane-devis" hidden></section>
       <section id="pane-agenda" hidden></section>
+      <section id="pane-dossier" hidden></section>
+      <section id="pane-dash" hidden></section>
       <section id="pane-admin" hidden></section>
     </main>
   </div>
@@ -643,6 +664,19 @@ function renderFoyer(){const c=cur(); if(!c) return; const f=couleurFoyer(c), bo
 document.getElementById('pane-form').addEventListener('click',e=>{const b=e.target.closest('[data-cradd],[data-crdel]'); if(!b) return; const c=cur(); c.credits=Array.isArray(c.credits)?c.credits:[];
   if(b.dataset.cradd) c.credits.push({type:'Immobilier',mens:'',fin:''}); else c.credits.splice(+b.dataset.crdel,1);
   c.updated=Date.now(); persist(c); renderFoyer()});
+const today0=()=>isoLocal(new Date());
+function relance(c){const t=today0();
+  if(c.dateRappel&&c.dateRappel<=t) return c.dateRappel<t?`Rappel prévu le ${new Date(c.dateRappel+'T12:00').toLocaleDateString('fr-FR')} (en retard)`:'Rappel prévu aujourd\'hui';
+  if(c.dateRappel&&c.dateRappel>t) return '';
+  if(c.statut==='devis'&&c.devis&&!c._sig){const d=c.devis.envoyeLe||c.devis.date; if(d){const j=Math.floor((Date.now()-new Date(d).getTime())/864e5); if(j>=7) return `Devis envoyé il y a ${j} jours, non signé`}}
+  return ''}
+const digits=x=>String(x||'').replace(/\D/g,'').slice(-9), normAdr=x=>String(x||'').trim().replace(/\s+/g,' ').toLowerCase();
+async function doublons(tel,adr,cp,excl){const T=digits(tel), A=normAdr(adr), P=String(cp||'').trim();
+  if((T.length<9)&&(A.length<5||!P)) return [];
+  if(MODE==='cloud'){const {data,error}=await sb.rpc('ite_doublons',{p_tel:tel||'',p_adresse:adr||'',p_cp:cp||'',p_exclure:excl||null}); return error?[]:(data||[])}
+  return clients.filter(c=>c.id!==excl&&((T.length===9&&digits(c.tel)===T)||(A.length>=5&&P&&String(c.cp||'').trim()===P&&normAdr(c.adresse)===A))).map(c=>({nom:fullName(c),ville:c.ville||'',statut:c.statut,suivi:'',cree:new Date(c.created||Date.now()).toISOString().slice(0,10)}))}
+const dblHtml=L=>`<div class="dbl"><b>⚠ Client peut-être déjà en base</b> (même téléphone ou même adresse) :<ul>${L.map(x=>`<li>${esc(x.nom||'Sans nom')}${x.ville?' – '+esc(x.ville):''} · ${esc(STATUTS[x.statut]||x.statut||'')}${x.suivi?' · suivi par '+esc(x.suivi):''}${x.cree?' · créé le '+new Date(x.cree+'T12:00').toLocaleDateString('fr-FR'):''}</li>`).join('')}</ul></div>`;
+async function checkDblFiche(){const c=cur(), box=document.getElementById('dblWarn'); if(!c||!box) return; const L=await doublons(c.tel,c.adresse,c.cp,c.id); if(cur()!==c) return; box.hidden=!L.length; box.innerHTML=L.length?dblHtml(L):''}
 function migrate(c){if(c.tel)c.tel=fmtTel(c.tel);if('mensualite' in c){delete c.mensualite} if(c.taux==null)c.taux=6;if(c.mensForce==null)c.mensForce='';if(c.aideRegion==null){c.aideRegion=c.autresAides||'';delete c.autresAides}return c}
 function load(){try{const r=JSON.parse(localStorage.getItem(KEY)||'[]');if(!Array.isArray(r))return[];r.forEach(migrate);return r}catch(e){return[]}}
 /* Enregistrement : navigateur (mode local) ou base Supabase (mode en ligne) */
@@ -715,16 +749,17 @@ const plural=(v,w)=>w+(v>=2?'s':'');
 /* ===== Liste ===== */
 function renderFilters(){
   const f=document.getElementById('filters');
-  f.innerHTML=[['all','Tous'],...Object.entries(STATUTS)].map(([k,l])=>`<button type="button" class="chipf" data-f="${k}" aria-pressed="${filter===k}">${l}</button>`).join('');
+  const nr=clients.filter(c=>relance(c)).length;
+  f.innerHTML=[['all','Tous'],...Object.entries(STATUTS),['relance',`🔔 À relancer${nr?' ('+nr+')':''}`]].map(([k,l])=>`<button type="button" class="chipf" data-f="${k}" aria-pressed="${filter===k}">${l}</button>`).join('');
 }
 function renderList(){
   const q=document.getElementById('search').value.trim().toLowerCase();
-  const items=clients.filter(c=>(filter==='all'||c.statut===filter)&&(repFilter==='all'||c._owner===repFilter)&&(!q||[c.nom,c.prenom,c.ville,c.tel,c.email,c.cp].join(' ').toLowerCase().includes(q)))
+  const items=clients.filter(c=>(filter==='all'||(filter==='relance'?!!relance(c):c.statut===filter))&&(repFilter==='all'||c._owner===repFilter)&&(!q||[c.nom,c.prenom,c.ville,c.tel,c.email,c.cp].join(' ').toLowerCase().includes(q)))
     .sort((a,b)=>b.updated-a.updated);
   const ul=document.getElementById('clientList');
   ul.innerHTML=items.length?items.map(c=>{const r=compute(c);return `<li><button type="button" data-id="${c.id}" aria-current="${c.id===currentId}">
     <span class="n">${esc(fullName(c))}</span><span class="p num no-tp">${r.ok?pctf(r.couvAff):'–'}</span>
-    <span class="s"><span class="status ${c.statut}">${STATUTS[c.statut]||''}</span> ${(f=>f?`<i class="fdot" style="background:${f.col}" title="Foyer ${f.nom}"></i>`:'')(couleurFoyer(c))}${esc(c.ville||'')}${isAdmin()&&c._owner?' · '+esc(ownerName(c._owner)):''}</span></button></li>`}).join('')
+    <span class="s"><span class="status ${c.statut}">${STATUTS[c.statut]||''}</span> ${(f=>f?`<i class="fdot" style="background:${f.col}" title="Foyer ${f.nom}"></i>`:'')(couleurFoyer(c))}${esc(c.ville||'')}${isAdmin()&&c._owner?' · '+esc(ownerName(c._owner)):''}${(r=>r?`<span class="relb" title="${esc(r)}">🔔</span>`:'')(relance(c))}</span></button></li>`}).join('')
     :'<li class="empty">Aucun client ne correspond.</li>';
 }
 
@@ -733,8 +768,9 @@ function fillForm(){
   const c=cur(); if(!c) return;
   document.querySelectorAll('[data-k]').forEach(el=>{let v=c[el.dataset.k]??''; if(el.type==='datetime-local'&&/^\d{4}-\d{2}-\d{2}$/.test(v)) v+='T09:00'; el.value=v});
   if(isAdmin()){const s=document.getElementById('ownerSel');s.innerHTML=team.filter(p=>(p.actif&&p.role!=='telepro')||p.id===c._owner).map(p=>`<option value="${p.id}">${esc(p.nom||p.email)}${p.role==='admin'?' (admin)':p.role==='telepro'?' (télépro)':''}</option>`).join('');s.value=c._owner||me.id}
-  updateHeader(); updateHint(); renderFoyer(); ceeHint();
+  updateHeader(); updateHint(); renderFoyer(); ceeHint(); relHint(); const dw=document.getElementById('dblWarn'); dw.hidden=true; dw.innerHTML='';
 }
+function relHint(){const c=cur(), el=document.getElementById('relHint'); if(el&&c){const r=relance(c); el.textContent=r?'🔔 '+r:''; el.style.color=r?'#b5541b':''}}
 function updateHeader(){
   const c=cur();
   document.getElementById('clientTitle').textContent=fullName(c);
@@ -749,10 +785,11 @@ document.getElementById('pane-form').addEventListener('input',e=>{
   if(e.target.dataset.crk){const c=cur(), x=(c.credits||[])[+e.target.dataset.cr]; if(x){x[e.target.dataset.crk]=e.target.value; c.updated=Date.now(); persist(c); renderFoyer()} return}
   const k=e.target.dataset.k; if(!k) return;
   const c=cur(); c[k]=e.target.value; c.updated=Date.now(); persist(c);
-  updateHeader(); updateHint(); renderList(); if(['rfr','nbPers','cp','revM','revMme','coutTravaux','taux','duree','mensForce','differe'].includes(k)) renderFoyer(); if(['rfr','nbPers','cp','surfaceMurs','cee'].includes(k)) ceeHint();
+  updateHeader(); updateHint(); renderList(); if(['rfr','nbPers','cp','revM','revMme','coutTravaux','taux','duree','mensForce','differe'].includes(k)) renderFoyer(); if(['rfr','nbPers','cp','surfaceMurs','cee'].includes(k)) ceeHint(); if(['dateRappel','statut'].includes(k)){relHint(); renderFilters()}
   if(!document.getElementById('pane-sheet').hidden) renderSheet();
 });
 document.getElementById('pane-form').addEventListener('submit',e=>e.preventDefault());
+document.getElementById('pane-form').addEventListener('change',e=>{if(['tel','adresse','cp'].includes(e.target.id)) setTimeout(checkDblFiche,300)});
 
 /* ===== Synthèse ===== */
 function renderSheet(){
@@ -832,22 +869,27 @@ function ico(k){
 }
 
 /* ===== Navigation ===== */
-function select(id){currentId=id; fillForm(); renderList(); if(!document.getElementById('pane-sheet').hidden) renderSheet(); if(!document.getElementById('pane-devis').hidden) renderDevis(); phSel=null; phDraft=[]; phView='photo'; if(!document.getElementById('pane-photos').hidden) renderPhotos(); if(!document.getElementById('pane-carte').hidden) renderCarte(); resetDel();}
+function select(id){currentId=id; fillForm(); renderList(); if(!document.getElementById('pane-sheet').hidden) renderSheet(); if(!document.getElementById('pane-devis').hidden) renderDevis(); phSel=null; phDraft=[]; phView='photo'; if(!document.getElementById('pane-photos').hidden) renderPhotos(); if(!document.getElementById('pane-carte').hidden) renderCarte(); if(!document.getElementById('pane-dossier').hidden) renderDossier(); resetDel();}
 function setTab(t){
-  if(isTp()&&['sheet','photos','devis','admin'].includes(t)) t='form';
-  ['form','sheet','photos','carte','devis','agenda','admin'].forEach(k=>{document.getElementById('tab-'+k).setAttribute('aria-selected',k===t);document.getElementById('pane-'+k).hidden=k!==t});
+  if(isTp()&&['sheet','photos','devis','admin','dossier','dash'].includes(t)) t='form';
+  if(t==='dash'&&!dashOk()) t='form';
+  ['form','sheet','photos','carte','devis','dossier','agenda','dash','admin'].forEach(k=>{document.getElementById('tab-'+k).setAttribute('aria-selected',k===t);document.getElementById('pane-'+k).hidden=k!==t});
   if(t==='sheet') renderSheet();
   if(t==='admin') renderAdmin();
   if(t==='devis') renderDevis();
   if(t==='photos') renderPhotos();
   if(t==='carte') renderCarte();
   if(t==='agenda') renderAgenda();
+  if(t==='dossier') renderDossier();
+  if(t==='dash') renderDash();
   if(t==='form') fillForm();
 }
 document.getElementById('tab-devis').onclick=()=>setTab('devis');
 document.getElementById('tab-photos').onclick=()=>setTab('photos');
 document.getElementById('tab-carte').onclick=()=>setTab('carte');
 document.getElementById('tab-agenda').onclick=()=>setTab('agenda');
+document.getElementById('tab-dossier').onclick=()=>setTab('dossier');
+document.getElementById('tab-dash').onclick=()=>setTab('dash');
 document.getElementById('tab-admin').onclick=()=>setTab('admin');
 document.getElementById('tab-form').onclick=()=>setTab('form');
 document.getElementById('tab-sheet').onclick=()=>setTab('sheet');
@@ -1855,7 +1897,7 @@ async function adrSearch(q){
   return [];
 }
 function adrShow(){adrBox.innerHTML=adrRes.map((a,i)=>`<li role="option" data-i="${i}" class="${i===adrI?'on':''}">${esc(a.label)}</li>`).join(''); adrBox.hidden=!adrRes.length}
-function adrPick(i){const a=adrRes[i], c=cur(); if(!a||!c) return; Object.assign(c,{adresse:a.name,cp:a.cp,ville:a.ville,lat:a.lat,lon:a.lon,updated:Date.now()}); adrRes=[]; adrShow(); persist(c); fillForm(); renderList(); if(!document.getElementById('pane-sheet').hidden) renderSheet()}
+function adrPick(i){const a=adrRes[i], c=cur(); if(!a||!c) return; Object.assign(c,{adresse:a.name,cp:a.cp,ville:a.ville,lat:a.lat,lon:a.lon,updated:Date.now()}); adrRes=[]; adrShow(); persist(c); setTimeout(checkDblFiche,100); fillForm(); renderList(); if(!document.getElementById('pane-sheet').hidden) renderSheet()}
 adrIn.addEventListener('input',()=>{const c=cur(); if(c){delete c.lat; delete c.lon} clearTimeout(adrT); const q=adrIn.value.trim(); if(q.length<4){adrRes=[]; adrShow(); return}
   adrT=setTimeout(async()=>{const r=await adrSearch(q); if(adrIn.value.trim()!==q) return; adrRes=r; adrI=-1; adrShow()},250)});
 adrIn.addEventListener('keydown',e=>{if(adrBox.hidden) return;
@@ -1936,16 +1978,17 @@ function renderAgenda(){
   pane.innerHTML=`<div class="ag">
     <div class="ag-bar"><div class="ag-nav"><button class="btn small" type="button" data-ag="prev" aria-label="Semaine précédente">◀</button><button class="btn small" type="button" data-ag="today">Aujourd'hui</button><button class="btn small" type="button" data-ag="next" aria-label="Semaine suivante">▶</button><h2>${title}</h2></div>
       <div class="ag-nav">
-        <span class="seg sm">${[['semaine','Semaine'],['liste','Liste']].map(([k,l])=>`<button type="button" class="${agView===k?'on':''}" data-agview="${k}">${l}</button>`).join('')}</span>
+        <span class="seg sm">${[['semaine','Semaine'],['liste','Liste'],['carte','Tournée']].map(([k,l])=>`<button type="button" class="${agView===k?'on':''}" data-agview="${k}">${l}</button>`).join('')}</span>
         <button class="btn primary" type="button" data-ag="new">+ Nouveau RDV</button></div></div>
     ${isAdmin()?`<div class="ag-reps"><span class="hint" style="margin:0">Afficher :</span>${[...reps().map(p=>[p.id,p.nom||p.email]),[AC,'À confirmer']].map(([id,nm])=>`<label class="ag-rep" style="--c:${repColor(id===AC?null:id)}"><input type="checkbox" data-agrep="${id}" ${agHidden.has(id)?'':'checked'}><i></i>${esc(nm)}<small>(${(RDV||[]).filter(r=>repKey(r)===id&&new Date(r.debut)>=agStart&&new Date(r.debut)<addDays(agStart,5)).length})</small></label>`).join('')}
       <button class="linkbtn" type="button" data-ag="all">Tous</button><button class="linkbtn" type="button" data-ag="none">Aucun</button></div>`:''}
     ${conf.length?`<div class="ag-late"><b>${conf.length} RDV à confirmer</b>${conf.slice(0,8).map(r=>`<button type="button" class="ag-chip" data-rdv="${r.id}" style="--c:${repColor(null)}">${new Date(r.debut).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})} ${hhmm(r.debut)} · ${esc(r.titre||'RDV')}</button>`).join('')}</div>`:''}
     ${isTp()?'<p class="hint" style="margin:0">Vos RDV sont en couleur. Les créneaux en gris sont pris par les autres télépros (code postal et ville seulement). L\'administrateur confirme chaque RDV et choisit le commercial.</p>':''}
     ${late.length?`<div class="ag-late"><b>${late.length} RDV à statuer</b>${late.slice(0,8).map(r=>`<button type="button" class="ag-chip" data-rdv="${r.id}" style="--c:${repColor(r.commercial)}">${new Date(r.debut).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})} ${hhmm(r.debut)} · ${esc(r.titre||'RDV')}</button>`).join('')}</div>`:''}
-    ${agView==='semaine'?weekHtml():listHtml()}
+    ${agView==='semaine'?weekHtml():agView==='carte'?'<div class="tour-days" id="tourDays"></div><div id="tourMap"></div><p class="hint" id="tourHint" style="margin:6px 0 0">Chargement de la carte…</p>':listHtml()}
     ${agView==='semaine'&&visibleRdv().some(r=>{const d=new Date(r.debut);return d>=addDays(agStart,5)&&d<addDays(agStart,7)})?'<p class="hint" style="margin:0">Des RDV sont prévus ce week-end : voir la vue Liste.</p>':''}
 </div>`;
+  if(agView==='carte') renderTour();
 }
 const H0=7,H1=21,HP=46;
 function weekHtml(){
@@ -1984,7 +2027,7 @@ function rdvForm(r){
     <div class="full fields" id="rvNew" ${cid?'hidden':''} style="padding:0">
       <label>Nom<div class="in"><input id="rvNom"></div></label><label>Prénom<div class="in"><input id="rvPrenom"></div></label>
       <label>Téléphone<div class="in"><input id="rvTel" inputmode="tel"></div></label><label>Adresse<div class="in"><input id="rvAdr"></div></label>
-      <label>Code postal<div class="in"><input id="rvCp" inputmode="numeric"></div></label><label>Ville<div class="in"><input id="rvVille"></div></label></div>
+      <label>Code postal<div class="in"><input id="rvCp" inputmode="numeric"></div></label><label>Ville<div class="in"><input id="rvVille"></div></label><div class="full" id="rvDbl" hidden></div></div>
     <div class="full sug"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn small" type="button" data-rv="sug">📍 Proposer les meilleurs créneaux</button><span class="hint" style="margin:0">selon les RDV déjà placés près de chez le client</span></div><div id="rvSug"></div></div>
     ${noteOk()?'':'<!--'}<div class="full"><span style="font-size:13px;font-weight:600">Qualité du RDV</span><div class="stars" id="rvNote">${[1,2,3,4].map(k=>`<button type="button" data-note="${k}" class="${(+r.note||0)>=k?'on':''}" aria-label="${k} étoile${k>1?'s':''} : ${NOTE_TXT[k]}" title="${NOTE_TXT[k]}">★</button>`).join('')}<span class="hint" id="rvNoteTxt" style="margin:0 0 0 8px">${NOTE_TXT[r.note]||'Cliquez pour noter'}</span></div><input type="hidden" id="rvNoteVal" value="${esc(r.note||'')}"></div>${noteOk()?'':'-->'}
     ${isTp()?'<p class="hint full" style="margin:0">L\'administrateur confirmera ce RDV et choisira le commercial.</p>':''}
@@ -2122,6 +2165,7 @@ async function agModalClick(e){
     b.disabled=true; const ok=await upsertRdv(Object.assign({},r,{resultat:res,compte_rendu:cr}),false); b.disabled=false; if(!ok) return;
     const c=clients.find(x=>x.id===r.client_id);
     if(c){ if(RES_STATUT[res]&&!(c.statut==='signe'&&res!=='vendu')) c.statut=RES_STATUT[res];
+      if(res==='rappeler'&&!c.dateRappel) c.dateRappel=isoLocal(addDays(new Date(),2));
       const line=`[RDV du ${new Date(r.debut).toLocaleDateString('fr-FR')}] ${RES[res][0]}${cr?' : '+cr:''}`;
       if(!(c.notes||'').includes(line)) c.notes=((c.notes||'').trim()+'\n'+line).trim(); c.updated=Date.now(); persist(c); if(c.id===currentId) fillForm(); renderList()}
     m.hidden=true; rvRes=null; renderAgenda(); toast('Résultat enregistré'); return;
@@ -2135,6 +2179,7 @@ async function agModalClick(e){
     let cid=document.getElementById('rvClient').value, c=clients.find(x=>x.id===cid);
     if(!cid){
       const nom=document.getElementById('rvNom').value.trim(); if(!nom) return toast('Indiquez le nom du client');
+      const dbx=document.getElementById('rvDbl'); if(dbx&&!dbx.dataset.ok){const L=await doublons(document.getElementById('rvTel').value,document.getElementById('rvAdr').value,document.getElementById('rvCp').value); if(L.length){dbx.innerHTML=dblHtml(L)+'<p class="hint" style="margin:6px 0 0">Vérifiez avant de créer un second client. Cliquez à nouveau sur « Enregistrer le RDV » pour le créer quand même.</p>'; dbx.hidden=false; dbx.dataset.ok='1'; dbx.scrollIntoView({block:'center'}); return}}
       c=blank(); Object.assign(c,{nom,prenom:document.getElementById('rvPrenom').value.trim(),tel:fmtTel(document.getElementById('rvTel').value),adresse:document.getElementById('rvAdr').value.trim(),cp:document.getElementById('rvCp').value.trim(),ville:document.getElementById('rvVille').value.trim(),statut:'rdv',dateRdv:date+'T'+time});
       if(MODE==='cloud'){const {error}=await sb.from('ite_clients').insert({id:c.id,data:payload(c),owner:rep||myId()}); if(error) return toast('Client non créé : '+error.message); known.add(c.id); c._owner=rep||myId()}
       clients.push(c); if(MODE!=='cloud') persist(c); renderList(); cid=c.id;
@@ -2164,6 +2209,118 @@ document.getElementById('btnRdvAg').onclick=async()=>{const c=cur(); if(!c) retu
   let d=c.dateRdv?new Date(/T/.test(c.dateRdv)?c.dateRdv:c.dateRdv+'T09:00'):null; if(!d||isNaN(d)){d=new Date(); d.setDate(d.getDate()+1); d.setHours(9,0,0,0)}
   const ex=(RDV||[]).find(r=>r.client_id===c.id&&r.resultat==='a_venir'); if(ex){rvRes=null; agModal(rdvDetail(ex)); return}
   agStart=mondayOf(d); renderAgenda(); agModal(rdvForm({debut:d.toISOString(),duree:90,commercial:isTp()?null:(c._owner||myId()),client_id:known.has(c.id)||MODE==='local'?c.id:''}))};
+
+/* ===== Pièces du dossier ===== */
+const PIECES=["Avis d'imposition","Taxe foncière","Pièce d'identité","Facture d'énergie","RIB","Autre"];
+let DOS={cid:null,list:null};
+function dosLocalKey(cid){return 'ite-pieces-'+cid}
+async function loadPieces(cid){
+  if(MODE==='cloud'){const {data,error}=await sb.from('ite_pieces').select('*').eq('client_id',cid).order('created_at'); if(error){toast(/ite_pieces/.test(error.message||'')?'Dossier : exécutez mise-a-jour-devis.sql dans Supabase':'Dossier indisponible : '+error.message); return []} return data||[]}
+  try{return JSON.parse(localStorage.getItem(dosLocalKey(cid))||'[]')}catch(e){return []}}
+async function renderDossier(){
+  const pane=document.getElementById('pane-dossier'), c=cur(); if(!c) return;
+  if(MODE==='cloud'&&!known.has(c.id)){pane.innerHTML='<p class="hint">Enregistrement de la fiche en cours… revenez sur cet onglet dans un instant.</p>'; return}
+  if(DOS.cid!==c.id||!DOS.list){pane.innerHTML='<p class="hint">Chargement des pièces…</p>'; DOS={cid:c.id,list:null}; const L=await loadPieces(c.id); if(cur()!==c) return; DOS={cid:c.id,list:L}}
+  const L=DOS.list;
+  pane.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:12px"><div><h2 style="margin:0;font-size:18px">Pièces du dossier de ${esc(fullName(c))}</h2><p class="hint" style="margin:4px 0 0">Photographiez les documents avec le téléphone ou ajoutez un PDF. ${L.filter(x=>x.type!=='Autre').length?'':'Aucune pièce pour l\'instant.'}</p></div>
+    <p class="hint" style="margin:0">${PIECES.slice(0,5).filter(t=>L.some(x=>x.type===t)).length} / 5 pièces principales</p></div>
+  <div class="dos">${PIECES.map(t=>{const it=L.filter(x=>x.type===t);
+    return `<div class="dos-t"><h3>${esc(t)}${t==='Autre'?'':it.length?'<span class="ok">✓ reçue</span>':'<span class="ko">à fournir</span>'}</h3>
+      <div class="dos-items">${it.map(x=>`<div class="dos-it"><button type="button" class="v" data-dopen="${x.id}" title="Ouvrir ${esc(x.nom)}" style="${/^image\//.test(x.mime)?`background-image:url('${x.data}')`:''}">${/^image\//.test(x.mime)?'':'📄'}</button><small>${esc(x.nom||'')}</small><button type="button" class="x" data-ddel="${x.id}" aria-label="Supprimer ${esc(x.nom)}">✕</button></div>`).join('')}</div>
+      <label class="btn small" style="align-self:flex-start;flex-direction:row;color:var(--fg)">📷 Ajouter<input type="file" data-dadd="${esc(t)}" accept="image/*,application/pdf" multiple hidden></label></div>`}).join('')}</div>`;
+}
+function fileData(f){return new Promise((ok,ko)=>{const r=new FileReader(); r.onload=()=>ok(r.result); r.onerror=ko; r.readAsDataURL(f)})}
+async function shrink(f){const src=await fileData(f); if(!/^image\//.test(f.type)||/gif|svg/.test(f.type)) return {data:src,mime:f.type};
+  const img=new Image(); img.src=src; await img.decode().catch(()=>{}); const k=Math.min(1,1800/Math.max(img.naturalWidth||1,img.naturalHeight||1));
+  const cv=document.createElement('canvas'); cv.width=Math.round(img.naturalWidth*k); cv.height=Math.round(img.naturalHeight*k); cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
+  return {data:cv.toDataURL('image/jpeg',0.82),mime:'image/jpeg'}}
+const dPane=document.getElementById('pane-dossier');
+dPane.addEventListener('change',async e=>{const t=e.target.dataset.dadd; if(!t) return; const c=cur(); const files=[...e.target.files]; e.target.value='';
+  for(const f of files){ if(f.size>8e6&&!/^image\//.test(f.type)){toast(`${f.name} : fichier trop lourd (8 Mo maximum)`); continue}
+    const {data,mime}=await shrink(f); if(data.length>11e6){toast(`${f.name} : fichier trop lourd`); continue}
+    const row={id:newId(),client_id:c.id,type:t,nom:f.name.slice(0,120),mime,data};
+    if(MODE==='cloud'){const {error}=await sb.from('ite_pieces').insert(row); if(error){toast('Pièce non enregistrée : '+error.message); continue}}
+    DOS.list.push(Object.assign({created_at:new Date().toISOString()},row));
+    if(MODE!=='cloud') try{localStorage.setItem(dosLocalKey(c.id),JSON.stringify(DOS.list))}catch(err){DOS.list.pop(); toast('Mémoire du navigateur pleine : pièce non enregistrée'); continue}}
+  renderDossier(); toast(files.length>1?'Pièces ajoutées':'Pièce ajoutée')});
+dPane.addEventListener('click',async e=>{const b=e.target.closest('button'); if(!b) return;
+  if(b.dataset.dopen){const x=DOS.list.find(y=>y.id===b.dataset.dopen); if(!x) return; const blob=await (await fetch(x.data)).blob(); const u=URL.createObjectURL(blob); const w=window.open(u,'_blank'); if(!w){const a=document.createElement('a'); a.href=u; a.download=x.nom||'piece'; a.click()} setTimeout(()=>URL.revokeObjectURL(u),60000); return}
+  if(b.dataset.ddel){if(b.dataset.sure!=='1'){b.dataset.sure='1'; b.textContent='?'; b.title='Cliquez encore pour supprimer'; setTimeout(()=>{b.dataset.sure=''; b.textContent='✕'},3000); return}
+    const id=b.dataset.ddel; if(MODE==='cloud'){const {error}=await sb.from('ite_pieces').delete().eq('id',id); if(error) return toast(error.message)}
+    DOS.list=DOS.list.filter(x=>x.id!==id); if(MODE!=='cloud') try{localStorage.setItem(dosLocalKey(DOS.cid),JSON.stringify(DOS.list))}catch(err){} renderDossier(); toast('Pièce supprimée')}});
+
+/* ===== Tableau de bord ===== */
+const dashOk=()=>MODE!=='cloud'||isAdmin();
+let dashPer='mois';
+const HONORE=r=>r.commercial!==null&&!['a_venir','absent','reporte'].includes(r.resultat||'a_venir');
+const caClient=c=>c?(c.devis?devisTotals(c).ttc:n(c.coutTravaux)):0;
+function dashRange(){const now=new Date(), y=now.getFullYear(), m=now.getMonth();
+  if(dashPer==='semaine') return [mondayOf(now),addDays(mondayOf(now),7),'cette semaine'];
+  if(dashPer==='mois') return [new Date(y,m,1),new Date(y,m+1,1),'ce mois-ci'];
+  if(dashPer==='mprec') return [new Date(y,m-1,1),new Date(y,m,1),'le mois dernier'];
+  if(dashPer==='3m') return [new Date(y,m-2,1),new Date(y,m+1,1),'les 3 derniers mois'];
+  return [new Date(2000,0,1),new Date(2100,0,1),'les 5 derniers mois']}
+async function renderDash(){
+  const pane=document.getElementById('pane-dash'); if(!dashOk()){pane.innerHTML='';return}
+  pane.innerHTML='<p class="hint">Calcul…</p>'; await loadRdv(true);
+  const [a,b,lab]=dashRange(), R=(RDV||[]).filter(r=>{const d=new Date(r.debut); return d>=a&&d<b});
+  const pct=(x,y)=>y?Math.round(x/y*100)+' %':'—', cl=id=>clients.find(c=>c.id===id);
+  const vendus=R.filter(r=>r.resultat==='vendu'), hon=R.filter(HONORE), ca=vendus.reduce((s,r)=>s+caClient(cl(r.client_id)),0);
+  const roleOf=id=>(team.find(p=>p.id===id)||{}).role;
+  const tps=MODE==='cloud'?team.filter(p=>p.role==='telepro'):[], reps_=MODE==='cloud'?reps():[{id:'local',nom:'Moi'}];
+  const rowTp=p=>{const L=R.filter(r=>r.created_by===p.id), h=L.filter(HONORE), v=L.filter(r=>r.resultat==='vendu'), nt=L.filter(r=>r.note);
+    return `<tr><td>${esc(p.nom||p.email)}</td><td class="num">${L.length}</td><td class="num">${L.filter(r=>r.commercial).length}</td><td class="num">${h.length}</td><td class="num">${L.filter(r=>r.resultat==='absent').length}</td><td class="num">${v.length}</td><td class="num">${pct(v.length,h.length)}</td><td class="num">${nt.length?(nt.reduce((s,r)=>s+r.note,0)/nt.length).toFixed(1).replace('.',',')+' ★':'—'}</td></tr>`};
+  const rowRep=p=>{const L=R.filter(r=>(r.commercial||'local')===p.id||(MODE!=='cloud')), h=L.filter(HONORE), v=L.filter(r=>r.resultat==='vendu'), c_=v.reduce((s,r)=>s+caClient(cl(r.client_id)),0);
+    return `<tr><td>${esc(p.nom||p.email)}</td><td class="num">${L.length}</td><td class="num">${h.length}</td><td class="num">${L.filter(r=>r.resultat==='absent').length}</td><td class="num">${v.length}</td><td class="num">${pct(v.length,h.length)}</td><td class="num">${eur(c_)}</td><td class="num">${v.length?eur(c_/v.length):'—'}</td></tr>`};
+  const notes=[4,3,2,1,0].map(k=>{const L=R.filter(r=>(+r.note||0)===k), h=L.filter(HONORE), v=L.filter(r=>r.resultat==='vendu'); return {k,L,h,v}}), maxv=Math.max(1,...notes.map(x=>x.h.length?x.v.length/x.h.length:0));
+  const aRel=clients.filter(c=>relance(c)).length, aStat=(RDV||[]).filter(r=>r.commercial&&r.resultat==='a_venir'&&new Date(r.debut).getTime()+(+r.duree||90)*6e4<Date.now()).length, aConf=(RDV||[]).filter(r=>!r.commercial&&MODE==='cloud'&&new Date(r.debut)>new Date()).length;
+  const devisEnv=clients.filter(c=>c.devis&&c.devis.envoyeLe&&new Date(c.devis.envoyeLe)>=a&&new Date(c.devis.envoyeLe)<b).length;
+  pane.innerHTML=`<div class="dash"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h2 style="margin:0;font-size:20px">Tableau de bord</h2>
+    <span class="seg sm">${[['semaine','Semaine'],['mois','Ce mois'],['mprec','Mois dernier'],['3m','3 mois'],['tout','Tout']].map(([k,l])=>`<button type="button" class="${dashPer===k?'on':''}" data-dper="${k}">${l}</button>`).join('')}</span></div>
+  <div class="kpis">
+    <div class="kpi"><span>RDV</span><b>${R.length}</b><small>${lab}</small></div>
+    <div class="kpi"><span>RDV honorés</span><b>${hon.length}</b><small>${R.filter(r=>r.resultat==='absent').length} client(s) absent(s)</small></div>
+    <div class="kpi"><span>Ventes</span><b>${vendus.length}</b><small>transformation ${pct(vendus.length,hon.length)}</small></div>
+    <div class="kpi"><span>CA signé TTC</span><b>${eur(ca)}</b><small>panier moyen ${vendus.length?eur(ca/vendus.length):'—'}</small></div>
+    <div class="kpi"><span>Devis envoyés</span><b>${devisEnv}</b><small>sur la période</small></div>
+    <div class="kpi"><span>À traiter</span><b>${aRel+aStat+aConf}</b><small>${aRel} à relancer · ${aStat} à statuer${MODE==='cloud'?` · ${aConf} à confirmer`:''}</small></div></div>
+  ${tps.length?`<h3>Télépros</h3><div class="table-wrap"><table class="tbl"><thead><tr><th>Télépro</th><th class="num">RDV pris</th><th class="num">Confirmés</th><th class="num">Honorés</th><th class="num">Absents</th><th class="num">Vendus</th><th class="num">% vente</th><th class="num">Note moy.</th></tr></thead><tbody>${tps.map(rowTp).join('')}</tbody></table></div>`:''}
+  <h3>Commerciaux</h3><div class="table-wrap"><table class="tbl"><thead><tr><th>Commercial</th><th class="num">RDV</th><th class="num">Honorés</th><th class="num">Absents</th><th class="num">Vendus</th><th class="num">% transfo.</th><th class="num">CA TTC</th><th class="num">Panier moyen</th></tr></thead><tbody>${reps_.map(rowRep).join('')}</tbody></table></div>
+  <h3>La note du télépro annonce-t-elle la vente ?</h3><div class="table-wrap"><table class="tbl"><thead><tr><th>Note</th><th class="num">RDV</th><th class="num">Honorés</th><th class="num">Vendus</th><th>% vente</th></tr></thead><tbody>
+    ${notes.map(x=>{const t=x.h.length?x.v.length/x.h.length:0; return `<tr><td>${x.k?'<span class="ag-st" style="font-size:13px">'+'★'.repeat(x.k)+'</span> '+NOTE_TXT[x.k]:'Sans note'}</td><td class="num">${x.L.length}</td><td class="num">${x.h.length}</td><td class="num">${x.v.length}</td><td>${x.h.length?`<span class="bar" style="width:${Math.round(t/maxv*120)}px"></span>${Math.round(t*100)} %`:'—'}</td></tr>`}).join('')}</tbody></table></div>
+  <p class="hint">Honoré = RDV qui a eu lieu (hors client absent et reporté). Le CA vient du devis de la fiche (ou du montant des travaux). L'agenda garde l'historique des 5 derniers mois.</p></div>`;
+}
+document.getElementById('pane-dash').addEventListener('click',e=>{const b=e.target.closest('[data-dper]'); if(b){dashPer=b.dataset.dper; renderDash()}});
+
+/* ===== Tournée de la semaine (carte) ===== */
+let tourDay='all', LMAP=null;
+async function leaflet(){if(window.L) return true; try{const l=document.createElement('link'); l.rel='stylesheet'; l.href='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css'; document.head.appendChild(l); await loadScript('https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js'); return !!window.L}catch(e){return false}}
+async function renderTour(){
+  const days=[...Array(5)].map((_,i)=>addDays(agStart,i)), dd=document.getElementById('tourDays'), hint=document.getElementById('tourHint'); if(!dd) return;
+  dd.innerHTML=`<span class="seg sm"><button type="button" data-tday="all" class="${tourDay==='all'?'on':''}">Toute la semaine</button>${days.map(d=>`<button type="button" data-tday="${d.getDay()}" class="${String(tourDay)===String(d.getDay())?'on':''}">${d.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric'})}</button>`).join('')}</span>`;
+  if(!(await leaflet())){hint.textContent='Carte indisponible (pas de connexion à la bibliothèque de cartes).'; return}
+  const el=document.getElementById('tourMap'); if(!el) return; if(LMAP){LMAP.remove(); LMAP=null}
+  LMAP=L.map(el,{scrollWheelZoom:false}); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(LMAP); LMAP.setView([46.6,2.4],6);
+  const inWeek=r=>{const d=new Date(r.debut); return d>=agStart&&d<addDays(agStart,5)&&(tourDay==='all'||d.getDay()===+tourDay)};
+  const R=visibleRdv().filter(inWeek), O=isTp()?(OCC||[]).filter(inWeek):[];
+  hint.textContent=R.length?'Localisation des adresses…':'Aucun RDV à afficher sur cette période.';
+  const P=await Promise.all(R.concat(O.map(o=>Object.assign({_occ:true},o))).map(async r=>({r,p:await rdvPos(r).catch(()=>null)})));
+  if(!LMAP||!document.getElementById('tourMap')) return;
+  const pts=[], groups={}; let miss=0;
+  P.forEach(({r,p})=>{if(!p){miss++; return} pts.push([p.lat,p.lon]); const d=new Date(r.debut);
+    const lbl=`${tourDay==='all'?d.toLocaleDateString('fr-FR',{weekday:'short'})+' ':''}${hhmm(d)}`;
+    const ic=L.divIcon({className:'',html:`<span class="tour-pin${r._occ?' busy':''}" style="--c:${r._occ?'#9aa095':repColor(MODE==='cloud'?r.commercial:'local')}">${esc(r._occ?hhmm(d):lbl)}</span>`,iconSize:null});
+    const mk=L.marker([p.lat,p.lon],{icon:ic}).addTo(LMAP);
+    if(!r._occ){mk.bindPopup(`<b>${esc(r.titre||'RDV')}</b><br>${esc(dLong(r.debut))} · ${hhmm(r.debut)}<br>${esc(r.adresse||'')}${MODE==='cloud'?'<br>'+esc(repName(r.commercial)):''}<br><button type="button" class="btn small" data-topen="${r.id}" style="margin-top:6px">Ouvrir le RDV</button>`);
+      const k=(r.commercial||'_')+'|'+dayStart(r.debut).getTime(); (groups[k]=groups[k]||[]).push({r,p})}});
+  Object.entries(groups).forEach(([k,L_])=>{L_.sort((x,y)=>x.r.debut.localeCompare(y.r.debut)); const rep=k.split('|')[0], h=team.find(t=>t.id===rep), line=L_.map(x=>[x.p.lat,x.p.lon]);
+    if(h&&h.lat&&h.lon){line.unshift([h.lat,h.lon]); pts.push([h.lat,h.lon]); L.marker([h.lat,h.lon],{icon:L.divIcon({className:'',html:'<span class="tour-home" title="Domicile">🏠</span>',iconSize:null})}).addTo(LMAP)}
+    if(line.length>1) L.polyline(line,{color:repColor(rep==='_'?null:rep),weight:3,opacity:.75,dashArray:'6 6'}).addTo(LMAP)});
+  if(pts.length) LMAP.fitBounds(pts,{padding:[30,30],maxZoom:13});
+  hint.textContent=R.length?`${R.length} RDV${miss?` · ${miss} adresse(s) non localisée(s)`:''}. Les pointillés relient les RDV de chaque commercial dans l'ordre de la journée${team.some(t=>t.lat)?', depuis son domicile 🏠':''}.`:hint.textContent;
+}
+document.getElementById('pane-agenda').addEventListener('click',e=>{const t=e.target.closest('[data-tday]'); if(t){tourDay=t.dataset.tday; renderTour(); return}
+  const o=e.target.closest('[data-topen]'); if(o){const r=(RDV||[]).find(x=>x.id===o.dataset.topen); if(r){rvRes=null; agModal(rdvDetail(r))}}});
 
 /* ===== Administration ===== */
 function renderAdmin(){
@@ -2321,6 +2478,7 @@ async function enterApp(user){
   const role=document.getElementById('userRole'); role.textContent=ROLES[prof.role]||'Commercial'; role.className='status'+(prof.role==='admin'?' signe':'');
   document.getElementById('userBox').hidden=false;
   document.getElementById('tab-admin').hidden=!isAdmin();
+  document.getElementById('tab-dash').hidden=!dashOk();
   document.getElementById('ownerWrap').hidden=!isAdmin();
   renderRepFilter(); renderFilters(); fillForm(); renderList(); resetDel();
   document.getElementById('authScreen').hidden=true;
@@ -2372,7 +2530,7 @@ async function boot(){
   clients=load();
   if(!clients.length){clients=[sample()];persist();}
   currentId=clients[0].id;
-  renderFilters(); fillForm(); renderList();
+  renderFilters(); fillForm(); renderList(); document.getElementById('tab-dash').hidden=false;
 }
 
 let tt; function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),Math.max(2200,String(m).length*55))}
