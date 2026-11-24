@@ -55,6 +55,7 @@ header.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom
 .btn.ghost{background:transparent}
 .btn.danger{color:var(--bad)}
 .btn.small{padding:5px 10px;font-size:12.5px}
+a.btn{text-decoration:none;color:var(--fg)}a.btn.primary{color:var(--on-green)}
 
 /* Sidebar */
 aside.list{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
@@ -323,6 +324,35 @@ label small{font-weight:400}
 .ac li{color:var(--fg);font-weight:500;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13.5px}.ac li:hover,.ac li.on{background:var(--lime-soft)}
 .map-wrap{display:flex;flex-direction:column;gap:10px}
 .map{width:100%;height:min(70vh,640px);border:1px solid var(--line);border-radius:var(--r);background:var(--surface-2)}
+
+/* Agenda */
+.ag{display:flex;flex-direction:column;gap:12px}
+.ag-bar{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center}
+.ag-nav{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.ag-nav h2{font-size:17px;margin-left:6px;text-transform:capitalize}
+.ag-nav select{border:1px solid var(--line);border-radius:999px;padding:7px 12px;background:var(--surface);color:var(--fg);font-weight:600}
+.ag-late{display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:#fff4e0;border:1px solid #f0d199;border-radius:12px;padding:8px 12px;font-size:13px;color:#7a4b00}
+.ag-chip{border:1px solid var(--line);border-left:4px solid var(--c);background:var(--surface);border-radius:8px;padding:4px 8px;cursor:pointer;font-size:12.5px;color:var(--fg)}
+.ag-week{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:auto}
+.ag-head,.ag-body{display:grid;grid-template-columns:44px repeat(7,minmax(96px,1fr));min-width:720px}
+.ag-head span{padding:8px 6px;font-size:12px;color:var(--muted);text-transform:capitalize;border-bottom:1px solid var(--line);text-align:center}.ag-head b{font-size:15px;color:var(--fg);margin-left:2px}
+.ag-head span.today b{background:var(--green);color:var(--on-green);border-radius:999px;padding:1px 7px}
+.ag-body{position:relative}
+.ag-hours{position:relative;border-right:1px solid var(--line)}.ag-hours span{position:absolute;right:6px;font-size:11px;color:var(--muted);transform:translateY(-6px)}
+.ag-day{position:relative;border-right:1px solid var(--line);cursor:copy;background-image:repeating-linear-gradient(to bottom,var(--line) 0 1px,transparent 1px 46px)}
+.ag-day.today{background-color:var(--surface-2)}
+.ag-ev{position:absolute;border:0;border-left:4px solid var(--c);background:color-mix(in srgb,var(--c) 14%,var(--surface));border-radius:8px;padding:3px 6px;text-align:left;cursor:pointer;overflow:hidden;display:flex;flex-direction:column;gap:1px;font-size:11.5px;line-height:1.25;color:var(--fg)}
+.ag-ev b{font-size:12px}.ag-ev span{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ag-ev em{font-style:normal;font-weight:700}
+.ag-ev.done{opacity:.8}
+.ag-list{display:flex;flex-direction:column;gap:14px}.ag-dayl h3{font-size:14px;text-transform:capitalize;margin:0 0 6px}
+.ag-row{width:100%;display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:10px;align-items:center;text-align:left;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--c);border-radius:12px;padding:10px 12px;margin-bottom:6px;cursor:pointer;color:var(--fg)}
+.ag-row .t{font-family:var(--display);font-weight:800}.ag-row .m{display:flex;flex-direction:column;min-width:0}.ag-row small{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ag-row .st{font-size:12px;font-weight:700}
+.ag-legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted)}.ag-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}
+.ag-info{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ag-com{background:var(--surface-2);border-radius:12px;padding:10px 12px;font-size:13.5px}.ag-com p{margin:4px 0 0}
+.ag-res{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:10px}.ag-res legend{font-weight:800;font-family:var(--display);padding:0 4px}
+.ag-resb{display:flex;flex-wrap:wrap;gap:6px}.ag-resb button{border:2px solid color-mix(in srgb,var(--c) 40%,transparent);background:var(--surface);color:var(--c);border-radius:999px;padding:7px 12px;font-weight:700;cursor:pointer}
+.ag-resb button.on{background:var(--c);color:#fff;border-color:var(--c)}
+.modal textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--bg);color:var(--fg);font:inherit;resize:vertical}
 #printRoot{display:none}
 @media print{
   body.print-devis .wrap, body.print-devis .toast{display:none!important}
@@ -397,6 +427,7 @@ body.pm .sheet-head h2{font-size:30px} body.pm .ribbon{font-size:22px} body.pm .
         <button role="tab" id="tab-photos" aria-selected="false" aria-controls="pane-photos" type="button">Photos &amp; métrage</button>
         <button role="tab" id="tab-carte" aria-selected="false" aria-controls="pane-carte" type="button">Carte</button>
         <button role="tab" id="tab-devis" aria-selected="false" aria-controls="pane-devis" type="button">Devis</button>
+ <button role="tab" id="tab-agenda" aria-selected="false" aria-controls="pane-agenda" type="button">Agenda</button>
         <button role="tab" id="tab-admin" aria-selected="false" aria-controls="pane-admin" type="button" hidden>Administration</button>
       </div>
 
@@ -465,6 +496,7 @@ body.pm .sheet-head h2{font-size:30px} body.pm .ribbon{font-size:22px} body.pm .
       <section id="pane-photos" hidden></section>
       <section id="pane-carte" hidden></section>
       <section id="pane-devis" hidden></section>
+      <section id="pane-agenda" hidden></section>
       <section id="pane-admin" hidden></section>
     </main>
   </div>
@@ -722,17 +754,19 @@ function ico(k){
 /* ===== Navigation ===== */
 function select(id){currentId=id; fillForm(); renderList(); if(!document.getElementById('pane-sheet').hidden) renderSheet(); if(!document.getElementById('pane-devis').hidden) renderDevis(); phSel=null; phDraft=[]; phView='photo'; if(!document.getElementById('pane-photos').hidden) renderPhotos(); if(!document.getElementById('pane-carte').hidden) renderCarte(); resetDel();}
 function setTab(t){
-  ['form','sheet','photos','carte','devis','admin'].forEach(k=>{document.getElementById('tab-'+k).setAttribute('aria-selected',k===t);document.getElementById('pane-'+k).hidden=k!==t});
+  ['form','sheet','photos','carte','devis','agenda','admin'].forEach(k=>{document.getElementById('tab-'+k).setAttribute('aria-selected',k===t);document.getElementById('pane-'+k).hidden=k!==t});
   if(t==='sheet') renderSheet();
   if(t==='admin') renderAdmin();
   if(t==='devis') renderDevis();
   if(t==='photos') renderPhotos();
   if(t==='carte') renderCarte();
+  if(t==='agenda') renderAgenda();
   if(t==='form') fillForm();
 }
 document.getElementById('tab-devis').onclick=()=>setTab('devis');
 document.getElementById('tab-photos').onclick=()=>setTab('photos');
 document.getElementById('tab-carte').onclick=()=>setTab('carte');
+document.getElementById('tab-agenda').onclick=()=>setTab('agenda');
 document.getElementById('tab-admin').onclick=()=>setTab('admin');
 document.getElementById('tab-form').onclick=()=>setTab('form');
 document.getElementById('tab-sheet').onclick=()=>setTab('sheet');
@@ -1761,6 +1795,161 @@ function renderCarte(){
     <iframe class="map" title="Carte : ${esc(addr)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=${encodeURIComponent(q)}&t=${mapType==='k'?'k':''}&z=19&hl=fr&output=embed"></iframe></div>`;
 }
 document.getElementById('pane-carte').addEventListener('click',e=>{const b=e.target.closest('[data-map]'); if(b){mapType=b.dataset.map; renderCarte()}});
+
+/* ===== Agenda des rendez-vous ===== */
+const RES={a_venir:['À venir','#6b7766'],vendu:['Vendu','#2f8f1f'],devis:['Devis à envoyer','#c58a00'],rappeler:['À rappeler','#1f4aa8'],reporte:['Reporté','#7a5bb5'],absent:['Client absent','#b5541b'],refus:['Pas intéressé','#b3261e']};
+const RES_STATUT={vendu:'signe',devis:'devis',refus:'perdu',rappeler:'rdv',reporte:'rdv',absent:'rdv'};
+const REP_COLORS=['#2f8f1f','#1f4aa8','#c0392b','#8e44ad','#d68910','#16a085','#5d6d7e','#a04000'];
+const RKEY='ite-rdv'; let RDV=null, agView=window.innerWidth<760?'liste':'semaine', agRep='all';
+const dayStart=d=>{const x=new Date(d); x.setHours(0,0,0,0); return x};
+const mondayOf=d=>{const x=dayStart(d); x.setDate(x.getDate()-((x.getDay()+6)%7)); return x};
+let agStart=mondayOf(new Date());
+const addDays=(d,k)=>{const x=new Date(d); x.setDate(x.getDate()+k); return x};
+const hhmm=d=>new Date(d).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+const dLong=d=>new Date(d).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+const repName=id=>{const p=team.find(t=>t.id===id); return p?(p.nom||p.email):(MODE==='local'?'Moi':'')};
+const repColor=id=>{const i=team.findIndex(t=>t.id===id); return REP_COLORS[(i<0?0:i)%REP_COLORS.length]};
+const myId=()=>MODE==='cloud'?me.id:'local';
+async function loadRdv(force){
+  if(RDV&&!force) return RDV;
+  if(MODE==='cloud'){const from=addDays(new Date(),-150).toISOString();
+    const {data,error}=await sb.from('ite_rdv').select('*').gte('debut',from).order('debut');
+    if(error){RDV=[]; toast(/ite_rdv/.test(error.message||'')?'Agenda : exécutez mise-a-jour-devis.sql dans Supabase':'Agenda indisponible : '+error.message); return RDV}
+    RDV=data||[];
+  } else {try{RDV=JSON.parse(localStorage.getItem(RKEY)||'[]')}catch(e){RDV=[]}}
+  return RDV;
+}
+function saveLocalRdv(){try{localStorage.setItem(RKEY,JSON.stringify(RDV))}catch(e){}}
+async function upsertRdv(r,isNew){
+  const row={id:r.id,commercial:r.commercial,client_id:r.client_id||null,debut:r.debut,duree:+r.duree||90,titre:r.titre||'',adresse:r.adresse||'',commentaire:r.commentaire||'',resultat:r.resultat||'a_venir',compte_rendu:r.compte_rendu||''};
+  if(MODE==='cloud'){const q=isNew?sb.from('ite_rdv').insert(row):sb.from('ite_rdv').update(row).eq('id',r.id); const {error}=await q; if(error){toast('RDV non enregistré : '+error.message);return false}}
+  const i=RDV.findIndex(x=>x.id===r.id); if(i<0) RDV.push(Object.assign({},row)); else RDV[i]=Object.assign(RDV[i],row);
+  RDV.sort((a,b)=>a.debut.localeCompare(b.debut)); if(MODE!=='cloud') saveLocalRdv(); return true;
+}
+async function deleteRdv(id){if(MODE==='cloud'){const {error}=await sb.from('ite_rdv').delete().eq('id',id); if(error) return toast(error.message)} RDV=RDV.filter(x=>x.id!==id); if(MODE!=='cloud') saveLocalRdv()}
+const visibleRdv=()=>(RDV||[]).filter(r=>agRep==='all'||r.commercial===agRep);
+const aStatuer=()=>visibleRdv().filter(r=>r.resultat==='a_venir'&&new Date(r.debut).getTime()+(+r.duree||90)*60000<Date.now());
+function renderAgenda(){
+  const pane=document.getElementById('pane-agenda');
+  if(!RDV){pane.innerHTML='<p class="hint">Chargement de l\'agenda…</p>'; loadRdv().then(renderAgenda); return}
+  const end=addDays(agStart,6), late=aStatuer();
+  const title=agStart.getMonth()===end.getMonth()?`${agStart.getDate()} – ${end.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})}`:`${agStart.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})} – ${end.toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'})}`;
+  pane.innerHTML=`<div class="ag">
+    <div class="ag-bar"><div class="ag-nav"><button class="btn small" type="button" data-ag="prev" aria-label="Semaine précédente">◀</button><button class="btn small" type="button" data-ag="today">Aujourd'hui</button><button class="btn small" type="button" data-ag="next" aria-label="Semaine suivante">▶</button><h2>${title}</h2></div>
+      <div class="ag-nav">${isAdmin()?`<select data-ag="rep" aria-label="Commercial"><option value="all">Tous les commerciaux</option>${team.filter(p=>p.actif).map(p=>`<option value="${p.id}" ${agRep===p.id?'selected':''}>${esc(p.nom||p.email)}</option>`).join('')}</select>`:''}
+        <span class="seg sm">${[['semaine','Semaine'],['liste','Liste']].map(([k,l])=>`<button type="button" class="${agView===k?'on':''}" data-agview="${k}">${l}</button>`).join('')}</span>
+        <button class="btn primary" type="button" data-ag="new">+ Nouveau RDV</button></div></div>
+    ${late.length?`<div class="ag-late"><b>${late.length} RDV à statuer</b>${late.slice(0,8).map(r=>`<button type="button" class="ag-chip" data-rdv="${r.id}" style="--c:${repColor(r.commercial)}">${new Date(r.debut).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})} ${hhmm(r.debut)} · ${esc(r.titre||'RDV')}</button>`).join('')}</div>`:''}
+    ${agView==='semaine'?weekHtml():listHtml()}
+    ${isAdmin()&&team.length>1?`<div class="ag-legend">${team.filter(p=>p.actif).map(p=>`<span><i style="background:${repColor(p.id)}"></i>${esc(p.nom||p.email)}</span>`).join('')}</div>`:''}</div>`;
+}
+const H0=7,H1=21,HP=46;
+function weekHtml(){
+  const days=[...Array(7)].map((_,i)=>addDays(agStart,i)), today=dayStart(new Date()).getTime(), R=visibleRdv();
+  const col=d=>{const ev=R.filter(r=>dayStart(r.debut).getTime()===d.getTime()).map(r=>({r,s:new Date(r.debut),e:new Date(new Date(r.debut).getTime()+(+r.duree||90)*60000)}));
+    ev.forEach((x,i)=>{x.lane=0; while(ev.slice(0,i).some(y=>y.lane===x.lane&&y.e>x.s&&y.s<x.e)) x.lane++}); const lanes=Math.max(1,...ev.map(x=>x.lane+1));
+    return ev.map(({r,s,lane})=>{const top=Math.max(0,(s.getHours()+s.getMinutes()/60-H0)*HP), h=Math.max(22,(+r.duree||90)/60*HP-2), st=RES[r.resultat]||RES.a_venir;
+      return `<button type="button" class="ag-ev${r.resultat!=='a_venir'?' done':''}" data-rdv="${r.id}" style="top:${top}px;height:${h}px;left:calc(${lane*100/lanes}% + 2px);width:calc(${100/lanes}% - 4px);--c:${repColor(r.commercial)}"><b>${hhmm(r.debut)} ${esc(r.titre||'RDV')}</b>${r.adresse?`<span>${esc(r.adresse)}</span>`:''}${r.resultat!=='a_venir'?`<em style="color:${st[1]}">${st[0]}</em>`:''}</button>`}).join('')};
+  return `<div class="ag-week"><div class="ag-head"><span></span>${days.map(d=>`<span class="${d.getTime()===today?'today':''}">${d.toLocaleDateString('fr-FR',{weekday:'short'})} <b>${d.getDate()}</b></span>`).join('')}</div>
+    <div class="ag-body" style="height:${(H1-H0)*HP}px"><div class="ag-hours">${[...Array(H1-H0)].map((_,i)=>`<span style="top:${i*HP}px">${H0+i}h</span>`).join('')}</div>
+    ${days.map(d=>`<div class="ag-day${d.getTime()===today?' today':''}" data-day="${d.toISOString()}">${col(d)}</div>`).join('')}</div></div>`;
+}
+function listHtml(){
+  const R=visibleRdv().filter(r=>new Date(r.debut)>=agStart&&new Date(r.debut)<addDays(agStart,14));
+  if(!R.length) return `<div class="dv-empty"><p class="hint" style="margin:0">Aucun RDV sur ces deux semaines.</p></div>`;
+  const by={}; R.forEach(r=>{const k=dayStart(r.debut).toISOString(); (by[k]=by[k]||[]).push(r)});
+  return `<div class="ag-list">${Object.entries(by).map(([k,L])=>`<div class="ag-dayl"><h3>${dLong(k)}</h3>${L.map(r=>{const st=RES[r.resultat]||RES.a_venir;
+    return `<button type="button" class="ag-row" data-rdv="${r.id}" style="--c:${repColor(r.commercial)}"><span class="t">${hhmm(r.debut)}</span><span class="m"><b>${esc(r.titre||'RDV')}</b>${r.adresse?`<small>${esc(r.adresse)}</small>`:''}${isAdmin()?`<small>${esc(repName(r.commercial))}</small>`:''}</span><span class="st" style="color:${st[1]}">${st[0]}</span></button>`}).join('')}</div>`).join('')}</div>`;
+}
+/* Fenêtre RDV */
+function agModal(html){let m=document.getElementById('rdvModal'); if(!m){m=document.createElement('div'); m.className='modal-bg'; m.id='rdvModal'; document.body.appendChild(m);
+  m.addEventListener('click',e=>{if(e.target===m) m.hidden=true}); m.addEventListener('click',agModalClick); m.addEventListener('change',e=>{if(e.target.id==='rvClient') rdvClientToggle(); if(e.target.id==='rvRep'){const s=document.getElementById('rvClient'); s.innerHTML=clientOpts(e.target.value,s.value); rdvClientToggle()}})}
+  m.innerHTML=`<div class="modal" role="dialog" aria-modal="true">${html}</div>`; m.hidden=false; return m}
+const isoLocal=d=>{const x=new Date(d); return [x.getFullYear(),String(x.getMonth()+1).padStart(2,'0'),String(x.getDate()).padStart(2,'0')].join('-')};
+function rdvForm(r){
+  const isNew=!r.id, d=new Date(r.debut), canPick=isAdmin(), cid=r.client_id||'';
+  const reps=team.filter(p=>p.actif||p.id===r.commercial);
+  return `<h2>${isNew?'Nouveau rendez-vous':'Modifier le rendez-vous'}</h2><input type="hidden" id="rvId" value="${esc(r.id||'')}">
+  <div class="fields">
+    ${canPick?`<label>Commercial<div class="in"><select id="rvRep">${reps.map(p=>`<option value="${p.id}" ${p.id===r.commercial?'selected':''}>${esc(p.nom||p.email)}</option>`).join('')}</select></div></label>`:''}
+    <label>Date<div class="in"><input id="rvDate" type="date" value="${isoLocal(d)}"></div></label>
+    <label>Heure<div class="in"><input id="rvTime" type="time" step="900" value="${hhmm(d)}"></div></label>
+    <label>Durée<div class="in"><select id="rvDur">${[30,45,60,90,120,180].map(m=>`<option value="${m}" ${+r.duree===m?'selected':''}>${m<60?m+' min':(m/60+' h').replace('.',',').replace(',5 h',' h 30')}</option>`).join('')}</select></div></label>
+    <label class="full">Client<div class="in"><select id="rvClient">${clientOpts(r.commercial,cid)}</select></div></label>
+    <div class="full fields" id="rvNew" ${cid?'hidden':''} style="padding:0">
+      <label>Nom<div class="in"><input id="rvNom"></div></label><label>Prénom<div class="in"><input id="rvPrenom"></div></label>
+      <label>Téléphone<div class="in"><input id="rvTel" inputmode="tel"></div></label><label>Adresse<div class="in"><input id="rvAdr"></div></label>
+      <label>Code postal<div class="in"><input id="rvCp" inputmode="numeric"></div></label><label>Ville<div class="in"><input id="rvVille"></div></label></div>
+    <label class="full">Commentaire pour le commercial<textarea id="rvCom" rows="3" placeholder="Accès, besoin du client, chauffage, personnes présentes…">${esc(r.commentaire||'')}</textarea></label>
+  </div>
+  <div class="acts">${isNew?'':`<span id="rvDelWrap" style="margin-right:auto"><button class="btn danger" type="button" data-rv="del">Supprimer</button></span>`}<button class="btn" type="button" data-rv="close">Annuler</button><button class="btn primary" type="button" data-rv="save">Enregistrer le RDV</button></div>`;
+}
+function clientOpts(rep,cid){const cl=clients.filter(c=>MODE==='local'||(known.has(c.id)&&(!isAdmin()||c._owner===rep)));
+  return `<option value="">+ Nouveau client</option>${cl.map(c=>`<option value="${c.id}" ${c.id===cid?'selected':''}>${esc(fullName(c))}${c.ville?' – '+esc(c.ville):''}</option>`).join('')}`}
+function rdvClientToggle(){document.getElementById('rvNew').hidden=!!document.getElementById('rvClient').value}
+function rdvDetail(r){
+  const c=clients.find(x=>x.id===r.client_id), st=RES[r.resultat]||RES.a_venir, fin=new Date(new Date(r.debut).getTime()+(+r.duree||90)*60000);
+  const tel=c&&c.tel, addr=r.adresse||(c?[c.adresse,c.cp,c.ville].filter(Boolean).join(' '):'');
+  return `<input type="hidden" id="rvId" value="${r.id}"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start"><div><h2>${esc(r.titre||'Rendez-vous')}</h2>
+    <p class="hint" style="margin:4px 0 0;font-size:13px">${dLong(r.debut)} · ${hhmm(r.debut)} – ${hhmm(fin)}${MODE==='cloud'?' · '+esc(repName(r.commercial)):''}</p></div><span class="status" style="background:${st[1]}22;color:${st[1]}">${st[0]}</span></div>
+  <div class="ag-info">${tel?`<a class="btn small" href="tel:${esc(tel.replace(/\s/g,''))}">📞 ${esc(tel)}</a>`:''}${addr?`<a class="btn small" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}">📍 Itinéraire</a><span class="hint" style="margin:0">${esc(addr)}</span>`:''}</div>
+  ${r.commentaire?`<div class="ag-com"><b>Commentaire</b><p>${esc(r.commentaire).replace(/\n/g,'<br>')}</p></div>`:''}
+  <fieldset class="ag-res"><legend>Résultat du RDV</legend><div class="ag-resb">${Object.entries(RES).filter(([k])=>k!=='a_venir').map(([k,[l,col]])=>`<button type="button" class="${r.resultat===k?'on':''}" data-res="${k}" style="--c:${col}">${l}</button>`).join('')}</div>
+    <label>Compte rendu<textarea id="rvCr" rows="4" placeholder="Ce qui a été dit, prochaine étape, date de rappel…">${esc(r.compte_rendu||'')}</textarea></label>
+    <p class="hint" style="margin:0">Le statut de la fiche client suit le résultat (Vendu → Signé, Devis → Devis envoyé, Pas intéressé → Perdu) et le compte rendu est ajouté à ses notes.</p></fieldset>
+  <div class="acts"><button class="btn" type="button" data-rv="edit" style="margin-right:auto">Modifier le RDV</button>${c?`<button class="btn" type="button" data-rv="fiche">Ouvrir la fiche client</button>`:''}<button class="btn" type="button" data-rv="close">Fermer</button><button class="btn primary" type="button" data-rv="statuer">Enregistrer le résultat</button></div>`;
+}
+let rvRes=null;
+async function agModalClick(e){
+  const m=document.getElementById('rdvModal'), b=e.target.closest('button'); if(!b) return;
+  const id=document.getElementById('rvId')?.value, r=(RDV||[]).find(x=>x.id===id);
+  if(b.dataset.res){rvRes=b.dataset.res; m.querySelectorAll('[data-res]').forEach(x=>x.classList.toggle('on',x===b)); return}
+  const a=b.dataset.rv; if(!a) return;
+  if(a==='close'){m.hidden=true; return}
+  if(a==='edit'){agModal(rdvForm(r)); return}
+  if(a==='fiche'){m.hidden=true; select(r.client_id); setTab('form'); return}
+  if(a==='del'){document.getElementById('rvDelWrap').innerHTML='<span class="confirm">Supprimer ce RDV ? <button class="btn danger small" type="button" data-rv="delYes">Oui</button></span>'; return}
+  if(a==='delYes'){await deleteRdv(id); m.hidden=true; renderAgenda(); toast('RDV supprimé'); return}
+  if(a==='statuer'){
+    const res=rvRes||r.resultat, cr=document.getElementById('rvCr').value.trim();
+    if(res==='a_venir') return toast('Choisissez le résultat du RDV');
+    b.disabled=true; const ok=await upsertRdv(Object.assign({},r,{resultat:res,compte_rendu:cr}),false); b.disabled=false; if(!ok) return;
+    const c=clients.find(x=>x.id===r.client_id);
+    if(c){ if(RES_STATUT[res]&&!(c.statut==='signe'&&res!=='vendu')) c.statut=RES_STATUT[res];
+      const line=`[RDV du ${new Date(r.debut).toLocaleDateString('fr-FR')}] ${RES[res][0]}${cr?' : '+cr:''}`;
+      if(!(c.notes||'').includes(line)) c.notes=((c.notes||'').trim()+'\n'+line).trim(); c.updated=Date.now(); persist(c); if(c.id===currentId) fillForm(); renderList()}
+    m.hidden=true; rvRes=null; renderAgenda(); toast('Résultat enregistré'); return;
+  }
+  if(a==='save'){
+    const date=document.getElementById('rvDate').value, time=document.getElementById('rvTime').value||'09:00';
+    if(!date) return toast('Indiquez la date');
+    const rep=document.getElementById('rvRep')?.value||(r&&r.commercial)||myId();
+    const debut=new Date(date+'T'+time).toISOString(), duree=+document.getElementById('rvDur').value;
+    let cid=document.getElementById('rvClient').value, c=clients.find(x=>x.id===cid);
+    if(!cid){
+      const nom=document.getElementById('rvNom').value.trim(); if(!nom) return toast('Indiquez le nom du client');
+      c=blank(); Object.assign(c,{nom,prenom:document.getElementById('rvPrenom').value.trim(),tel:fmtTel(document.getElementById('rvTel').value),adresse:document.getElementById('rvAdr').value.trim(),cp:document.getElementById('rvCp').value.trim(),ville:document.getElementById('rvVille').value.trim(),statut:'rdv',dateRdv:date});
+      if(MODE==='cloud'){const {error}=await sb.from('ite_clients').insert({id:c.id,data:payload(c),owner:rep}); if(error) return toast('Client non créé : '+error.message); known.add(c.id); c._owner=rep}
+      clients.push(c); if(MODE!=='cloud') persist(c); renderList(); cid=c.id;
+    } else if(c){c.dateRdv=date; if(['prospect',''].includes(c.statut||'')) c.statut='rdv'; c.updated=Date.now(); persist(c); renderList()}
+    const isNew=!r, row=Object.assign({},r||{id:newId(),resultat:'a_venir',compte_rendu:''},{commercial:rep,client_id:cid,debut,duree,titre:c?fullName(c):'RDV',adresse:c?[c.adresse,c.cp,c.ville].filter(Boolean).join(' '):'',commentaire:document.getElementById('rvCom').value.trim()});
+    b.disabled=true; const ok=await upsertRdv(row,isNew); b.disabled=false; if(!ok) return;
+    m.hidden=true; agStart=mondayOf(new Date(debut)); renderAgenda(); toast(isNew?'RDV ajouté à l\'agenda':'RDV modifié');
+  }
+}
+const agPane=document.getElementById('pane-agenda');
+agPane.addEventListener('click',e=>{
+  const ev=e.target.closest('[data-rdv]'); if(ev){const r=RDV.find(x=>x.id===ev.dataset.rdv); if(r){rvRes=null; agModal(rdvDetail(r))} return}
+  const b=e.target.closest('button');
+  if(b&&b.dataset.agview){agView=b.dataset.agview; renderAgenda(); return}
+  if(b&&b.dataset.ag){const a=b.dataset.ag;
+    if(a==='prev'||a==='next'){agStart=addDays(agStart,(a==='prev'?-7:7)); renderAgenda(); return}
+    if(a==='today'){agStart=mondayOf(new Date()); renderAgenda(); return}
+    if(a==='new'){const d=new Date(); d.setDate(d.getDate()+1); d.setHours(9,0,0,0); agModal(rdvForm({debut:d.toISOString(),duree:90,commercial:agRep!=='all'?agRep:myId(),client_id:currentId&&cur()&&(!isAdmin()||cur()._owner===myId())?currentId:''})); return}}
+  const day=e.target.closest('.ag-day'); if(day&&!b){const rect=day.getBoundingClientRect(), y=e.clientY-rect.top, h=H0+Math.floor(y/HP*2)/2, d=new Date(day.dataset.day); d.setHours(Math.floor(h),(h%1)*60,0,0);
+    agModal(rdvForm({debut:d.toISOString(),duree:90,commercial:agRep!=='all'?agRep:myId(),client_id:''}))}
+});
+agPane.addEventListener('change',e=>{if(e.target.dataset.ag==='rep'){agRep=e.target.value; renderAgenda()}});
 
 /* ===== Administration ===== */
 function renderAdmin(){
