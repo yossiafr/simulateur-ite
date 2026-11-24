@@ -1968,8 +1968,8 @@ function listHtml(){
 }
 /* Fenêtre RDV */
 function agModal(html){let m=document.getElementById('rdvModal'); if(!m){m=document.createElement('div'); m.className='modal-bg'; m.id='rdvModal'; document.body.appendChild(m);
-  m.addEventListener('click',e=>{if(e.target===m) m.hidden=true}); m.addEventListener('click',agModalClick); m.addEventListener('change',e=>{if(e.target.id==='rvClient') rdvClientToggle(); if(e.target.id==='rvRep'){const s=document.getElementById('rvClient'); s.innerHTML=clientOpts(e.target.value,s.value); rdvClientToggle()}})}
-  m.innerHTML=`<div class="modal" role="dialog" aria-modal="true">${html}</div>`; m.hidden=false; return m}
+  m.addEventListener('click',e=>{if(e.target===m) m.hidden=true}); m.addEventListener('click',agModalClick); m.addEventListener('change',e=>{if(e.target.id==='rvClient') rdvClientToggle(); if(e.target.id==='rvConfRep') fillTrajet(e.target.value||null); if(e.target.id==='rvRep'){const s=document.getElementById('rvClient'); s.innerHTML=clientOpts(e.target.value,s.value); rdvClientToggle()}})}
+  m.innerHTML=`<div class="modal" role="dialog" aria-modal="true">${html}</div>`; m.hidden=false; if(document.getElementById('rvTrajet')) fillTrajet(); return m}
 const isoLocal=d=>{const x=new Date(d); return [x.getFullYear(),String(x.getMonth()+1).padStart(2,'0'),String(x.getDate()).padStart(2,'0')].join('-')};
 function rdvForm(r){
   const isNew=!r.id, d=new Date(r.debut), canPick=isAdmin(), cid=r.client_id||'';
@@ -2042,6 +2042,20 @@ async function suggest(){
   box.innerHTML=`<div class="sug-l">${out.map((c,i)=>`<button type="button" data-sug="${new Date(c.S).toISOString()}" class="${c.best&&i===0?'best':''}"><b>${dLong(c.S)} · ${hhmm(c.S)}</b><small>${c.best?`${c.best.x.real?'':'≈ '}${String(c.best.k).replace('.',',')} km · ${c.best.x.min} min ${c.best.x.real?'par la route':'(estimation)'} du RDV de ${hhmm(c.best.x.s)}${lieu(c.best.x)?' à '+esc(lieu(c.best.x)):''}`:'Aucun RDV ce jour-là pour l\'instant'}</small></button>`).join('')}</div>
     <p class="hint" style="margin:0">${P.some(x=>x.real)?'Distances et temps de trajet calculés par la route (itinéraire IGN, gratuit).':'Distances estimées (vol d\'oiseau × 1,3, 55 km/h) : le calcul d\'itinéraire n\'a pas répondu.'} 10 min de marge sont gardées entre deux RDV. Cliquez un créneau pour le choisir.</p>`;
 }
+async function trajetAvant(r,repId){
+  const rep=repId||r.commercial; if(!rep) return null; const pos=await rdvPos(r).catch(()=>null); if(!pos) return {err:'Adresse du client introuvable pour calculer le trajet.'};
+  const d0=dayStart(r.debut).getTime(), prev=(RDV||[]).filter(x=>x.id!==r.id&&x.commercial===rep&&dayStart(x.debut).getTime()===d0&&new Date(x.debut)<new Date(r.debut)).sort((a,b)=>a.debut.localeCompare(b.debut)).pop();
+  let from, lab;
+  if(prev){from=await rdvPos(prev).catch(()=>null); const v=prev.ville||(clients.find(y=>y.id===prev.client_id)||{}).ville||''; lab=`depuis le RDV de ${hhmm(prev.debut)}${v?' à '+v:''}`}
+  else {const p=team.find(t=>t.id===rep); if(!p||!p.lat||!p.lon) return MODE==='cloud'?{err:`Domicile de ${repName(rep)} non renseigné : ajoutez-le dans Administration pour calculer le trajet du premier RDV.`}:null; from={lat:p.lat,lon:p.lon}; lab=rep===myId()?"depuis votre domicile":`depuis le domicile de ${repName(rep)}`}
+  if(!from) return null;
+  const rt=await routeIGN(pos,from); const km=rt?rt.km:kmRoute([from,pos]), min=rt?rt.min:minTrajet(km);
+  return {km,min,real:!!rt,lab,first:!prev,depart:new Date(new Date(r.debut).getTime()-(min+10)*6e4)};
+}
+async function fillTrajet(repId){const el=document.getElementById('rvTrajet'); if(!el) return; const r=(RDV||[]).find(x=>x.id===el.dataset.rdv); if(!r) return;
+  el.textContent='Calcul du trajet…'; const t=await trajetAvant(r,repId); if(document.getElementById('rvTrajet')!==el) return;
+  if(!t){el.textContent=''; return} if(t.err){el.textContent=isAdmin()?t.err:''; return}
+  el.innerHTML=`🚗 <b>${t.first?'Premier RDV de la journée':'Trajet'}</b> : ${t.real?'':'≈ '}${String(t.km).replace('.',',')} km · ${t.min} min ${esc(t.lab)}${t.real?'':' (estimation)'}${t.first?` · départ conseillé <b>${hhmm(t.depart)}</b>`:''}`}
 function rdvPdf(r){
   const c=clients.find(x=>x.id===r.client_id)||{}, f=couleurFoyer(c), fin=new Date(new Date(r.debut).getTime()+(+r.duree||90)*60000), cr=Array.isArray(c.credits)?c.credits:[];
   const v=x=>x==null||x===''?'—':esc(x), e0=x=>+x>0?eur(+x):'—', rev=(+c.revM||0)+(+c.revMme||0), ch=cr.reduce((a,x)=>a+(+x.mens||0),0);
@@ -2051,7 +2065,7 @@ function rdvPdf(r){
   document.getElementById('printRoot').innerHTML=`<div class="rp">
   <div class="rp-top"><img src="${LOGO_SRC}" alt="Les Compagnons Écologiques Français"><h1>FICHE RENDEZ-VOUS<small>Isolation thermique par l'extérieur</small></h1></div>
   <div class="rp-band"><div><span>Commercial</span><b>${esc(repName(r.commercial))}</b></div><div><span>Date</span><b>${esc(new Date(r.debut).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).replace(/^./,m=>m.toUpperCase()))}</b></div><div><span>Heure</span><b>${hhmm(r.debut)} – ${hhmm(fin)}</b></div></div>
-  <div class="rp-client"><div><h2>${esc(fullName(c)||r.titre||'Client')}</h2><p>${esc(adr)}</p></div>${f?`<span class="rp-pill" style="background:${f.col}">Foyer ${f.nom}</span>`:''}</div>
+  <div class="rp-client"><div><h2>${esc(fullName(c)||r.titre||'Client')}</h2><p>${esc(adr)}</p>${(t=>t&&/km/.test(t)?`<p style="color:#1d2a17">${esc(t)}</p>`:'')((document.getElementById('rvTrajet')||{}).textContent)}</div>${f?`<span class="rp-pill" style="background:${f.col}">Foyer ${f.nom}</span>`:''}</div>
   <div class="rp-grid">
     <div class="rp-sec"><h3>Coordonnées</h3>${tb([['Adresse',v(c.adresse||r.adresse)],['Code postal / ville',v([c.cp,c.ville].filter(Boolean).join(' '))],['Téléphone',v(c.tel)],['E-mail',v(c.email)],['Statut',v(STATUTS[c.statut])]])}</div>
     <div class="rp-sec"><h3>Logement</h3>${tb([['Type',v(c.typeLogement)],['Année de construction',v(c.annee)],['Surface habitable',+c.surface>0?esc(c.surface)+' m²':'—'],['Murs à isoler',+c.surfaceMurs>0?esc(c.surfaceMurs)+' m²':'—'],['DPE actuel',v(c.dpe)],['Chauffage',v(c.energie)],['Facture de chauffage',+c.factureAn>0?eur(+c.factureAn)+' / an':'—']])}</div>
@@ -2070,6 +2084,7 @@ function rdvDetail(r){
   return `<input type="hidden" id="rvId" value="${r.id}"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start"><div><h2>${esc(r.titre||'Rendez-vous')}</h2>
     ${r.note?`<p style="margin:2px 0 0"><i class="ag-st" style="font-size:16px">${'★'.repeat(r.note)}${'☆'.repeat(4-r.note)}</i> <span class="hint" style="margin:0">${NOTE_TXT[r.note]}</span></p>`:''}<p class="hint" style="margin:4px 0 0;font-size:13px">${dLong(r.debut)} · ${hhmm(r.debut)} – ${hhmm(fin)}${MODE==='cloud'&&!isTp()?' · '+esc(repName(r.commercial)):''}</p></div>${wait?'<span class="status" style="background:#fff4e0;color:#7a4b00">À confirmer</span>':isTp()&&r.resultat==='a_venir'?'<span class="status" style="background:#2f8f1f22;color:#2f8f1f">Confirmé</span>':`<span class="status" style="background:${st[1]}22;color:${st[1]}">${st[0]}</span>`}</div>
   <div class="ag-info">${tel?`<a class="btn small" href="tel:${esc(tel.replace(/\s/g,''))}">📞 ${esc(tel)}</a>`:''}${addr?`<a class="btn small" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}">📍 Itinéraire</a><a class="btn small" target="_blank" rel="noopener" href="https://waze.com/ul?q=${encodeURIComponent(addr)}&navigate=yes">🚗 Waze</a><span class="hint" style="margin:0">${esc(addr)}</span>`:''}</div>
+  ${MODE==='cloud'&&!isTp()?`<p class="hint" id="rvTrajet" data-rdv="${r.id}" style="margin:10px 0 0;font-size:13px"></p>`:''}
   ${isAdmin()?'<div style="margin-top:10px"><button class="btn small" type="button" data-rv="pdf">📄 Fiche RDV (PDF)</button></div>':''}
   ${(f=>f?`<div class="fc" style="--fc:${f.col};margin-top:10px"><b class="pill">Foyer ${f.nom}</b><span>${f.txt}</span></div>`:'')(c&&couleurFoyer(c))}
   ${r.commentaire?`<div class="ag-com"><b>Commentaire</b><p>${esc(r.commentaire).replace(/\n/g,'<br>')}</p></div>`:''}
@@ -2159,9 +2174,10 @@ function renderAdmin(){
   const f=(k,l,u,st)=>`<label>${l}<div class="in"><input id="def-${k}" data-def="${k}" type="number" step="${st}" value="${esc(d[k])}"><span class="u">${u}</span></div></label>`;
   pane.innerHTML=`<div class="grid">
   <fieldset class="span-all"><legend>Comptes (commerciaux, télépros, admin)</legend>
-    <div class="table-wrap"><table class="tbl"><thead><tr><th>Nom</th><th>E-mail</th><th>Rôle</th><th class="num">Clients</th><th class="num">Signés</th><th>Accès</th>${CFG.api?'<th>Mot de passe</th>':''}</tr></thead><tbody>
+    <div class="table-wrap"><table class="tbl"><thead><tr><th>Nom</th><th>E-mail</th><th>Rôle</th><th>Domicile <small style="font-weight:400">(trajet du 1er RDV)</small></th><th class="num">Clients</th><th class="num">Signés</th><th>Accès</th>${CFG.api?'<th>Mot de passe</th>':''}</tr></thead><tbody>
     ${team.map(p=>`<tr data-id="${p.id}" class="${p.actif?'':'off'}"><td><input type="text" data-act="nom" aria-label="Nom" value="${esc(p.nom)}" placeholder="Nom à saisir" style="width:150px">${p.id===me.id?' (vous)':''}</td><td>${esc(p.email)}</td>
       <td><select data-act="role" aria-label="Rôle" ${p.id===me.id?'disabled':''}>${Object.entries({commercial:'Commercial',telepro:'Télépro',admin:'Admin'}).map(([k,l])=>`<option value="${k}" ${(p.role||'commercial')===k?'selected':''}>${l}</option>`).join('')}</select></td>
+      <td>${p.role==='telepro'?'<span class="hint" style="margin:0">—</span>':`<input type="text" data-act="adresse" aria-label="Adresse du domicile" value="${esc(p.adresse||'')}" placeholder="Adresse, CP, ville" style="width:220px">${p.adresse?(p.lat&&p.lon?' <span title="Adresse localisée" style="color:#2f8f1f">✓</span>':' <span title="Adresse introuvable : vérifiez-la" style="color:#b3261e">⚠</span>'):''}`}</td>
       <td class="num">${cnt(p.id)}</td><td class="num">${signes(p.id)}</td>
       <td><label style="flex-direction:row;align-items:center;gap:6px;color:var(--fg)"><input type="checkbox" data-act="actif" ${p.actif?'checked':''} ${p.id===me.id?'disabled':''}>${p.actif?'Actif':'Désactivé'}</label></td>
       ${CFG.api?'<td class="pwd"><button class="btn small" data-act="pwd" type="button">Changer</button></td>':''}</tr>`).join('')}
@@ -2196,8 +2212,9 @@ function renderAdmin(){
 async function reloadTeam(){const {data,error}=await sb.from('ite_profiles').select('*').order('nom');if(!error)team=data;return !error}
 document.getElementById('pane-admin').addEventListener('change',async e=>{
   const tr=e.target.closest('tr[data-id]'); if(!tr) return; const id=tr.dataset.id, act=e.target.dataset.act;
-  if(act!=='role'&&act!=='actif'&&act!=='nom') return;
-  const patch=act==='role'?{role:e.target.value}:act==='nom'?{nom:e.target.value.trim()}:{actif:e.target.checked};
+  if(!['role','actif','nom','adresse'].includes(act)) return;
+  let patch=act==='role'?{role:e.target.value}:act==='nom'?{nom:e.target.value.trim()}:{actif:e.target.checked};
+  if(act==='adresse'){const a=e.target.value.trim(), g=a?await geo(a):null; patch={adresse:a,lat:g?g.lat:null,lon:g?g.lon:null}; if(a&&!g) toast('Adresse introuvable : vérifiez-la (numéro, rue, code postal, ville)')}
   const {error}=await sb.from('ite_profiles').update(patch).eq('id',id);
   if(error) toast('Modification impossible : '+error.message); else toast('Compte mis à jour');
   await reloadTeam(); renderAdmin(); renderRepFilter();
