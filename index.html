@@ -275,6 +275,8 @@ label small{font-weight:400}
 .sig-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 16px;display:flex;flex-direction:column;gap:8px;align-items:flex-start}
 .sig-link{display:flex;flex-wrap:wrap;gap:8px;align-items:center;width:100%}
 .sig-link input{flex:1 1 260px;min-width:0;border:1px solid var(--line);border-radius:10px;padding:7px 10px;background:var(--bg);color:var(--fg);font-size:12.5px}
+.dv-mail{display:flex;flex-direction:column;gap:10px;width:100%;border-top:1px solid var(--line);padding-top:12px;margin-top:4px}
+#dvMailBox{width:100%}
 .sig-ok{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
 .sig-ok img{height:60px;max-width:220px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:4px}
 .dv .sigimg{display:block;max-height:22mm;max-width:70mm;margin-top:2mm}
@@ -1048,6 +1050,7 @@ function entBlock(){
 const dvPane=document.getElementById('pane-devis');
 dvPane.addEventListener('input',e=>{
   const c=cur(), el=e.target; if(!c) return;
+  if(el.closest('.dv-mail')){if(el.id==='dmMsg') setSet({devisMsg:el.value}); refreshDm(); return}
   if(el.dataset.e!==undefined||el.closest('.ob')||el.dataset.sans!==undefined) return;
   if(c._sig) return;
   if(el.classList.contains('dvOpt')){const o=opts()[+el.value]; if(!o||!c.devis) return;
@@ -1071,6 +1074,7 @@ dvPane.addEventListener('click',async e=>{
   const c=cur(), b=e.target.closest('button'); if(!b||!c) return;
   if(b.id==='dvCreate'){b.disabled=true; await createDevis(); return}
   if(['dvLink','dvCopy','dvUnlink','dvCheck','dvUnsign','dvUnsignYes'].includes(b.id)) return signAction(b.id,c);
+  if(['dvMail','dmSend','dmCopy','dmClose'].includes(b.id)) return mailAction(b.id,c);
   if(b.id==='entSave'){
     const vals={}; dvPane.querySelectorAll('[data-e]').forEach(i=>{vals[i.dataset.e]=i.value});
     vals.prochainNumero=n(vals.prochainNumero)||1;
@@ -1129,7 +1133,9 @@ async function getAnnexes(force){
     const {data,error}=await sb.from('ite_annexes').select('id,titre,ordre,pages,created_at').order('ordre');
     if(error){ANNEX=[]; if(!/ite_annexes/.test(error.message||'')) toast('Documents joints indisponibles : '+error.message); return ANNEX}
     ANNEX=data;
-  } else {try{ANNEX=JSON.parse(localStorage.getItem(AKEY)||'[]')}catch(e){ANNEX=[]}}
+    if(!ANNEX.length&&isAdmin()&&!CFG.defaults.annexesInit&&await seedAnnexes()){const r=await sb.from('ite_annexes').select('id,titre,ordre,pages,created_at').order('ordre'); ANNEX=r.data||[]}
+  } else {try{ANNEX=JSON.parse(localStorage.getItem(AKEY)||'[]')}catch(e){ANNEX=[]}
+    if(!ANNEX.length&&/^https?:$/.test(location.protocol)&&!inIframe&&!getSet().annexesInit) await seedAnnexes()}
   ANNEX.sort((a,b)=>(a.ordre-b.ordre)||String(a.created_at||'').localeCompare(String(b.created_at||'')));
   return ANNEX;
 }
@@ -1206,7 +1212,7 @@ document.addEventListener('change',async e=>{
     for(const f of files){
       try{toast('Conversion de « '+f.name+' »…');
         const pages=await fileToPages(f,(i,t)=>toast(`Conversion de « ${f.name} » : page ${i}/${t}`));
-        if(await addAnnex(f.name.replace(/\.[a-z0-9]+$/i,'').replace(/[_-]+/g,' ').trim(),pages)) toast('Document ajouté : '+pages.length+' '+plural(pages.length,'page'));
+        if(await addAnnex(f.name.replace(/\.[a-z0-9]+$/i,'').replace(/^[0-9a-f]{8}-/i,'').replace(/[_-]+/g,' ').trim(),pages)) toast('Document ajouté : '+pages.length+' '+plural(pages.length,'page'));
       }catch(err){toast('Impossible de lire « '+f.name+' » : '+err.message)}
     }
     fillAnnexAdmin(); fillDvAnnex();
@@ -1256,24 +1262,20 @@ function sigBlockHtml(c){
   if(MODE!=='cloud') return `<p class="hint" style="margin:0">La signature en ligne par le client fonctionne dans la version en ligne (Vercel + Supabase), pas dans ce fichier.</p>`;
   if(c._sig){const s=c._sig; return `<div class="sig-ok"><img src="${s.image}" alt="Signature du client"><div><b>Devis signé le ${frDateTime(s.date)}</b> par ${esc(s.nom)}.<br><span class="hint" style="margin:0">Adresse IP ${esc(s.ip||'inconnue')} · empreinte ${esc(String(s.empreinte||'').slice(0,16))}… · le devis signé n'est plus modifiable.</span></div></div>
     ${isAdmin()?`<span id="dvUnsignWrap"><button class="btn small danger" type="button" id="dvUnsign">Annuler la signature</button></span>`:''}`}
-  if(c._token){const u=signUrl(c._token), e=ent();
-    const subj=`Votre devis ${c.devis.numero} – ${e.nomCourt}`, body=`Bonjour ${[c.prenom,c.nom].filter(Boolean).join(' ')},\n\nVoici votre devis d'isolation thermique par l'extérieur, avec ses documents joints. Vous pouvez le lire et le signer en ligne avec ce lien :\n${u}\n\nJe reste à votre disposition pour toute question.\n\nCordialement,\n${profile?(profile.nom||''):''}\n${e.nomCourt}`;
+  if(c._token){const u=signUrl(c._token);
     return `<div class="sig-link"><input readonly value="${esc(u)}" aria-label="Lien de signature" onclick="this.select()">
-      <button class="btn small primary" type="button" id="dvCopy">Copier le lien</button>
-      <a class="btn small" href="mailto:${encodeURIComponent(c.email||'')}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}">Envoyer par e-mail</a>
+      <button class="btn small" type="button" id="dvCopy">Copier le lien</button>
+      <button class="btn small primary" type="button" id="dvMail">Envoyer le devis par e-mail</button>
       <button class="btn small" type="button" id="dvCheck">Vérifier la signature</button>
       <button class="btn small danger" type="button" id="dvUnlink">Désactiver le lien</button></div>
-      <p class="hint">En attente de signature. Le client voit le devis à jour et ses documents joints, saisit son nom et signe au doigt ou à la souris. Pas besoin de compte.</p>`}
-  return `<button class="btn primary" type="button" id="dvLink">Créer le lien de signature</button>
+      <div id="dvMailBox" hidden></div>
+      <p class="hint">${c.devis.envoyeLe?`<b>Envoyé le ${frDateTime(c.devis.envoyeLe)}.</b> `:''}En attente de signature. Le client voit le devis à jour et ses documents joints, saisit son nom et signe au doigt ou à la souris. Pas besoin de compte.</p>`}
+  return `<div class="sig-link"><button class="btn primary" type="button" id="dvMail">Envoyer le devis au client par e-mail</button><button class="btn" type="button" id="dvLink">Créer seulement le lien de signature</button></div><div id="dvMailBox" hidden></div>
     <p class="hint">Signature électronique simple et gratuite : le client ouvre le lien, lit le devis et signe. La date, l'heure, l'adresse IP et une empreinte du devis signé sont enregistrées.</p>`;
 }
 async function signAction(id,c){
   if(id==='dvLink'){
-    if(!c.email) toast('Pensez à saisir l\'e-mail du client dans la fiche');
-    if(!known.has(c.id)||timers.has(c.id)){if(!(await saveNow(c))) return}
-    const tok=newToken(); const {error}=await sb.from('ite_clients').update({sign_token:tok}).eq('id',c.id);
-    if(error) return toast('Lien impossible : '+error.message+(/sign_token/.test(error.message)?' (exécutez mise-a-jour-devis.sql)':''));
-    c._token=tok; if(['prospect','rdv',''].includes(c.statut||'')){c.statut='devis'; persist(c); renderList()} renderDevis(); toast('Lien de signature créé'); return;
+    if(!(await ensureToken(c))) return; if(['prospect','rdv',''].includes(c.statut||'')){c.statut='devis'; persist(c); renderList()} renderDevis(); toast('Lien de signature créé'); return;
   }
   if(id==='dvCopy'){try{await navigator.clipboard.writeText(signUrl(c._token)); toast('Lien copié')}catch(e){toast('Sélectionnez le lien puis copiez-le')} return}
   if(id==='dvUnlink'){const {error}=await sb.from('ite_clients').update({sign_token:null}).eq('id',c.id); if(error) return toast(error.message); c._token=null; renderDevis(); toast('Lien désactivé'); return}
@@ -1340,9 +1342,120 @@ document.addEventListener('click',async e=>{
     b.disabled=true; b.textContent='Signature en cours…';
     const {error}=await sb.rpc('ite_signer_devis',{p_token:SIGN.tok,p_nom:document.getElementById('sgNom').value.trim(),p_image:document.getElementById('sgPad').toDataURL('image/png')});
     if(error){toast(error.message); b.textContent='Signer le devis'; checkSign(); return}
+    fetch('/api/notify-signature',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:SIGN.tok})}).catch(()=>{});
     await signPage(SIGN.tok); window.scrollTo(0,0);
   }
 });
+
+/* ===== Envoi du devis par e-mail (depuis l'adresse de l'entreprise) ===== */
+const SOCIETE='Les Compagnons Écologiques Français';
+let LOGO_PNG=null;
+async function logoPng(){
+  if(LOGO_PNG) return LOGO_PNG;
+  try{const img=new Image(); img.src=LOGO_SRC; await img.decode(); const k=360/img.naturalWidth, cv=document.createElement('canvas'); cv.width=360; cv.height=Math.round(img.naturalHeight*k);
+    const g=cv.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,cv.width,cv.height); g.drawImage(img,0,0,cv.width,cv.height); LOGO_PNG=cv.toDataURL('image/png')}catch(e){LOGO_PNG=''}
+  return LOGO_PNG;
+}
+const DM_MSG=`Suite à notre échange, voici votre devis d'isolation thermique par l'extérieur.
+
+Vous pouvez le consulter en ligne, avec la fiche produit, notre attestation RGE et notre assurance décennale, puis le signer en quelques secondes depuis votre téléphone ou votre ordinateur.
+
+Nous restons à votre disposition pour toute question.`;
+function devisMailHtml(c,msg,link,logo,docs){
+  const d=c.devis, e=ent(), t=devisTotals(c);
+  const nm=[d.civilite,c.nom].filter(Boolean).join(' ')||fullName(c);
+  const row=(l,v,b)=>`<tr><td style="padding:6px 0;color:#4f5c48;font-size:14px">${l}</td><td style="padding:6px 0;text-align:right;font-size:14px;${b?'font-weight:bold;color:#1e6312;font-size:16px':''}">${v}</td></tr>`;
+  const sender=profile?(profile.nom||''):(getSet().sig||'');
+  return `<div style="background:#f3f6ef;padding:24px 10px;font-family:Arial,Helvetica,sans-serif;color:#1d2a17">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:14px;border-collapse:separate;overflow:hidden">
+<tr><td style="padding:22px 28px 14px;border-bottom:4px solid #c9ea6a">${logo?`<img src="${logo}" width="180" alt="${esc(SOCIETE)}" style="display:block;width:180px;height:auto;border:0">`:`<b style="font-size:18px">${esc(SOCIETE)}</b>`}</td></tr>
+<tr><td style="padding:24px 28px 8px">
+<p style="margin:0 0 14px;font-size:15px">Bonjour ${esc(nm)},</p>
+${esc(msg).split(/\n{2,}/).map(p=>`<p style="margin:0 0 12px;font-size:15px;line-height:1.5">${p.replace(/\n/g,'<br>')}</p>`).join('')}
+</td></tr>
+<tr><td style="padding:8px 28px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f8ea;border:1px solid #d6e3c9;border-radius:12px;border-collapse:separate"><tr><td style="padding:16px 18px">
+<p style="margin:0 0 8px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#2f8f1f;font-weight:bold">Devis n° ${esc(d.numero)} du ${frDate(d.date)}</p>
+<p style="margin:0 0 10px;font-size:14px">Isolation thermique par l'extérieur${n(d.surface)?` · ${num2(n(d.surface))} m²`:''}${d.reference?` · ${esc(d.reference)}`:''}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+${row('Total TTC',eur2(t.ttc))}${t.region?row('Aides région','- '+eur2(t.region)):''}${d.deduireCee&&t.cee?row('Prime CEE','- '+eur2(t.cee)):''}${row('Reste à régler',eur2(t.reste),1)}
+</table>${t.cee&&!d.deduireCee?`<p style="margin:8px 0 0;font-size:12px;color:#4f5c48">Prime CEE de ${eur2(t.cee)} versée selon les termes indiqués dans le devis.</p>`:''}
+</td></tr></table></td></tr>
+<tr><td style="padding:22px 28px 6px;text-align:center">
+<a href="${esc(link)}" style="background:#2f8f1f;color:#ffffff;text-decoration:none;font-weight:bold;font-size:16px;padding:14px 28px;border-radius:999px;display:inline-block">Consulter et signer mon devis</a>
+<p style="margin:10px 0 0;font-size:12px;color:#6b7766">Signature en ligne, sans création de compte.</p></td></tr>
+${docs.length?`<tr><td style="padding:14px 28px 0"><p style="margin:0 0 6px;font-size:13px;font-weight:bold">Documents joints au devis</p><ul style="margin:0;padding-left:18px;font-size:13px;color:#4f5c48;line-height:1.6">${docs.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></td></tr>`:''}
+<tr><td style="padding:20px 28px 24px"><p style="margin:0;font-size:15px;line-height:1.5">Bien cordialement,<br>${sender?`<b>${esc(sender)}</b><br>`:''}${esc(SOCIETE)}</p></td></tr>
+<tr><td style="padding:14px 28px;background:#1e6312;color:#e8f6c4;font-size:11px;line-height:1.5">${esc(e.pied1)}<br>${esc(e.pied2)}</td></tr>
+</table>
+<p style="max-width:600px;margin:10px auto 0;font-size:11px;color:#6b7766;text-align:center">Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br><a href="${esc(link)}" style="color:#2f8f1f;word-break:break-all">${esc(link)}</a></p>
+</div>`;
+}
+function devisMailText(c,msg,link,docs){const d=c.devis,t=devisTotals(c);
+  return [`Bonjour ${[d.civilite,c.nom].filter(Boolean).join(' ')},`,'',msg,'',`Devis n° ${d.numero} du ${frDate(d.date)}`,`Total TTC : ${eur2(t.ttc)}`,t.region?`Aides région : - ${eur2(t.region)}`:null,`Reste à régler : ${eur2(t.reste)}`,'',
+    `Consulter et signer mon devis : ${link}`,'',docs.length?'Documents joints : '+docs.join(', '):null,docs.length?'':null,'Bien cordialement,',profile&&profile.nom?profile.nom:null,SOCIETE].filter(x=>x!==null).join('\n')}
+async function dmDocs(c){return annexOn(await getAnnexes(),c.devis).map(a=>a.titre)}
+async function ensureToken(c){
+  if(c._token) return true;
+  if(!known.has(c.id)||timers.has(c.id)){if(!(await saveNow(c))) return false}
+  const tok=newToken(); const {error}=await sb.from('ite_clients').update({sign_token:tok}).eq('id',c.id);
+  if(error){toast('Lien impossible : '+error.message+(/sign_token/.test(error.message)?' (exécutez mise-a-jour-devis.sql)':''));return false}
+  c._token=tok; return true;
+}
+async function openDevisMail(c){
+  if(!(await ensureToken(c))) return;
+  renderDevis(); const box=document.getElementById('dvMailBox'); if(!box) return;
+  const e=ent(), from=CFG.from||'contact@compagnons-ecologiques.fr';
+  box.innerHTML=`<div class="dv-mail"><div class="fields">
+    ${fld('À (e-mail du client)','id="dmTo" type="email"',c.email||'')}${fld('Objet','id="dmSub"',`Votre devis ${c.devis.numero} – ${SOCIETE}`)}
+    ${fld('Message personnalisé','id="dmMsg"',getSet().devisMsg||DM_MSG,{area:1,rows:6,cls:'full'})}</div>
+    <div class="mail-preview" id="dmPrev"></div>
+    <div class="ob-bar">${CFG.mail?`<button class="btn primary" type="button" id="dmSend">Envoyer depuis ${esc(from)}</button>`:''}
+      <button class="btn${CFG.mail?'':' primary'}" type="button" id="dmCopy">Copier et ouvrir ma messagerie</button><button class="btn" type="button" id="dmClose">Fermer</button></div>
+    ${CFG.mail?`<p class="hint">Envoyé depuis ${esc(from)}, avec une copie dans cette boîte. Les réponses du client y arrivent aussi.</p>`:`<p class="hint">L'envoi direct depuis ${esc(from)} n'est pas encore activé sur le site (voir le guide de mise en ligne). En attendant, l'e-mail mis en page est copié : collez-le dans votre messagerie.</p>`}</div>`;
+  box.hidden=false; await refreshDm(); box.scrollIntoView({behavior:'smooth',block:'start'});
+}
+async function refreshDm(){const c=cur(), p=document.getElementById('dmPrev'); if(!p||!c) return;
+  p.innerHTML=devisMailHtml(c,document.getElementById('dmMsg').value,signUrl(c._token),await logoPng(),await dmDocs(c))}
+async function mailAction(id,c){
+  if(id==='dvMail') return openDevisMail(c);
+  if(id==='dmClose'){document.getElementById('dvMailBox').hidden=true; return}
+  const to=document.getElementById('dmTo').value.trim(), sub=document.getElementById('dmSub').value, msg=document.getElementById('dmMsg').value, link=signUrl(c._token), docs=await dmDocs(c);
+  if(to&&!c.email){c.email=to; persist(c)}
+  const done=()=>{c.devis.envoyeLe=new Date().toISOString(); if(['prospect','rdv',''].includes(c.statut||'')) c.statut='devis'; persist(c); renderList()};
+  if(id==='dmCopy'){
+    const html=devisMailHtml(c,msg,link,await logoPng(),docs), text=devisMailText(c,msg,link,docs); let ok=false;
+    try{await navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([html],{type:'text/html'}),'text/plain':new Blob([text],{type:'text/plain'})})]); ok=true}catch(e){}
+    location.href='mailto:'+encodeURIComponent(to).replace(/%40/g,'@')+'?subject='+encodeURIComponent(sub)+(ok?'':'&body='+encodeURIComponent(text));
+    toast(ok?'E-mail copié : collez-le dans le message (Ctrl+V / Cmd+V)':'E-mail préparé dans votre messagerie'); done(); return;
+  }
+  if(id==='dmSend'){
+    if(!to) return toast('Renseignez l\'e-mail du client');
+    const b=document.getElementById('dmSend'); b.disabled=true; const lbl=b.textContent; b.textContent='Envoi…';
+    try{const {data:{session}}=await sb.auth.getSession();
+      const res=await fetch('/api/send-mail',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(session?session.access_token:'')},
+        body:JSON.stringify({to,subject:sub,html:devisMailHtml(c,msg,link,'cid:logo-cef',docs),text:devisMailText(c,msg,link,docs),fromName:SOCIETE,logo:await logoPng()})});
+      const out=await res.json().catch(()=>({})); if(!res.ok) throw new Error(out.erreur||('Erreur '+res.status));
+      done(); toast('Devis envoyé à '+to); renderDevis();
+    }catch(err){toast('Envoi impossible : '+err.message); b.disabled=false; b.textContent=lbl}
+  }
+}
+
+/* Documents CEF ajoutés automatiquement la première fois */
+let seeding=null;
+async function seedAnnexes(){
+  if(seeding) return seeding;
+  seeding=(async()=>{
+    try{const r=await fetch('documents-cef.json',{cache:'no-store'}); if(!r.ok) return false; const docs=await r.json(); if(!Array.isArray(docs)) return false;
+      for(let i=0;i<docs.length;i++){const x=docs[i];
+        if(MODE==='cloud'){const {error}=await sb.from('ite_annexes').insert({titre:x.titre,ordre:i+1,pages:x.pages}); if(error){toast('Documents par défaut : '+error.message);return false}}
+        else ANNEX.push({id:uid(),titre:x.titre,ordre:i+1,pages:x.pages,created_at:new Date().toISOString()})}
+      if(MODE!=='cloud') saveLocalAnnex();
+      await saveCfg(d=>Object.assign(d,{annexesInit:true})); return true;
+    }catch(e){return false}
+  })();
+  return seeding;
+}
 
 /* ===== Administration ===== */
 function renderAdmin(){
@@ -1508,7 +1621,8 @@ async function boot(){
     /* 1) config.js à la racine (version simple, sans fonctions serveur) */
     try{await loadScript('/config.js')}catch(e){}
     const C=window.ITE_CONFIG||{};
-    if(C.url&&C.anonKey&&!/xxxx/.test(C.url)) conf={url:C.url,anon:C.anonKey,mail:false,api:false};
+    if(C.url&&C.anonKey&&!/xxxx/.test(C.url)){conf={url:C.url,anon:C.anonKey,mail:false,api:false};
+      if(!new URLSearchParams(location.search).get('signer')) try{const r=await fetch('/api/send-mail',{cache:'no-store'}); const j=r.ok?await r.json():null; if(j&&j.mail){conf.mail=true; conf.from=j.from}}catch(e){}}
     /* 2) sinon fonctions Vercel /api (version complète) */
     else try{const r=await fetch('/api/config',{cache:'no-store'}); const j=await r.json().catch(()=>null);
       if(r.ok&&j&&j.url) conf=Object.assign(j,{api:true}); else if(r.status===503&&j) conf={erreur:j.erreur};}catch(e){}
@@ -1518,7 +1632,7 @@ async function boot(){
   if(conf){
     try{await loadScript('/supabase-2.119.0.js')}catch(e){try{await loadScript('/vendor/supabase-2.119.0.js')}catch(e2){}}
     if(window.supabase){
-      MODE='cloud'; CFG.mail=!!conf.mail; CFG.api=!!conf.api;
+      MODE='cloud'; CFG.mail=!!conf.mail; CFG.api=!!conf.api; CFG.from=conf.from||'';
       document.querySelector('.wrap').hidden=true;
       document.querySelectorAll('.local-only').forEach(e=>e.hidden=false);
       sb=window.supabase.createClient(conf.url,conf.anon);
