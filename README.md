@@ -20,6 +20,15 @@ Sur la fiche client : revenu fiscal de référence, nombre de personnes du foyer
 
 Prime CEE calculée automatiquement : surface de murs à isoler × 14 €/m² pour les foyers bleu et jaune, × 12 €/m² pour les foyers violet et rose (tarifs modifiables dans Administration › Tarifs de base). Saisir un montant dans le champ Prime CEE force une autre valeur ; le vider revient au calcul automatique.
 
+## Suivi commercial
+
+- **Tableau de bord** (onglet réservé à l'admin) : RDV, RDV honorés, ventes, taux de transformation, CA signé, panier moyen ; un tableau par télépro (RDV pris, confirmés, honorés, vendus, note moyenne), un par commercial, et la comparaison note du télépro / vente. Période : semaine, mois, mois dernier, 3 mois, tout.
+- **Alerte doublon** : à la création d'un client (fiche ou prise de RDV), l'appli signale un client existant avec le même téléphone ou la même adresse, même s'il est suivi par quelqu'un d'autre (seuls le nom, la ville, le statut et le responsable sont montrés).
+- **Relances** : champ « Date de rappel » sur la fiche et filtre « 🔔 À relancer » dans la liste. Y apparaissent les rappels du jour ou en retard et les devis envoyés depuis 7 jours ou plus sans signature. Un RDV statué « À rappeler » programme un rappel à J+2.
+- **Dossier** : onglet pour photographier ou joindre les pièces (avis d'imposition, taxe foncière, pièce d'identité, facture d'énergie, RIB, autre). Les photos sont réduites automatiquement. Non visible des télépros.
+- **Tournée** : dans l'Agenda, vue « Tournée » : carte des RDV de la semaine (ou d'un jour), une couleur par commercial, reliés dans l'ordre de la journée depuis son domicile.
+- **Rappel la veille** : chaque jour vers 17 h, un e-mail de rappel part depuis contact@ vers les clients qui ont un RDV confirmé le lendemain (date, heure, adresse, nom du commercial). Fichiers `api/rappels.js` et `vercel.json`. Variables Vercel en plus : `SUPABASE_SERVICE_ROLE_KEY` (Supabase › Project Settings › API, clé secrète service_role) et `CRON_SECRET` (un mot de passe long de votre choix). Le client doit avoir un e-mail sur sa fiche.
+
 ## Devis
 
 Onglet « Devis » de chaque fiche : crée un devis ITE (opération BAR-EN-102) pré-rempli avec les coordonnées du client, la surface de murs et 3 lignes (prestations administratives, isolant, main d'œuvre). Lignes, prix, textes et TVA sont modifiables. Le total TTC devient le montant des travaux de la simulation ; les aides région sont déduites du reste à régler, la prime CEE figure dans les termes CEE. « Imprimer / PDF du devis » produit un A4 avec en-tête et pied de page légal sur chaque page. Les informations de l'entreprise (RGE, SIRET, pied de page, tarifs, prochain numéro) se règlent dans « Réglages de l'entreprise » en bas de l'onglet (administrateur).
