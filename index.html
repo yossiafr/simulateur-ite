@@ -283,6 +283,7 @@ label small{font-weight:400}
 .pad-wrap canvas{width:100%;max-width:520px;height:180px;background:#fff;border:2px dashed var(--line);border-radius:12px;touch-action:none;cursor:crosshair}
 .sign-paper{padding:16px}.sign-paper .zoomer{width:800px;margin:0 auto;display:flex;flex-direction:column;gap:16px;align-items:center}
 .sign-paper .dv{margin:0}
+.sign-synth{display:flex;flex-direction:column;gap:10px}.sign-synth>h2{font-size:18px;margin:0}
 .annex-page{width:210mm;max-width:100%;background:#fff;box-shadow:0 2px 14px rgba(0,0,0,.15)}
 .annex{display:none}
 @page annexe{size:A4 portrait;margin:0}
@@ -353,6 +354,8 @@ label small{font-weight:400}
 .ag-tag{display:inline-block;font-size:10.5px;font-weight:700;color:#7a4b00;background:#fff4e0;border-radius:6px;padding:0 5px;align-self:flex-start}
 .ag-conf{background:#fff4e0;border:1px solid #f0d199;border-radius:12px;padding:12px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:12px 0}
 body.tp .no-tp{display:none!important}
+.tab-off{display:none!important}
+.tabs-adm{border-collapse:collapse;font-size:14px}.tabs-adm td,.tabs-adm th{text-align:center;padding:7px 22px;border-bottom:1px solid var(--line)}.tabs-adm th{font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}.tabs-adm td:first-child,.tabs-adm th:first-child{text-align:left}
 .dbl{background:#fdecea;border:1px solid #f1b8b2;border-radius:12px;padding:10px 12px;font-size:13px;color:#7a1f17}.dbl b{color:#b3261e}.dbl ul{margin:4px 0 0;padding-left:18px}
 .relb{display:inline-block;font-size:11px;margin-left:4px}
 .dos{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
@@ -553,7 +556,7 @@ body.pm .sheet-head h2{font-size:30px} body.pm .ribbon{font-size:22px} body.pm .
             <legend>Aides & patrimoine</legend>
             <div class="fields">
               <label class="full">Prime CEE <small>laisser vide pour le calcul auto</small><div class="in"><input id="cee" data-k="cee" type="number" min="0" step="10" placeholder="auto"><span class="u">€</span></div><span class="calc-hint" id="ceeHint"></span></label>
-              <label>Aide région<div class="in"><input id="aideRegion" data-k="aideRegion" type="number" min="0" step="50"><span class="u">€</span></div></label>
+              <label class="full">Aide région <small>laisser vide pour le calcul auto</small><div class="in"><input id="aideRegion" data-k="aideRegion" type="number" min="0" step="50" placeholder="auto"><span class="u">€</span></div><span class="calc-hint" id="regionHint"></span></label>
               <label>Valeur actuelle du bien<div class="in"><input id="valeurBien" data-k="valeurBien" type="number" min="0" step="1000"><span class="u">€</span></div></label>
               <label>Plus-value estimée<div class="in"><input id="tauxPV" data-k="tauxPV" type="number" min="0" max="30" step="0.5"><span class="u">%</span></div></label>
               <label class="full">Hausse annuelle du prix de l'énergie<div class="in"><input id="hausse" data-k="hausse" type="number" min="0" max="15" step="0.5"><span class="u">%/an</span></div></label>
@@ -637,7 +640,7 @@ function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2
 function sample(){return Object.assign({},DEFAULTS,{id:uid(),created:Date.now(),updated:Date.now(),
   nom:'Exemple',prenom:'Client',tel:'06 00 00 00 00',ville:'Montauban',cp:'82000',statut:'rdv',
   annee:1978,surface:110,surfaceMurs:140,dpe:'F',energie:'Gaz',factureAn:2400,tauxEco:25,
-  coutTravaux:22000,mensForce:'',taux:6,duree:120,differe:6,cee:4500,aideRegion:1000,valeurBien:220000,tauxPV:10,hausse:0,
+  coutTravaux:22000,mensForce:'',taux:6,duree:120,differe:6,cee:4500,aideRegion:'',valeurBien:220000,tauxPV:10,hausse:0,
   notes:'Fiche d\'exemple : remplacez par les données de votre client.'})}
 const PLAF={idf:[[24031,29253,40851],[35270,42933,60051],[42357,51564,71846],[49455,60208,84562],[56580,68877,96817]],idfSup:[7116,8663,12257],
   aut:[[17363,22259,31185],[25393,32553,45842],[30540,39148,55196],[35676,45735,64550],[40835,52348,73907]],autSup:[5151,6598,9357]};
@@ -649,6 +652,11 @@ function couleurFoyer(c){const rfr=+c.rfr, np=Math.round(+c.nbPers); if(!(rfr>0)
   const idf=isIdf(c.cp), T=idf?PLAF.idf:PLAF.aut, S=idf?PLAF.idfSup:PLAF.autSup, lim=np<=5?T[np-1]:T[4].map((v,i)=>v+S[i]*(np-5));
   const k=rfr<=lim[0]?0:rfr<=lim[1]?1:rfr<=lim[2]?2:3; return {k,idf,lim,np,nom:COUL[k][0],txt:COUL[k][1],col:COUL[k][2]}}
 function ceeAuto(c){const f=couleurFoyer(c), m2=n(c.surfaceMurs); if(!f||!(m2>0)) return null; const e=ent(), t=f.k<2?n(e.ceeBJ):n(e.ceeVR); return {val:Math.round(t*m2*100)/100,t,m2,f}}
+function regionAuto(c){const m2=n(c.surfaceMurs), t=n(ent().regionM2); if(!(m2>0)||!(t>0)) return null; return {val:Math.round(t*m2*100)/100,t,m2}}
+const regionVal=c=>c.aideRegion!==''&&c.aideRegion!=null?n(c.aideRegion):((regionAuto(c)||{}).val||0);
+function regionHint(){const c=cur(), el=document.getElementById('regionHint'); if(!c||!el) return; const a=regionAuto(c);
+  el.textContent=(a?`Calcul auto : ${eur(a.t)}/m² × ${a.m2.toLocaleString('fr-FR')} m² = ${eur(a.val)}`+(c.aideRegion!==''&&c.aideRegion!=null?` · valeur forcée utilisée : ${eur(n(c.aideRegion))}`:''):'Calcul auto dès que la surface de murs est connue')+' · déduite du montant à financer';
+  document.getElementById('aideRegion').placeholder=a?String(Math.round(a.val)):'auto'}
 const ceeVal=c=>c.cee!==''&&c.cee!=null?n(c.cee):((ceeAuto(c)||{}).val||0);
 function ceeHint(){const c=cur(), el=document.getElementById('ceeHint'); if(!c||!el) return; const a=ceeAuto(c);
   el.textContent=a?`Calcul auto : ${eur(a.t)}/m² × ${a.m2.toLocaleString("fr-FR")} m² = ${eur(a.val)} (foyer ${a.f.nom})`+(c.cee!==''&&c.cee!=null?` · valeur forcée utilisée : ${eur(n(c.cee))}`:''):'Calcul auto dès que la couleur du foyer et la surface de murs sont connues';
@@ -716,7 +724,7 @@ const n=v=>{const x=parseFloat(String(v).replace(',','.'));return isFinite(x)?x:
 /* ===== Calcul ===== */
 function compute(d){
   const duree=Math.max(0,Math.round(n(d.duree))), diff=Math.max(0,Math.round(n(d.differe)));
-  const capital=n(d.coutTravaux), ti=n(d.taux)/100/12;
+  const region=regionVal(d), travaux=n(d.coutTravaux), capital=Math.max(0,travaux-region), ti=n(d.taux)/100/12;
   const capDiff=capital*Math.pow(1+ti,diff); /* intérêts du différé capitalisés */
   const mensAuto=duree>0?(ti>0?capDiff*ti/(1-Math.pow(1+ti,-duree)):capDiff/duree):0;
   const forced=d.mensForce!==''&&d.mensForce!=null;
@@ -726,13 +734,13 @@ function compute(d){
   const h=n(d.hausse)/100, mois=diff+duree;
   let ecoGlobale=0, ecoDiff=0;
   for(let m=0;m<mois;m++){const v=ecoMens*Math.pow(1+h,Math.floor(m/12));ecoGlobale+=v;if(m<diff)ecoDiff+=v;}
-  const cee=ceeVal(d), aides=cee+n(d.aideRegion);
+  const cee=ceeVal(d), aides=cee; /* l'aide région est déjà déduite du montant financé */
   const pv=n(d.valeurBien)*n(d.tauxPV)/100;
   const total=mens*duree;
   const ech=x=>mens>0?x/mens:0;
   const pct=x=>total>0?x/total:0;
-  return {mens,mensAuto,forced,capital,capDiff,taux:n(d.taux),duree,diff,ecoAuto,ecoMens,ecoGlobale,ecoDiff,aides,cee,ceeAuto:ceeAuto(d),region:n(d.aideRegion),pv,total,
-    echEco:ech(ecoGlobale),echEcoDiff:ech(ecoDiff),echCee:ech(cee),echRegion:ech(n(d.aideRegion)),echAides:ech(aides),echPv:ech(pv),
+  return {mens,mensAuto,forced,capital,capDiff,taux:n(d.taux),duree,diff,ecoAuto,ecoMens,ecoGlobale,ecoDiff,aides,cee,ceeAuto:ceeAuto(d),region,travaux,pv,total,
+    echEco:ech(ecoGlobale),echEcoDiff:ech(ecoDiff),echCee:ech(cee),echRegion:ech(region),echAides:ech(aides),echPv:ech(pv),
     partMens:mens>0?ecoMens/mens:0, effort:mens-ecoMens,
     pEco:pct(ecoGlobale),pAid:pct(aides),pPv:pct(pv),
     couv:pct(ecoGlobale+aides+pv),couvAff:Math.min(1,pct(ecoGlobale+aides+pv)),couvCash:pct(ecoGlobale+aides),couvTotal:pct(ecoGlobale+aides+pv),reste:total-ecoGlobale-aides-pv, ok:mens>0&&duree>0};
@@ -768,7 +776,7 @@ function fillForm(){
   const c=cur(); if(!c) return;
   document.querySelectorAll('[data-k]').forEach(el=>{let v=c[el.dataset.k]??''; if(el.type==='datetime-local'&&/^\d{4}-\d{2}-\d{2}$/.test(v)) v+='T09:00'; el.value=v});
   if(isAdmin()){const s=document.getElementById('ownerSel');s.innerHTML=team.filter(p=>(p.actif&&p.role!=='telepro')||p.id===c._owner).map(p=>`<option value="${p.id}">${esc(p.nom||p.email)}${p.role==='admin'?' (admin)':p.role==='telepro'?' (télépro)':''}</option>`).join('');s.value=c._owner||me.id}
-  updateHeader(); updateHint(); renderFoyer(); ceeHint(); relHint(); const dw=document.getElementById('dblWarn'); dw.hidden=true; dw.innerHTML='';
+  updateHeader(); updateHint(); renderFoyer(); ceeHint(); regionHint(); relHint(); const dw=document.getElementById('dblWarn'); dw.hidden=true; dw.innerHTML='';
 }
 function relHint(){const c=cur(), el=document.getElementById('relHint'); if(el&&c){const r=relance(c); el.textContent=r?'🔔 '+r:''; el.style.color=r?'#b5541b':''}}
 function updateHeader(){
@@ -778,26 +786,27 @@ function updateHeader(){
 }
 function updateHint(){
   const r=compute(cur());
-  document.getElementById('mensHint').textContent=r.capital>0?`Calcul auto à ${ech1(r.taux)} % : ${eur(r.mensAuto)} / mois sur ${r.duree} mois · coût du crédit ${eur(r.mensAuto*r.duree-r.capital)}`:'Saisissez le montant des travaux pour calculer la mensualité';
+  document.getElementById('mensHint').textContent=r.capital>0?`Calcul auto à ${ech1(r.taux)} % sur ${eur(r.capital)} financés${r.region?` (travaux ${eur(r.travaux)} − aide région ${eur(r.region)})`:''} : ${eur(r.mensAuto)} / mois sur ${r.duree} mois · coût du crédit ${eur(r.mensAuto*r.duree-r.capital)}`:'Saisissez le montant des travaux pour calculer la mensualité';
   document.getElementById('ecoHint').textContent=`Calcul auto : ${eur(r.ecoAuto)} / mois`+(r.mens>0?` · utilisé : ${eur(r.ecoMens)} soit ${pctf(r.partMens)} de la mensualité`:'');
 }
 document.getElementById('pane-form').addEventListener('input',e=>{
   if(e.target.dataset.crk){const c=cur(), x=(c.credits||[])[+e.target.dataset.cr]; if(x){x[e.target.dataset.crk]=e.target.value; c.updated=Date.now(); persist(c); renderFoyer()} return}
   const k=e.target.dataset.k; if(!k) return;
   const c=cur(); c[k]=e.target.value; c.updated=Date.now(); persist(c);
-  updateHeader(); updateHint(); renderList(); if(['rfr','nbPers','cp','revM','revMme','coutTravaux','taux','duree','mensForce','differe'].includes(k)) renderFoyer(); if(['rfr','nbPers','cp','surfaceMurs','cee'].includes(k)) ceeHint(); if(['dateRappel','statut'].includes(k)){relHint(); renderFilters()}
+  updateHeader(); updateHint(); renderList(); if(['rfr','nbPers','cp','revM','revMme','coutTravaux','taux','duree','mensForce','differe'].includes(k)) renderFoyer(); if(['rfr','nbPers','cp','surfaceMurs','cee'].includes(k)) ceeHint(); if(['surfaceMurs','aideRegion'].includes(k)) regionHint(); if(['dateRappel','statut'].includes(k)){relHint(); renderFilters()}
   if(!document.getElementById('pane-sheet').hidden) renderSheet();
 });
 document.getElementById('pane-form').addEventListener('submit',e=>e.preventDefault());
 document.getElementById('pane-form').addEventListener('change',e=>{if(['tel','adresse','cp'].includes(e.target.id)) setTimeout(checkDblFiche,300)});
 
 /* ===== Synthèse ===== */
-function renderSheet(){
-  const c=cur(), r=compute(c);
+function renderSheet(){document.getElementById('pane-sheet').innerHTML=sheetHtml(cur())}
+function sheetHtml(c){
+  const r=compute(c);
   const total=Math.max(1,r.couvTotal);
   const w=x=>(x/total*100).toFixed(2)+'%';
   const mark=(1/total*100).toFixed(2)+'%';
-  document.getElementById('pane-sheet').innerHTML=`
+  return `
   <div class="sheet">
     <div class="sheet-head">
       <div><h2>Isolation de votre maison :</h2><div class="ribbon">un besoin qui s'autofinance</div></div>
@@ -809,7 +818,7 @@ function renderSheet(){
     <div class="steps">
       <div class="step"><div class="k"><i>1</i>Travaux d'isolation</div><span class="pill">Aucun acompte</span><p>Isolation thermique par l'extérieur${c.surfaceMurs?' · '+esc(c.surfaceMurs)+' m² de murs':''}</p></div>
       <div class="step"><div class="k"><i>2</i>Fin de chantier</div><p>Déblocage des fonds par la banque</p></div>
-      <div class="step hot"><div class="k"><i>3</i>Pendant ${r.diff} mois</div><div class="big">${r.diff} mois de différé</div><p>Vous cumulez ${eur(r.ecoDiff)} d'économies de chauffage et vos aides (${eur(r.aides)})</p></div>
+      <div class="step hot"><div class="k"><i>3</i>Pendant ${r.diff} mois</div><div class="big">${r.diff} mois de différé</div><p>Vous cumulez ${eur(r.ecoDiff)} d'économies de chauffage et votre prime CEE (${eur(r.aides)})</p></div>
       <div class="step"><div class="k"><i>4</i>1ʳᵉ échéance</div><div class="big">${r.diff} mois après</div><p>la fin des travaux</p></div>
     </div>
 
@@ -826,6 +835,7 @@ function renderSheet(){
         <div class="row"><span>Prime CEE</span><span class="val num">${eur(r.cee)}</span></div>
         <div class="row"><span>Aide région</span><span class="val num">${eur(r.region)}</span></div>
         <div class="cover"><span>Couvre environ</span><b class="num">${ech1(r.echAides)}</b><span>${plural(r.echAides,'échéance')}</span></div>
+        <p class="foot">Prime CEE seule : l'aide région est déjà déduite du montant financé.</p>
       </div>
       <div class="box">
         <h3>${ico('house')}Plus-value immobilière estimée</h3>
@@ -840,7 +850,7 @@ function renderSheet(){
       <div class="cell"><span class="lbl">Votre mensualité (financement)</span><span class="money num">${eur(r.mens)}</span><span class="pct-sub">${r.duree} échéances · ${eur(r.total)} au total${r.forced?'':` (crédit de ${eur(r.capital)} à ${ech1(r.taux)} %)`}</span></div>
       <div class="cell"><span class="lbl">Économie globale générée sur la durée du financement (${ech1((r.diff+r.duree)/12)} ans)</span><span class="money num">${eur(r.ecoGlobale)}</span></div>
       <div class="cell"><span class="lbl">Votre projet est couvert à</span><span class="pct num">${pctf(r.couvAff)}</span>
-        <span class="pct-sub"><b>${pctf(r.couvCash)}</b> par les économies d'énergie et les aides (${eur(r.ecoGlobale+r.aides)}), complété par la valorisation de votre patrimoine (${eur(r.pv)}*), pour ${eur(r.total)} payés au total.</span></div>
+        <span class="pct-sub"><b>${pctf(r.couvCash)}</b> par les économies d'énergie et la prime CEE (${eur(r.ecoGlobale+r.aides)}), complété par la valorisation de votre patrimoine (${eur(r.pv)}*), pour ${eur(r.total)} payés au total.</span></div>
     </div>
 
     <div class="meter">
@@ -848,13 +858,14 @@ function renderSheet(){
         <span class="seg-eco" style="width:${w(r.pEco)}"></span><span class="seg-aid" style="width:${w(r.pAid)}"></span><span class="seg-pv" style="width:${w(r.pPv)}"></span>
         ${r.couv>1?`<span class="mark" style="left:${mark}" title="100 % du financement"></span>`:''}
       </div>
-      <div class="legend"><span><i class="seg-eco"></i>Économies ${pctf(r.pEco)}</span><span><i class="seg-aid"></i>Aides ${pctf(r.pAid)}</span>
+      <div class="legend"><span><i class="seg-eco"></i>Économies ${pctf(r.pEco)}</span><span><i class="seg-aid"></i>Prime CEE ${pctf(r.pAid)}</span>
         <span><i class="seg-pv"></i>Plus-value estimée* ${pctf(r.pPv)}</span>${r.couv>1?'<span>Trait vertical : 100 % du montant payé</span>':`<span>Reste à couvrir : ${eur(r.reste)}</span>`}</div>
     </div>
 
     <div class="details">
       <div class="kv"><span>Effort réel par mois</span><b class="num">${eur(Math.max(0,r.effort))}</b></div>
-      <div class="kv"><span>Montant des travaux</span><b class="num">${eur(n(c.coutTravaux))}</b></div>
+      <div class="kv"><span>Montant des travaux</span><b class="num">${eur(r.travaux)}</b></div>
+      ${r.region?`<div class="kv"><span>Aide région déduite</span><b class="num">− ${eur(r.region)}</b></div><div class="kv"><span>Montant financé</span><b class="num">${eur(r.capital)}</b></div>`:''}
       <div class="kv"><span>Facture chauffage actuelle</span><b class="num">${eur(n(c.factureAn))}/an</b></div>
       <div class="kv"><span>Économie retenue</span><b class="num">${c.ecoForce!==''&&c.ecoForce!=null?'saisie manuelle':ech1(n(c.tauxEco))+' %'}</b></div>
     </div>
@@ -870,7 +881,14 @@ function ico(k){
 
 /* ===== Navigation ===== */
 function select(id){currentId=id; fillForm(); renderList(); if(!document.getElementById('pane-sheet').hidden) renderSheet(); if(!document.getElementById('pane-devis').hidden) renderDevis(); phSel=null; phDraft=[]; phView='photo'; if(!document.getElementById('pane-photos').hidden) renderPhotos(); if(!document.getElementById('pane-carte').hidden) renderCarte(); if(!document.getElementById('pane-dossier').hidden) renderDossier(); resetDel();}
+const TABS_OPT=[['sheet','Synthèse'],['photos','Photos'],['carte','Carte'],['devis','Devis'],['dossier','Dossier'],['agenda','Agenda']];
+const TABS_TP=['carte','agenda'];
+function tabsOff(role){role=role||(profile&&profile.role); if(MODE!=='cloud'||!role||role==='admin') return []; const o=((CFG.defaults||{}).onglets)||{}; return Array.isArray(o[role])?o[role]:[]}
+function applyTabs(){const off=tabsOff(); TABS_OPT.forEach(([k])=>document.getElementById('tab-'+k).classList.toggle('tab-off',off.includes(k)));
+  const ag=document.getElementById('btnRdvAg'); if(ag) ag.classList.toggle('tab-off',off.includes('agenda'));
+  const on=document.querySelector('.tabs [role=tab][aria-selected=true]'); if(on&&off.includes(on.id.slice(4))) setTab('form')}
 function setTab(t){
+  if(tabsOff().includes(t)) t='form';
   if(isTp()&&['sheet','photos','devis','admin','dossier','dash'].includes(t)) t='form';
   if(t==='dash'&&!dashOk()) t='form';
   ['form','sheet','photos','carte','devis','dossier','agenda','dash','admin'].forEach(k=>{document.getElementById('tab-'+k).setAttribute('aria-selected',k===t);document.getElementById('pane-'+k).hidden=k!==t});
@@ -950,13 +968,13 @@ function mailHtml(c,r,sig){
   <tr><td style="background:${G};background:linear-gradient(160deg,${G},${D});border-radius:12px;padding:16px 18px">
     <div style="${F}color:#ffffff;font-size:13px;letter-spacing:1px;text-transform:uppercase;font-weight:bold">${esc(document.getElementById('brandName').textContent.replace(/\s+/g,' ').trim())}</div>
     <div style="${F}color:#ffffff;font-size:22px;font-weight:bold;margin-top:4px">Isolation de votre maison : un besoin qui s'autofinance</div></td></tr>
-  ${sect('Votre financement',row('Montant des travaux',eur(r.capital))+(r.forced?'':row('Taux d\'intérêt',ech1(r.taux)+' %'))+row('Différé avant la 1<sup>re</sup> échéance',r.diff+' mois')+row('Votre mensualité',eur(r.mens)+' × '+r.duree,true)+row('Total remboursé',eur(r.total)))}
+  ${sect('Votre financement',row('Montant des travaux',eur(r.travaux))+(r.region?row('Aide région déduite','− '+eur(r.region))+row('Montant financé',eur(r.capital)):'')+(r.forced?'':row('Taux d\'intérêt',ech1(r.taux)+' %'))+row('Différé avant la 1<sup>re</sup> échéance',r.diff+' mois')+row('Votre mensualité',eur(r.mens)+' × '+r.duree,true)+row('Total remboursé',eur(r.total)))}
   ${sect('Économies de chauffage',row('Économie mensuelle estimée',eur(r.ecoMens),true)+row('Économie globale sur '+ech1((r.diff+r.duree)/12)+' ans',eur(r.ecoGlobale)),`Couvre environ <b>${ech1(r.echEco)}</b> ${plural(r.echEco,'échéance')}`)}
-  ${sect('Aides',row('Prime CEE',eur(r.cee))+row('Aide région',eur(r.region)),`Couvre environ <b>${ech1(r.echAides)}</b> ${plural(r.echAides,'échéance')}`)}
+  ${sect('Prime CEE',row('Prime CEE',eur(r.cee)),`Couvre environ <b>${ech1(r.echAides)}</b> ${plural(r.echAides,'échéance')}`)}
   ${sect('Plus-value immobilière estimée (+'+ech1(n(c.tauxPV))+' %)*',row('Sur un bien de '+eur(n(c.valeurBien)),eur(r.pv),true),`Équivalent à <b>${ech1(r.echPv)}</b> ${plural(r.echPv,'échéance')}, réalisable à la revente`)}
   <tr><td style="padding:12px 0 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${D};border-radius:12px"><tr>
     <td style="${F}padding:16px 18px;color:#ffffff;font-size:14px">Votre projet est couvert à<div style="font-size:40px;font-weight:bold;color:#c9ea6a;line-height:1.1">${pctf(r.couvAff)}</div>
-    ${pctf(r.couvCash)} par les économies d'énergie et les aides (${eur(r.ecoGlobale+r.aides)}), complété par la valorisation de votre patrimoine (${eur(r.pv)}*), pour ${eur(r.total)} payés au total.<br>Effort réel : environ ${eur(Math.max(0,r.effort))} par mois.</td></tr></table></td></tr>
+    ${pctf(r.couvCash)} par les économies d'énergie et la prime CEE (${eur(r.ecoGlobale+r.aides)}), complété par la valorisation de votre patrimoine (${eur(r.pv)}*), pour ${eur(r.total)} payés au total.<br>Effort réel : environ ${eur(Math.max(0,r.effort))} par mois.</td></tr></table></td></tr>
   <tr><td style="${F}font-size:11px;color:#6b7863;padding:10px 0 0;font-style:italic">*Plus-value estimée : Notaires de France, transactions 2024. Écart de valeur selon le DPE, non garanti par l'ITE seule, réalisable uniquement à la revente. Simulation indicative et non contractuelle, aides sous réserve d'éligibilité.</td></tr>
   <tr><td style="${F}font-size:14px;color:#1d2a17;padding:14px 0 0">Je reste à votre disposition pour toute question.<br><br>Bien cordialement,<br>${esc(sig||'').replace(/\n/g,'<br>')}</td></tr></table>`;
 }
@@ -965,9 +983,10 @@ function mailText(c,r,sig){
   'Voici la simulation de financement de l\'isolation par l\'extérieur de votre maison.','',
   `Mensualité : ${eur(r.mens)} × ${r.duree} (total ${eur(r.total)})`,
   `Économie de chauffage : ${eur(r.ecoMens)}/mois, soit ${eur(r.ecoGlobale)} sur la durée (${ech1(r.echEco)} échéances)`,
-  `Aides : CEE ${eur(r.cee)} + région ${eur(r.region)} (${ech1(r.echAides)} échéances)`,
+  r.region?`Aide région : ${eur(r.region)}, déduite du montant financé (${eur(r.travaux)} de travaux, ${eur(r.capital)} financés)`:null,
+  `Prime CEE : ${eur(r.cee)} (${ech1(r.echAides)} échéances)`,
   `Plus-value estimée : ${eur(r.pv)} (${ech1(r.echPv)} échéances, à la revente)`,
-  `Votre projet est couvert à ${pctf(r.couvAff)}, dont ${pctf(r.couvCash)} par les économies et les aides et le reste par la plus-value estimée (à la revente, non garantie*).`,'*Notaires de France, transactions 2024.','','Simulation indicative et non contractuelle.','','Bien cordialement,',sig||''].join('\n');
+  `Votre projet est couvert à ${pctf(r.couvAff)}, dont ${pctf(r.couvCash)} par les économies et les aides et le reste par la plus-value estimée (à la revente, non garantie*).`,'*Notaires de France, transactions 2024.','','Simulation indicative et non contractuelle.','','Bien cordialement,',sig||''].filter(x=>x!=null).join('\n');
 }
 function openMail(){
   const c=cur();
@@ -1083,7 +1102,7 @@ const ENT_DEFAULT={
   nomCourt:'C.E.F.', representant:'LE GOFF SAVY', siret:'88484037200020', rge:'E-E184755', rgeDebut:'01/01/2021', rgeFin:'19/11/2027',
   prefixeClient:'CEF', prochainNumero:1,
   marque:'HIRSCH ISOLATION', reference:'GRAPHIPAN ITETH 32 120MM', epaisseur:'120', resistance:'3,85', acermi:'12/081/795',
-  prixIsolant:145, prixMO:100, ceeBJ:14, ceeVR:12, tva:5.5, modePaiement:'Chèque, Virement',
+  prixIsolant:145, prixMO:100, ceeBJ:14, ceeVR:12, regionM2:40, tva:5.5, modePaiement:'Chèque, Virement, Financement',
   mentionAides:"Ce devis est valable uniquement si les demandes d'aides locales reçoivent des accords définitifs.",
   termesCee:"Tout ou partie des travaux relatifs à ce devis ou bon de commande sont éligibles à une prime d’un montant de {prime} euros dont EDF (SIREN 552 081 317) est à l’origine dans le cadre du dispositif des Certificats d’Economies d’Energie. Le montant de cette prime ne pourra être révisé à la baisse qu’en cas de modification du volume de Certificats d’Economies d’Energie attaché à l’opération ou aux opérations d’économies d’énergie ou de la situation de précarité énergétique et ce, de manière proportionnelle. Dans le cadre de la réglementation un contrôle qualité des travaux sur site ou par contact pourra être demandé. Un refus de ce contrôle sur site ou par contact via EDF ou un prestataire d'EDF conduira au refus de cette prime par EDF.",
   pied1:'C.E.F. – 14 Avenue du Général de Gaulle, 94160 SAINT MANDE – contact@compagnons-ecologiques.fr – 01 43 68 76 01 S.A.S au capital de 51 000,00 €',
@@ -1092,7 +1111,7 @@ const ENT_DEFAULT={
 const ENT_FIELDS=[['nomCourt','Nom court (C.E.F.)'],['representant','Représentant'],['siret','SIRET (bloc opération)'],['rge','N° certificat RGE'],['rgeDebut','RGE attribué le'],['rgeFin','RGE valable jusqu\'au'],
   ['prefixeClient','Préfixe n° client'],['prochainNumero','Prochain n° de devis'],['marque','Marque isolant'],['reference','Référence isolant'],['epaisseur','Épaisseur (mm)'],['resistance','Résistance R (m².K/W)'],['acermi','Certification ACERMI'],
   ['prixIsolant','Prix isolant TTC / m²'],['prixMO','Prix main d\'œuvre TTC / m²'],['tva','TVA (%)'],['modePaiement','Mode de paiement'],['mentionAides','Mention aides locales'],['termesCee','Termes CEE ({prime} = montant)'],['pied1','Pied de page, ligne 1'],['pied2','Pied de page, ligne 2']];
-function ent(){const e=MODE==='cloud'?(CFG.defaults.entreprise||{}):(getSet().entreprise||{});return Object.assign({},ENT_DEFAULT,e)}
+function ent(){const e=MODE==='cloud'?(CFG.defaults.entreprise||{}):(getSet().entreprise||{});const r=Object.assign({},ENT_DEFAULT,e);if(/^\s*ch[eè]que\s*,\s*virement\s*$/i.test(r.modePaiement||''))r.modePaiement=ENT_DEFAULT.modePaiement;if(e.regionM2==null||e.regionM2==='')r.regionM2=ENT_DEFAULT.regionM2;return r}
 const canEditEnt=()=>MODE==='local'||isAdmin();
 const eur2=v=>new Intl.NumberFormat('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}).format(v||0)+' €';
 const num2=v=>new Intl.NumberFormat('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}).format(v||0);
@@ -1103,7 +1122,7 @@ function logementTxt(c){const age=n(c.annee)?(new Date().getFullYear()-n(c.annee
 function devisTotals(c){
   const d=c.devis; let ttc=0,ht=0;
   d.lignes.forEach(l=>{const t=n(l.qte)*n(l.pu);ttc+=t;ht+=t/(1+n(l.tva)/100)});
-  const tva=ttc-ht, region=n(c.aideRegion), cee=ceeVal(c);
+  const tva=ttc-ht, region=regionVal(c), cee=ceeVal(c);
   const reste=ttc-region-(d.deduireCee?cee:0);
   const taux=[...new Set(d.lignes.map(l=>n(l.tva)))];
   return {ttc,ht,tva,region,cee,reste,taux};
@@ -1226,7 +1245,7 @@ function renderDevis(){
     </div><div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn" type="button" id="dvAdd">+ Ajouter une ligne</button>${optSelectHtml()}</div></fieldset>
     <fieldset class="span-all"><legend>Documents joints à la suite du devis</legend><div id="dvAnnex"><p class="hint">Chargement…</p></div></fieldset>
     <fieldset class="span-all"><legend>Aides et règlement</legend><div class="fields" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
-      ${fld('Prime CEE (termes du devis)','data-c="cee"',c.cee,{type:'number',step:'0.01',u:'€',ph:(a=>a?'auto : '+a.val:'auto')(ceeAuto(c))})}${fld('Aides région (déduites)','data-c="aideRegion"',c.aideRegion,{type:'number',step:'0.01',u:'€'})}
+      ${fld('Prime CEE (termes du devis)','data-c="cee"',c.cee,{type:'number',step:'0.01',u:'€',ph:(a=>a?'auto : '+a.val:'auto')(ceeAuto(c))})}${fld('Aides région (déduites)','data-c="aideRegion"',c.aideRegion,{type:'number',step:'0.01',u:'€',ph:(a=>a?'auto : '+a.val:'auto')(regionAuto(c))})}
       ${fld('Mode de paiement','data-d="modePaiement"',d.modePaiement)}
       <label style="flex-direction:row;align-items:center;gap:8px;color:var(--fg)"><input type="checkbox" data-d="deduireCee" ${d.deduireCee?'checked':''}> Déduire aussi la prime CEE du reste à régler</label>
     </div>
@@ -1449,13 +1468,15 @@ document.addEventListener('click',async e=>{
 });
 
 /* Documents joints au devis : choix, aperçu, impression */
+const SYN_ID='synthese', SYN_TITRE='Synthèse de votre projet (autofinancement)', synthOn=d=>!((d&&d.sansAnnexes)||[]).includes(SYN_ID);
 const annexOn=(list,d)=>list.filter(a=>!((d&&d.sansAnnexes)||[]).includes(String(a.id)));
 function annexPrintHtml(list){return list.map(a=>a.pages.map(p=>`<div class="annex"><img src="${p}" alt="${esc(a.titre)}"></div>`).join('')).join('')}
 async function fillDvAnnex(){
   const box=document.getElementById('dvAnnex'), c=cur(); if(!box||!c||!c.devis) return;
   const list=await getAnnexes(), d=c._sig?c._sig.devis:c.devis, sans=d.sansAnnexes||[];
-  box.innerHTML=list.length?`<div class="ax-pick">${list.map(a=>`<label><input type="checkbox" data-sans="${esc(a.id)}" ${sans.includes(String(a.id))?'':'checked'} ${c._sig?'disabled':''}> ${esc(a.titre)} <small>(${a.pages.length} p.)</small></label>`).join('')}</div>`
-    :`<p class="hint">Aucun document joint pour l'instant. ${canEditBO()?(MODE==='cloud'?'Ajoutez-les dans l\'onglet Administration › Documents joints au devis.':'Ajoutez-les dans « Documents joints au devis » en bas de cet onglet.'):'L\'administrateur peut les ajouter.'}</p>`;
+  const syn=`<label><input type="checkbox" data-sans="${SYN_ID}" ${synthOn(d)?'checked':''} ${c._sig?'disabled':''}> ${SYN_TITRE} <small>(page web jointe au devis)</small></label>`;
+  box.innerHTML=list.length?`<div class="ax-pick">${syn}${list.map(a=>`<label><input type="checkbox" data-sans="${esc(a.id)}" ${sans.includes(String(a.id))?'':'checked'} ${c._sig?'disabled':''}> ${esc(a.titre)} <small>(${a.pages.length} p.)</small></label>`).join('')}</div>`
+    :`<div class="ax-pick">${syn}</div><p class="hint">Aucun autre document joint pour l'instant. ${canEditBO()?(MODE==='cloud'?'Ajoutez-les dans l\'onglet Administration › Documents joints au devis.':'Ajoutez-les dans « Documents joints au devis » en bas de cet onglet.'):'L\'administrateur peut les ajouter.'}</p>`;
   const prev=document.getElementById('dvAnnexPrev'); if(prev){const on=annexOn(list,d); prev.innerHTML=on.length?`<h3>Documents joints à la suite du devis</h3><div class="ap-grid">${on.map(a=>a.pages.map((p,k)=>`<figure><img src="${p}" alt="" loading="lazy"><figcaption>${esc(a.titre)}${a.pages.length>1?' · '+(k+1)+'/'+a.pages.length:''}</figcaption></figure>`).join('')).join('')}</div>`:''}
 }
 function refreshOptSelect(){const s=document.querySelector('select.dvOpt'); if(s) s.outerHTML=optSelectHtml()}
@@ -1508,8 +1529,9 @@ function signView(){const c=Object.assign({},SIGN.data.data), s=SIGN.data.signat
 function renderSignPage(){
   const root=document.getElementById('signRoot'), {c,s}=signView(), e=ent(), t=devisTotals(c), ann=SIGN.data.annexes||[];
   root.innerHTML=`<header class="sign-top"><img src="${LOGO_SRC}" alt="${esc(e.nomCourt)}"><div><h1>Devis n° ${esc(c.devis.numero)}</h1><p>${esc([c.prenom,c.nom].filter(Boolean).join(' '))} · Total TTC <b>${eur2(t.ttc)}</b> · Reste à régler <b>${eur2(t.reste)}</b></p></div></header>
-  ${s?`<section class="sign-card" id="signBox">${signedHtml(s)}</section>`:SIGN.mode==='voir'?'':`<section class="sign-card"><p style="margin:0">Lisez votre devis${ann.length?' et ses documents joints':''} ci-dessous, puis signez en bas de la page.</p><a class="btn primary" href="#signBox">Aller à la signature</a></section>`}
+  ${s?`<section class="sign-card" id="signBox">${signedHtml(s)}</section>`:SIGN.mode==='voir'?'':`<section class="sign-card"><p style="margin:0">Lisez votre devis${ann.length||synthOn(c.devis)?' et ses documents joints':''} ci-dessous, puis signez en bas de la page.</p><a class="btn primary" href="#signBox">Aller à la signature</a></section>`}
   <div class="dv-paper sign-paper"><div class="zoomer">${devisDocHtml(c,s)}${ann.map(a=>a.pages.map(p=>`<img class="annex-page" src="${p}" alt="${esc(a.titre)}" loading="lazy">`).join('')).join('')}</div></div>
+  ${synthOn(c.devis)?`<section class="sign-synth" id="synthese"><h2>${SYN_TITRE}</h2>${(()=>{try{return sheetHtml(Object.assign({},DEFAULTS,c))}catch(e){return ''}})()}</section>`:''}
   ${s?'':SIGN.mode==='voir'?`<section class="sign-card" id="signature">${askHtml(c)}</section>`:`<section class="sign-card" id="signBox">${signFormHtml(c)}</section>`}`;
   fitSign(); if(!s&&SIGN.mode!=='voir') initPad();
   if(location.hash==='#signature'&&!s) setTimeout(()=>document.getElementById('signature')?.scrollIntoView({block:'center'}),300);
@@ -1613,7 +1635,7 @@ ${docs.length?`<tr><td style="padding:14px 28px 0"><p style="margin:0 0 6px;font
 function devisMailText(c,msg,link,docs){const d=c.devis,t=devisTotals(c);
   return [`Bonjour ${[d.civilite,c.nom].filter(Boolean).join(' ')},`,'',msg,'',`Devis n° ${d.numero} du ${frDate(d.date)}`,`Total TTC : ${eur2(t.ttc)}`,t.region?`Aides région : - ${eur2(t.region)}`:null,`Reste à régler : ${eur2(t.reste)}`,'',
     `Consulter mon devis : ${link}`,'',`Ce devis vous intéresse ? Demandez la signature électronique depuis la page du devis : ${link}#signature`,'',docs.length?'Documents joints : '+docs.join(', '):null,docs.length?'':null,'Bien cordialement,',profile&&profile.nom?profile.nom:null,SOCIETE].filter(x=>x!==null).join('\n')}
-async function dmDocs(c){return annexOn(await getAnnexes(),c.devis).map(a=>a.titre)}
+async function dmDocs(c){return (synthOn(c.devis)?[SYN_TITRE]:[]).concat(annexOn(await getAnnexes(),c.devis).map(a=>a.titre))}
 async function ensureToken(c){
   if(c._token) return true;
   if(!known.has(c.id)||timers.has(c.id)){if(!(await saveNow(c))) return false}
@@ -2349,6 +2371,10 @@ function renderAdmin(){
     <p class="hint">Communiquez au commercial son e-mail et son mot de passe provisoire. Il pourra le changer avec « Mot de passe oublié ». Un commercial ne voit que ses propres clients. Un télépro crée des clients et place des RDV, sans accès au financement, aux aides, aux photos ni aux devis ; vous confirmez ses RDV dans l'agenda en choisissant le commercial. Un compte désactivé ne peut plus se connecter à ses fiches.</p>`
     :`<p class="hint"><b>Ajouter un commercial :</b> dans Supabase › Authentication › Users › Add user › Create new user, saisissez son e-mail et un mot de passe provisoire, cochez « Auto Confirm User ». Revenez ici : il apparaît dans la liste, désactivé. Saisissez son nom, cochez « Actif », puis communiquez-lui son e-mail et son mot de passe. Il pourra le changer avec « Mot de passe oublié ».<br>Un commercial ne voit que ses propres clients. Un télépro crée des clients et place des RDV, sans accès au financement, aux aides, aux photos ni aux devis ; vous confirmez ses RDV dans l'agenda en choisissant le commercial. Un compte désactivé ne peut plus se connecter à ses fiches.</p>`}
   </fieldset>
+  <fieldset class="span-all"><legend>Onglets visibles</legend>${(()=>{const oc=tabsOff('commercial'), ot=tabsOff('telepro');
+    return `<div style="overflow-x:auto"><table class="tabs-adm"><thead><tr><th>Onglet</th><th>Commerciaux</th><th>Télépros</th></tr></thead><tbody>${TABS_OPT.map(([k,l])=>`<tr><td>${l}</td><td><input type="checkbox" data-ong="commercial" value="${k}" ${oc.includes(k)?'':'checked'} aria-label="${l} visible pour les commerciaux"></td><td>${TABS_TP.includes(k)?`<input type="checkbox" data-ong="telepro" value="${k}" ${ot.includes(k)?'':'checked'} aria-label="${l} visible pour les télépros">`:'<span class="hint" title="Jamais visible pour les télépros">—</span>'}</td></tr>`).join('')}</tbody></table></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="btn primary" id="saveTabs" type="button">Enregistrer les onglets</button></div>
+    <p class="hint">Décochez un onglet pour le masquer à tous les commerciaux ou à tous les télépros. La Fiche client reste toujours visible, et l'administrateur voit toujours tous les onglets. Le changement s'applique à leur prochaine connexion ou au rechargement de la page.</p>`})()}</fieldset>
   <fieldset class="span-all"><legend>Réglages par défaut des nouvelles fiches</legend>
     <div class="fields" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
       ${f('tauxEco','Économie due à l\'ITE','%',1)}${f('taux','Taux d\'intérêt','%',0.1)}${f('duree','Durée','mois',1)}${f('differe','Différé','mois',1)}${f('tauxPV','Plus-value','%',0.5)}${f('hausse','Hausse énergie','%/an',0.5)}
@@ -2358,7 +2384,7 @@ function renderAdmin(){
   </fieldset>
   <fieldset class="span-all"><legend>Tarifs de base du devis</legend>${(()=>{const e=ent(), tf=(k,l,o)=>fld(l,`data-tarif="${k}"`,e[k],o||{});
     return `<div class="fields" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
-      ${tf('prixIsolant','Prix isolant TTC',{type:'number',step:'0.01',u:'€/m²'})}${tf('prixMO','Prix main d\'œuvre TTC',{type:'number',step:'0.01',u:'€/m²'})}${tf('tva','TVA',{type:'number',step:'0.1',u:'%'})}${tf('ceeBJ','Prime CEE foyers bleu et jaune',{type:'number',step:'0.5',u:'€/m²'})}${tf('ceeVR','Prime CEE foyers violet et rose',{type:'number',step:'0.5',u:'€/m²'})}
+      ${tf('prixIsolant','Prix isolant TTC',{type:'number',step:'0.01',u:'€/m²'})}${tf('prixMO','Prix main d\'œuvre TTC',{type:'number',step:'0.01',u:'€/m²'})}${tf('tva','TVA',{type:'number',step:'0.1',u:'%'})}${tf('ceeBJ','Prime CEE foyers bleu et jaune',{type:'number',step:'0.5',u:'€/m²'})}${tf('ceeVR','Prime CEE foyers violet et rose',{type:'number',step:'0.5',u:'€/m²'})}${tf('regionM2','Aide région',{type:'number',step:'0.5',u:'€/m²'})}
       ${tf('marque','Marque de l\'isolant')}${tf('reference','Référence')}${tf('epaisseur','Épaisseur',{u:'mm'})}${tf('resistance','Résistance R',{u:'m².K/W'})}${tf('acermi','Certification ACERMI')}</div>
     <div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="btn primary" id="saveTarifs" type="button">Enregistrer les tarifs</button></div>
     <p class="hint">Utilisés pour tous les nouveaux devis, par tous les commerciaux. Les devis déjà créés gardent leurs prix (modifiables ligne par ligne).</p>`})()}</fieldset>
@@ -2378,8 +2404,12 @@ document.getElementById('pane-admin').addEventListener('change',async e=>{
 });
 document.getElementById('pane-admin').addEventListener('click',async e=>{
   const t=e.target, tr=t.closest('tr[data-id]');
+  if(t.id==='saveTabs'){
+    const off={commercial:[],telepro:[]}; document.querySelectorAll('#pane-admin [data-ong]').forEach(i=>{if(!i.checked) off[i.dataset.ong].push(i.value)});
+    if(await saveCfg(d=>Object.assign(d,{onglets:off}))) toast('Onglets enregistrés'); return;
+  }
   if(t.id==='saveTarifs'){
-    const vals={}; document.querySelectorAll('#pane-admin [data-tarif]').forEach(i=>{vals[i.dataset.tarif]=['prixIsolant','prixMO','tva','ceeBJ','ceeVR'].includes(i.dataset.tarif)?n(i.value):i.value.trim()});
+    const vals={}; document.querySelectorAll('#pane-admin [data-tarif]').forEach(i=>{vals[i.dataset.tarif]=['prixIsolant','prixMO','tva','ceeBJ','ceeVR','regionM2'].includes(i.dataset.tarif)?n(i.value):i.value.trim()});
     if(await saveCfg(d=>Object.assign(d,{entreprise:Object.assign({},d.entreprise||{},vals)}))) toast('Tarifs enregistrés : ils s\'appliquent aux nouveaux devis');
     return;
   }
@@ -2478,7 +2508,7 @@ async function enterApp(user){
   const role=document.getElementById('userRole'); role.textContent=ROLES[prof.role]||'Commercial'; role.className='status'+(prof.role==='admin'?' signe':'');
   document.getElementById('userBox').hidden=false;
   document.getElementById('tab-admin').hidden=!isAdmin();
-  document.getElementById('tab-dash').hidden=!dashOk();
+  document.getElementById('tab-dash').hidden=!dashOk(); applyTabs();
   document.getElementById('ownerWrap').hidden=!isAdmin();
   renderRepFilter(); renderFilters(); fillForm(); renderList(); resetDel();
   document.getElementById('authScreen').hidden=true;
