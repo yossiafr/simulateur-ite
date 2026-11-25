@@ -2,12 +2,28 @@ import { appelant, send, SB_URL } from "./send-mail.js";
 
 // Rendu réaliste du crépi par l'IA de Google (Gemini, retouche d'image).
 // Variables Vercel : GEMINI_API_KEY (clé Google AI Studio), et SUPABASE_URL / SUPABASE_ANON_KEY (déjà utilisées pour les e-mails).
-// GEMINI_MODEL facultatif (par défaut gemini-2.5-flash-image).
+// GEMINI_MODEL facultatif. Par défaut gemini-3.1-flash-image, puis des modèles de secours.
 const KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_KEY || "";
-const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash-image";
+const MODELES = [process.env.GEMINI_MODEL, "gemini-3.1-flash-image", "gemini-3.1-flash-lite-image", "gemini-nano-banana-2.1", "gemini-2.5-flash-image"].filter(Boolean);
 const okConf = () => !!(KEY && SB_URL);
 
 export const config = { maxDuration: 60 };
+
+// Essaie les modèles dans l'ordre : si Google ne connaît pas (ou plus) un modèle pour cette clé, on passe au suivant.
+async function appelGemini(modeles, body) {
+  let dernier = null;
+  for (const mod of modeles) {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${mod}:generateContent`, {
+      method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": KEY }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({}));
+    if (r.ok) return { j, mod };
+    const msg = (j.error && j.error.message) || "Erreur " + r.status;
+    dernier = { status: r.status, msg };
+    if (!(r.status === 404 || /not found|not supported|no longer available|deprecated|is not available/i.test(msg))) break;
+  }
+  return { erreur: dernier };
+}
+
 
 export default async function handler(req, res) {
   if (req.method === "GET") return send(res, 200, { ia: okConf() });
@@ -25,13 +41,9 @@ export default async function handler(req, res) {
     + `Ne change rien d'autre : fenêtres, portes, volets, appuis, toiture, gouttières, végétation, ciel, véhicules, cadrage, perspective et lumière restent identiques. `
     + `Rendu photoréaliste, sans texte ni logo.`;
   try {
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
-      method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": KEY },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: m[1], data: m[2] } }] }],
-        generationConfig: { responseModalities: ["IMAGE"] } }),
-    });
-    const j = await r.json().catch(() => ({}));
-    if (!r.ok) return send(res, 502, { erreur: (j.error && j.error.message) || "Erreur " + r.status });
+    const { j, erreur } = await appelGemini(MODELES, { contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: m[1], data: m[2] } }] }],
+      generationConfig: { responseModalities: ["IMAGE"] } });
+    if (erreur) return send(res, 502, { erreur: erreur.msg });
     const parts = (((j.candidates || [])[0] || {}).content || {}).parts || [];
     const img = parts.map((p) => p.inlineData || p.inline_data).find((d) => d && d.data);
     if (!img) return send(res, 502, { erreur: "L'IA n'a pas renvoyé d'image, réessayez." });

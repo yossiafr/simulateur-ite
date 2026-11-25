@@ -1,10 +1,26 @@
 import { appelant, send } from "./send-mail.js";
 
 // Détection automatique des façades et des ouvrants sur une photo (Gemini, vision).
-// Même clé que le rendu : GEMINI_API_KEY. GEMINI_VISION_MODEL facultatif (par défaut gemini-2.5-flash).
+// Même clé que le rendu : GEMINI_API_KEY. GEMINI_VISION_MODEL facultatif. Par défaut gemini-3.5-flash-lite, puis des modèles de secours.
 const KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_KEY || "";
-const MODEL = process.env.GEMINI_VISION_MODEL || "gemini-2.5-flash";
+const MODELES = [process.env.GEMINI_VISION_MODEL, "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-2.5-flash"].filter(Boolean);
 export const config = { maxDuration: 60 };
+
+// Essaie les modèles dans l'ordre : si Google ne connaît pas (ou plus) un modèle pour cette clé, on passe au suivant.
+async function appelGemini(modeles, body) {
+  let dernier = null;
+  for (const mod of modeles) {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${mod}:generateContent`, {
+      method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": KEY }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({}));
+    if (r.ok) return { j, mod };
+    const msg = (j.error && j.error.message) || "Erreur " + r.status;
+    dernier = { status: r.status, msg };
+    if (!(r.status === 404 || /not found|not supported|no longer available|deprecated|is not available/i.test(msg))) break;
+  }
+  return { erreur: dernier };
+}
+
 
 const PROMPT = `Tu analyses la photo d'une maison pour un devis d'isolation thermique par l'extérieur.
 Repère :
@@ -22,13 +38,9 @@ export default async function handler(req, res) {
   const m = /^data:(image\/(?:jpeg|png));base64,([A-Za-z0-9+/=]+)$/.exec(String((req.body || {}).image || ""));
   if (!m || m[2].length > 3_000_000) return send(res, 400, { erreur: "Photo invalide ou trop lourde." });
   try {
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
-      method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": KEY },
-      body: JSON.stringify({ contents: [{ parts: [{ inline_data: { mime_type: m[1], data: m[2] } }, { text: PROMPT }] }],
-        generationConfig: { responseMimeType: "application/json", temperature: 0.2 } }),
-    });
-    const j = await r.json().catch(() => ({}));
-    if (!r.ok) return send(res, 502, { erreur: (j.error && j.error.message) || "Erreur " + r.status });
+    const { j, erreur } = await appelGemini(MODELES, { contents: [{ parts: [{ inline_data: { mime_type: m[1], data: m[2] } }, { text: PROMPT }] }],
+      generationConfig: { responseMimeType: "application/json", temperature: 0.2 } });
+    if (erreur) return send(res, 502, { erreur: erreur.msg });
     const txt = ((((j.candidates || [])[0] || {}).content || {}).parts || []).map((p) => p.text || "").join("");
     let out; try { out = JSON.parse(txt.replace(/^```(json)?|```$/g, "").trim()); } catch { return send(res, 502, { erreur: "Réponse de l'IA illisible, réessayez." }); }
     const pt = (p) => Array.isArray(p) && p.length === 2 && p.every((v) => isFinite(v)) ? [Math.max(0, Math.min(1000, +p[0])), Math.max(0, Math.min(1000, +p[1]))] : null;
