@@ -6,7 +6,7 @@ Technique : page web unique (`index.html`), base et connexions Supabase, héberg
 
 ## Règles de calcul
 
-1. **Mensualité** : crédit à mensualités constantes sur le montant à financer (travaux moins aide région), au taux annuel saisi (6 % par défaut). Les intérêts du différé (6 mois par défaut) s'ajoutent au capital. La mensualité peut être saisie à la main.
+1. **Mensualité** : même méthode que la simulation Sofinco. Le crédit porte sur le montant à financer (travaux moins aide région), au taux débiteur saisi (6,686 % par défaut), avec des mensualités constantes arrondies au centime. La 1ʳᵉ échéance tombe « différé » mois après la fin des travaux (6 par défaut) : les intérêts courus au-delà du premier mois (30 jours par mois, taux ÷ 365) s'ajoutent au capital. Vérifié sur 16 650 € à 6,686 % sur 120 mois : 195,87 €/mois, TAEG 6,88 %, 6 854,40 € d'intérêts. L'assurance facultative (en % par mois du montant financé, 0,15 % chez Sofinco) s'ajoute à la mensualité. Le TAEG (hors assurance) est affiché. La mensualité peut aussi être saisie à la main.
 2. **Économie mensuelle** : facture de chauffage annuelle × taux d'économie (25 % par défaut) ÷ 12, ou saisie à la main.
 3. **Économie globale** : économie mensuelle × (différé + durée), avec une hausse annuelle de l'énergie facultative.
 4. **Plus-value** : valeur du bien × 10 % (Notaires de France, transactions 2024), réalisable à la revente.
