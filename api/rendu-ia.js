@@ -6,6 +6,7 @@ import { appelant, send, SB_URL } from "./send-mail.js";
 const KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_KEY || "";
 const MODELES = [process.env.GEMINI_MODEL, "gemini-3.1-flash-image", "gemini-3.1-flash-lite-image", "gemini-nano-banana-2.1", "gemini-2.5-flash-image"].filter(Boolean);
 const okConf = () => !!(KEY && SB_URL);
+const manque = () => [["GEMINI_API_KEY", KEY], ["SUPABASE_URL", SB_URL]].filter(([, v]) => !v).map(([k]) => k);
 
 export const config = { maxDuration: 60 };
 
@@ -26,7 +27,7 @@ async function appelGemini(modeles, body) {
 
 
 export default async function handler(req, res) {
-  if (req.method === "GET") return send(res, 200, { ia: okConf() });
+  if (req.method === "GET") return send(res, 200, { ia: okConf(), manque: manque() });
   if (req.method !== "POST") return send(res, 405, { erreur: "Méthode non autorisée" });
   if (!okConf()) return send(res, 501, { erreur: "Rendu IA non configuré (GEMINI_API_KEY dans Vercel)." });
   const profil = await appelant(req).catch(() => null);

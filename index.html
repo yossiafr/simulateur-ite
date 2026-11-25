@@ -437,6 +437,8 @@ body.pm .sheet{border:0;padding:0 4px;gap:12px}
 body.pm .steps{grid-template-columns:repeat(4,1fr)} body.pm .three{grid-template-columns:repeat(3,1fr)} body.pm .band{grid-template-columns:1fr 1fr 1.4fr} body.pm .details{grid-template-columns:repeat(4,1fr)}
 body.pm .sheet-head h2{font-size:30px} body.pm .ribbon{font-size:22px} body.pm .band .pct{font-size:48px}
 @media print{.sheet-head h2{font-size:30px} .ribbon{font-size:22px} .band .pct{font-size:48px}}
+.btn.ia-off{opacity:.6}
+.ia-off-txt{color:var(--warn,#b45309);margin:4px 0 0}
 </style>
 
 </head>
@@ -1002,6 +1004,8 @@ function mailText(c,r,sig){
   `Plus-value estimée : ${eur(r.pv)} (${ech1(r.echPv)} échéances, à la revente)`,
   `Votre projet est couvert à ${pctf(r.couvAff)}, dont ${pctf(r.couvCash)} par les économies et les aides et le reste par la plus-value estimée (à la revente, non garantie*).`,'*Notaires de France, transactions 2024.','','Simulation indicative et non contractuelle.','','Bien cordialement,',sig||''].filter(x=>x!=null).join('\n');
 }
+function iaOffTxt(){return MODE!=='cloud'?'IA disponible seulement sur la version en ligne (Vercel).':(()=>{const m=CFG.iaManque||[], v=m.filter(x=>/^[A-Z_]+$/.test(x)), f=m.filter(x=>!/^[A-Z_]+$/.test(x));
+  return 'IA pas encore active'+(v.length?' : il manque dans Vercel la variable '+v.join(', ')+' (Settings › Environment Variables, puis Deployments › Redeploy).':f.length?' : '+f.join(', ')+' introuvable sur le site en ligne.':'.')})()}
 function mailOffTxt(){return 'Envoi direct depuis le CRM pas encore actif'+((CFG.manque||[]).length?' : il manque dans Vercel '+CFG.manque.join(', ')+' (puis Redeploy).':'.')+' En attendant, passez par votre messagerie.'}
 function openMail(){
   const c=cur();
@@ -1789,7 +1793,7 @@ function renderPhotos(){
     <div class="ph-bar"><label class="btn primary">📷 Prendre une photo<input type="file" accept="image/*" capture="environment" data-ph="add" hidden></label>
       <label class="btn">Choisir une photo<input type="file" accept="image/*" data-ph="add" multiple hidden></label>
       <div class="ph-thumbs">${L.map((x,i)=>`<button type="button" class="ph-th${x.id===phSel?' on':''}" data-phsel="${x.id}" aria-label="Photo ${i+1}"><img src="${x.rendu||x.image}" alt=""><span>${esc(x.titre||'Façade '+(i+1))}</span></button>`).join('')}</div></div>
-    ${p?photoEditorHtml(p,L.indexOf(p)):`<div class="dv-empty"><h2 style="font-size:18px">Photos de la maison</h2><p class="hint" style="max-width:56ch">Prenez chaque façade bien en face, en entier. Sur la photo, vous placez une mesure connue (la hauteur d'une porte, par exemple), puis vous entourez la façade et les fenêtres : l'appli calcule la surface avec et sans les ouvrants. Vous pouvez aussi montrer au client la maison avec le crépi de son choix.</p></div>`}
+    ${p?photoEditorHtml(p,L.indexOf(p)):`<div class="dv-empty"><h2 style="font-size:18px">Photos de la maison</h2><p class="hint" style="max-width:56ch">Prenez chaque façade bien en face, en entier. Sur la photo, vous placez une mesure connue (la hauteur d'une porte, par exemple), puis vous entourez la façade et les fenêtres : l'appli calcule la surface avec et sans les ouvrants. Vous pouvez aussi montrer au client la maison avec le crépi de son choix.</p><p class="hint${CFG.ia?'':' ia-off-txt'}" style="max-width:56ch">✨ ${CFG.ia?'IA active : après avoir ajouté une photo, utilisez « Détecter façade et ouvrants (IA) » et « Rendu réaliste par IA ».':esc(iaOffTxt())+' Les boutons IA sont visibles après l\'ajout d\'une photo.'}</p></div>`}
     <fieldset class="ph-tot"><legend>Métrage total de la maison</legend>
       ${t.ok?`<div class="ph-nums"><span>Murs avec ouvrants <b>${m2(t.brute)}</b></span><span>Ouvrants (${t.nOuv}) <b>- ${m2(t.ouv)}</b></span><span>Murs sans ouvrants <b class="hl">${m2(t.net)}</b></span></div>
         <div class="ph-bar"><button class="btn primary" type="button" data-ph="use" data-v="${Math.round(t.net*10)/10}">Utiliser ${m2(t.net)} (sans ouvrants)</button><button class="btn" type="button" data-ph="use" data-v="${Math.round(t.brute*10)/10}">Utiliser ${m2(t.brute)} (avec ouvrants)</button></div>
@@ -1802,7 +1806,8 @@ function photoEditorHtml(p,i){
   const tool=(k,l)=>`<button type="button" class="${phTool===k?'on':''}" data-phtool="${k}">${l}</button>`;
   return `<div class="ph-ed"><div class="ph-main">
     <div class="ph-tools seg">${tool('ref','1. Mesure connue')}${tool('mur','2. Façade')}${tool('ouv','3. Fenêtre / porte')}</div>
-    ${CFG.ia?`<button class="btn primary" type="button" data-ph="detect">✨ Détecter façade et ouvrants (IA)</button>`:''}
+    <button class="btn primary${CFG.ia?'':' ia-off'}" type="button" data-ph="detect">✨ Détecter façade et ouvrants (IA)</button>
+    ${CFG.ia?'':`<p class="hint ia-off-txt">${esc(iaOffTxt())}</p>`}
     <p class="hint ph-help" id="phHelp">${phHelp()}</p>
     <div class="ph-cv"><canvas id="phCv"></canvas></div>
     <div class="ph-bar">${phDraft.length?`<button class="btn small" type="button" data-ph="undo">Annuler le dernier point</button>`:''}${phTool==='mur'&&phDraft.length>=3?`<button class="btn small primary" type="button" data-ph="close">Terminer la façade</button>`:''}
@@ -1818,7 +1823,7 @@ function photoEditorHtml(p,i){
     <fieldset class="ph-crepi"><legend>Crépi</legend><div class="sw">${CREPIS.map(([nm,hx])=>`<button type="button" class="${m.couleur===hx?'on':''}" style="background:${hx}" data-phcol="${hx}" title="${nm}" aria-label="${nm}"></button>`).join('')}<input type="color" data-phf="couleur" value="${esc(m.couleur||'#d9cdb4')}" aria-label="Autre couleur"></div>
       <p class="hint" style="margin:0">${esc((CREPIS.find(x=>x[1]===m.couleur)||['Couleur personnalisée'])[0])}</p>
       <button class="btn primary" type="button" data-ph="crepi" ${(m.murs||[]).length?'':'disabled'}>Appliquer le crépi sur les façades</button>
-      ${CFG.ia?`<button class="btn" type="button" data-ph="ia" ${p.image?'':'disabled'}>Rendu réaliste par IA</button>`:''}
+      <button class="btn${CFG.ia?'':' ia-off'}" type="button" data-ph="ia" ${p.image?'':'disabled'}>✨ Rendu réaliste par IA</button>
       <p class="hint" style="margin:0">${(m.murs||[]).length?'Seules les façades entourées sont colorées, sans les ouvrants.':'Entourez d\'abord au moins une façade.'}</p></fieldset>
     <span id="phDelWrap"><button class="btn small danger" type="button" data-ph="del">Supprimer la photo</button></span>
   </div></div>`;
@@ -1881,6 +1886,7 @@ phPane.addEventListener('click',async e=>{
   if(a==='delYes') return deletePhoto(p.id);
   if(a==='crepi'){if(!p.mesures.couleur) p.mesures.couleur='#d9cdb4'; b.disabled=true; b.textContent='Calcul…';
     p.rendu=await renderCrepi(p,p.mesures.couleur); queuePhoto(p,['mesures','rendu']); phView='crepi'; renderPhotos(); return}
+  if((a==='detect'||a==='ia')&&!CFG.ia) return toast(iaOffTxt());
   if(a==='detect'){b.disabled=true; b.textContent='Analyse de la photo (10 à 30 s)…';
     try{const {data:{session}}=await sb.auth.getSession();
       const r=await fetch('/api/detect-ia',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(session?session.access_token:'')},body:JSON.stringify({image:p.image})});
@@ -2550,17 +2556,20 @@ async function boot(){
     const C=window.ITE_CONFIG||{};
     if(C.url&&C.anonKey&&!/xxxx/.test(C.url)){conf={url:C.url,anon:C.anonKey,mail:false,api:false};
       if(!/[?&](signer|voir)=/.test(location.search)) try{const r=await fetch('/api/send-mail',{cache:'no-store'}); const j=r.ok?await r.json():null; if(j&&j.mail){conf.mail=true; conf.from=j.from} else conf.manque=j&&Array.isArray(j.manque)?j.manque:['les fonctions /api (dossier api/ sur GitHub)']}catch(e){conf.manque=['les fonctions /api']}
-      if(!/[?&](signer|voir)=/.test(location.search)) try{const r=await fetch('/api/rendu-ia',{cache:'no-store'}); const j=r.ok?await r.json():null; if(j&&j.ia) conf.ia=true}catch(e){}}
+      }
     /* 2) sinon fonctions Vercel /api (version complète) */
     else try{const r=await fetch('/api/config',{cache:'no-store'}); const j=await r.json().catch(()=>null);
       if(r.ok&&j&&j.url) conf=Object.assign(j,{api:true}); else if(r.status===503&&j) conf={erreur:j.erreur};}catch(e){}
+    /* IA photos : on demande au serveur ce qui est prêt ou ce qui manque */
+    if(conf&&!conf.erreur&&!/[?&](signer|voir)=/.test(location.search)) try{const r=await fetch('/api/rendu-ia',{cache:'no-store'}); const j=r.ok?await r.json().catch(()=>null):null;
+      if(j&&j.ia) conf.ia=true; else conf.iaManque=j&&Array.isArray(j.manque)&&j.manque.length?j.manque:(j?['GEMINI_API_KEY']:['la fonction /api/rendu-ia (fichier api/rendu-ia.js sur GitHub)'])}catch(e){conf.iaManque=['la fonction /api/rendu-ia']}
     if(!conf&&C.url!==undefined) conf={erreur:'Le fichier config.js ne contient pas encore l\'adresse et la clé anon de Supabase.'};
   }
   if(conf&&conf.erreur){document.querySelector('.wrap').hidden=true;return showAuth('config',conf.erreur+((window.ITE_CONFIG)?' Renseignez-les dans config.js (sur GitHub : ouvrir le fichier, crayon « Edit », puis « Commit changes »). Vercel republie tout seul.':' Ajoutez SUPABASE_URL, SUPABASE_ANON_KEY et SUPABASE_SERVICE_ROLE_KEY dans Vercel puis redéployez.'),true)}
   if(conf){
     try{await loadScript('/supabase-2.119.0.js')}catch(e){try{await loadScript('/vendor/supabase-2.119.0.js')}catch(e2){}}
     if(window.supabase){
-      MODE='cloud'; CFG.mail=!!conf.mail; CFG.manque=conf.manque||[]; CFG.api=!!conf.api; CFG.from=conf.from||''; CFG.ia=!!conf.ia;
+      MODE='cloud'; CFG.mail=!!conf.mail; CFG.manque=conf.manque||[]; CFG.api=!!conf.api; CFG.from=conf.from||''; CFG.ia=!!conf.ia; CFG.iaManque=conf.iaManque||[];
       document.querySelector('.wrap').hidden=true;
       document.querySelectorAll('.local-only').forEach(e=>e.hidden=false);
       sb=window.supabase.createClient(conf.url,conf.anon);

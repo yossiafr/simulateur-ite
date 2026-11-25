@@ -30,7 +30,7 @@ Réponds uniquement en JSON, coordonnées normalisées de 0 à 1000 au format [y
 {"facades":[{"points":[[y,x],[y,x],...]}],"ouvrants":[{"type":"fenetre|porte-fenetre|porte|garage","box_2d":[ymin,xmin,ymax,xmax]}]}`;
 
 export default async function handler(req, res) {
-  if (req.method === "GET") return send(res, 200, { ia: !!KEY });
+  if (req.method === "GET") return send(res, 200, { ia: !!KEY, manque: KEY ? [] : ["GEMINI_API_KEY"] });
   if (req.method !== "POST") return send(res, 405, { erreur: "Méthode non autorisée" });
   if (!KEY) return send(res, 501, { erreur: "Détection IA non configurée (GEMINI_API_KEY dans Vercel)." });
   const profil = await appelant(req).catch(() => null);
