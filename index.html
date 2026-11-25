@@ -1086,7 +1086,7 @@ const ENT_DEFAULT={
   prixIsolant:145, prixMO:100, ceeBJ:14, ceeVR:12, tva:5.5, modePaiement:'Chèque, Virement',
   mentionAides:"Ce devis est valable uniquement si les demandes d'aides locales reçoivent des accords définitifs.",
   termesCee:"Tout ou partie des travaux relatifs à ce devis ou bon de commande sont éligibles à une prime d’un montant de {prime} euros dont EDF (SIREN 552 081 317) est à l’origine dans le cadre du dispositif des Certificats d’Economies d’Energie. Le montant de cette prime ne pourra être révisé à la baisse qu’en cas de modification du volume de Certificats d’Economies d’Energie attaché à l’opération ou aux opérations d’économies d’énergie ou de la situation de précarité énergétique et ce, de manière proportionnelle. Dans le cadre de la réglementation un contrôle qualité des travaux sur site ou par contact pourra être demandé. Un refus de ce contrôle sur site ou par contact via EDF ou un prestataire d'EDF conduira au refus de cette prime par EDF.",
-  pied1:'C.E.F. – 14 Avenue du Général de Gaulle, 94160 SAINT MANDE – contact@compagnons-ecologiques.fr – 01 43 68 76 01 S.A.S au capital de 51 000,00€',
+  pied1:'C.E.F. – 14 Avenue du Général de Gaulle, 94160 SAINT MANDE – contact@compagnons-ecologiques.fr – 01 43 68 76 01 S.A.S au capital de 51 000,00 €',
   pied2:'SIRET 884 840 372 000 20 – APE 4329A – TVA FR19 884 840 372 Assurance Décennale Axa France n°10699861904 – RGE E184755'
 };
 const ENT_FIELDS=[['nomCourt','Nom court (C.E.F.)'],['representant','Représentant'],['siret','SIRET (bloc opération)'],['rge','N° certificat RGE'],['rgeDebut','RGE attribué le'],['rgeFin','RGE valable jusqu\'au'],
@@ -2538,6 +2538,9 @@ let tt; function toast(m){const t=document.getElementById('toast');t.textContent
 boot();
 window.__compute=compute;
 })();
+// Espace entre le chiffre et son unité (€, €/mois, m²…) dans les cases : la marge droite suit la longueur de l'unité
+function padUnits(){document.querySelectorAll('.in .u').forEach(u=>{const i=u.parentElement.querySelector('input');if(!i)return;const n=(u.textContent||'').length;const w=Math.round(20+n*7.6)+'px';if(i.style.paddingRight!==w)i.style.paddingRight=w})}
+padUnits();let padT;new MutationObserver(()=>{clearTimeout(padT);padT=setTimeout(padUnits,30)}).observe(document.body,{childList:true,subtree:true});
 </script>
 
 </body>
