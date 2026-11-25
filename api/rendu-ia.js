@@ -1,14 +1,14 @@
 import { appelant, send } from "./send-mail.js";
- 
+
 // Rendu réaliste du crépi par l'IA de Google (Gemini, retouche d'image).
 // Variables Vercel : GEMINI_API_KEY (clé Google AI Studio), et SUPABASE_URL / SUPABASE_ANON_KEY (déjà utilisées pour les e-mails).
 // GEMINI_MODEL facultatif (par défaut gemini-2.5-flash-image).
 const KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_KEY || "";
 const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash-image";
 const okConf = () => !!(KEY && (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL));
- 
+
 export const config = { maxDuration: 60 };
- 
+
 export default async function handler(req, res) {
   if (req.method === "GET") return send(res, 200, { ia: okConf() });
   if (req.method !== "POST") return send(res, 405, { erreur: "Méthode non autorisée" });
@@ -40,4 +40,3 @@ export default async function handler(req, res) {
     send(res, 502, { erreur: "Service IA injoignable : " + (e.message || e) });
   }
 }
- 

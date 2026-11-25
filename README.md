@@ -6,19 +6,27 @@ Technique : page web unique (`index.html`), base et connexions Supabase, héberg
 
 ## Règles de calcul
 
-1. **Mensualité** : crédit à mensualités constantes sur le montant des travaux, au taux annuel saisi (6 % par défaut). Les intérêts du différé (6 mois par défaut) s'ajoutent au capital. La mensualité peut être saisie à la main.
+1. **Mensualité** : crédit à mensualités constantes sur le montant à financer (travaux moins aide région), au taux annuel saisi (6 % par défaut). Les intérêts du différé (6 mois par défaut) s'ajoutent au capital. La mensualité peut être saisie à la main.
 2. **Économie mensuelle** : facture de chauffage annuelle × taux d'économie (25 % par défaut) ÷ 12, ou saisie à la main.
 3. **Économie globale** : économie mensuelle × (différé + durée), avec une hausse annuelle de l'énergie facultative.
 4. **Plus-value** : valeur du bien × 10 % (Notaires de France, transactions 2024), réalisable à la revente.
-5. **Projet couvert** : (économies + CEE + aide région + plus-value) ÷ total remboursé, affiché jusqu'à 100 %. La part « économies + aides » est affichée à part.
+5. **Projet couvert** : (économies + prime CEE + plus-value) ÷ total remboursé, affiché jusqu'à 100 %. L'aide région n'y est pas comptée car elle est déjà déduite du montant financé.
 
 Les valeurs par défaut se règlent dans l'onglet Administration.
+
+## Onglets visibles
+
+Administration › Onglets visibles : décochez un onglet (Synthèse, Photos, Carte, Devis, Dossier, Agenda) pour le masquer à tous les commerciaux ou à tous les télépros. La Fiche client reste toujours visible et l'administrateur voit toujours tout. Le changement s'applique au prochain chargement de la page. C'est un masquage d'affichage : les droits sur les données restent ceux du rôle.
 
 ## Foyer et revenus
 
 Sur la fiche client : revenu fiscal de référence, nombre de personnes du foyer, revenus nets mensuels et statut de Monsieur et de Madame (salarié CDI, CDD, à son compte, retraité…), crédits en cours (type, mensualité, date de fin). La couleur du foyer MaPrimeRénov' (bleu, jaune, violet, rose) est calculée automatiquement avec le barème 2026 : Île-de-France si le code postal commence par 75, 77, 78, 91, 92, 93, 94 ou 95, sinon barème hors Île-de-France. Le taux d'endettement (crédits ÷ revenus, puis avec la mensualité du projet) s'affiche sous les crédits. La couleur apparaît aussi dans la liste des clients et sur les RDV de l'agenda.
 
 Prime CEE calculée automatiquement : surface de murs à isoler × 14 €/m² pour les foyers bleu et jaune, × 12 €/m² pour les foyers violet et rose (tarifs modifiables dans Administration › Tarifs de base). Saisir un montant dans le champ Prime CEE force une autre valeur ; le vider revient au calcul automatique.
+
+Aide région calculée automatiquement : surface de murs × 40 €/m² (réglable dans Administration › Tarifs de base › Aide région). Elle est déduite du montant à financer et du reste à régler du devis. Saisir un montant force une autre valeur ; le vider revient au calcul auto.
+
+Envoi du devis : la synthèse du projet (autofinancement) est jointe par défaut. Le client la voit sous le devis, sur la page du lien envoyé. Décochez « Synthèse de votre projet » dans les documents joints du devis pour ne pas l'envoyer. Mode de paiement par défaut : Chèque, Virement, Financement.
 
 ## Suivi commercial
 

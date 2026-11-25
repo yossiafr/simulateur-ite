@@ -1,22 +1,23 @@
 import { transport, adresseEnvoi, SB_URL, smtpOk, emailValide, send } from "./send-mail.js";
- 
+
 // Rappel automatique envoyé au client la veille de son RDV (lancé chaque jour par Vercel Cron, voir vercel.json).
 // Variables Vercel en plus de celles de send-mail.js :
 //   SUPABASE_SERVICE_ROLE_KEY : clé secrète Supabase (Project Settings > API), à ne jamais mettre dans config.js
 //   CRON_SECRET : un mot de passe au choix ; Vercel l'envoie automatiquement à chaque lancement.
 const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-const H = () => ({ apikey: KEY, Authorization: "Bearer " + KEY, "Content-Type": "application/json" });
+// Ancienne clé service_role (eyJ…) : en-têtes apikey + Authorization ; nouvelle clé secrète (sb_secret_…) : en-tête apikey seul.
+const H = () => Object.assign({ apikey: KEY, "Content-Type": "application/json" }, KEY.startsWith("eyJ") ? { Authorization: "Bearer " + KEY } : {});
 const jourParis = (d) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(d);
 const heure = (d) => new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", hour: "2-digit", minute: "2-digit" }).format(d);
 const dateLongue = (d) => new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", weekday: "long", day: "numeric", month: "long" }).format(d);
- 
+
 async function get(path) {
   const r = await fetch(SB_URL + "/rest/v1/" + path, { headers: H() });
   if (!r.ok) throw new Error(path.split("?")[0] + " : " + r.status + " " + (await r.text()).slice(0, 200));
   return r.json();
 }
- 
+
 export default async function handler(req, res) {
   const secret = process.env.CRON_SECRET;
   if (!secret || req.headers.authorization !== "Bearer " + secret) return send(res, 401, { erreur: "Non autorisé" });
@@ -65,4 +66,3 @@ export default async function handler(req, res) {
     send(res, 500, { erreur: String(err.message || err) });
   }
 }
- 

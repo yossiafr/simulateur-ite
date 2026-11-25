@@ -1,11 +1,11 @@
 import { transport, adresseEnvoi, SB_URL, SB_ANON, smtpOk, emailValide, send } from "./send-mail.js";
- 
+
 // Après la signature : confirmation au client et avis à l'entreprise, depuis l'adresse de l'entreprise.
 // Ne fait rien si le devis n'a pas été signé dans les 15 dernières minutes.
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const eur = (v) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(+v || 0);
 const n = (v) => { const x = parseFloat(String(v ?? "").replace(",", ".")); return isFinite(x) ? x : 0; };
- 
+
 export default async function handler(req, res) {
   if (req.method !== "POST") return send(res, 405, { erreur: "Méthode non autorisée" });
   if (!smtpOk()) return send(res, 200, { ok: false, raison: "smtp" });
@@ -44,4 +44,3 @@ export default async function handler(req, res) {
   const out = await Promise.allSettled(envois);
   send(res, 200, { ok: out.every((x) => x.status === "fulfilled") });
 }
- 

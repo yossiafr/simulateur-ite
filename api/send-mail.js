@@ -1,15 +1,15 @@
 import nodemailer from "nodemailer";
- 
+
 // Envoi des e-mails aux clients (simulation et devis) depuis l'adresse de l'entreprise.
 // Variables Vercel : SUPABASE_URL, SUPABASE_ANON_KEY (les mêmes que config.js), SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM (facultatif).
 // Fichier autonome : n'a besoin que de nodemailer (package.json).
- 
+
 const SB_URL = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "").replace(/\/$/, "");
 const SB_ANON = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 const smtpOk = () => !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS && SB_URL && SB_ANON);
 const emailValide = (e) => /^[^\s@<>",;]+@[^\s@<>",;]+\.[^\s@<>",;]+$/.test(e);
 const send = (res, status, body) => { res.setHeader("Cache-Control", "no-store"); res.status(status).json(body); };
- 
+
 export function transport() {
   const port = +(process.env.SMTP_PORT || 465);
   return nodemailer.createTransport({ host: process.env.SMTP_HOST, port, secure: port === 465,
@@ -17,7 +17,7 @@ export function transport() {
 }
 export const adresseEnvoi = () => process.env.SMTP_FROM || process.env.SMTP_USER;
 export { SB_URL, SB_ANON, smtpOk, emailValide, send };
- 
+
 // Vérifie la connexion du commercial avec son jeton Supabase (aucune clé secrète nécessaire).
 export async function appelant(req) {
   const token = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
@@ -30,7 +30,7 @@ export async function appelant(req) {
   const [profil] = p.ok ? await p.json() : [];
   return profil && profil.actif && profil.role !== "telepro" ? profil : null;
 }
- 
+
 export default async function handler(req, res) {
   if (req.method === "GET") return send(res, 200, { mail: smtpOk(), from: smtpOk() ? adresseEnvoi() : "" });
   if (req.method !== "POST") return send(res, 405, { erreur: "Méthode non autorisée" });
@@ -60,4 +60,3 @@ export default async function handler(req, res) {
     send(res, 502, { erreur: "Le serveur d'envoi a refusé le message : " + (e.message || e) });
   }
 }
- 
