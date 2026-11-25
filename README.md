@@ -26,7 +26,7 @@ Prime CEE calculée automatiquement : surface de murs à isoler × 14 €/m² po
 
 Aide région calculée automatiquement : surface de murs × 40 €/m² (réglable dans Administration › Tarifs de base › Aide région). Elle est déduite du montant à financer et du reste à régler du devis. Saisir un montant force une autre valeur ; le vider revient au calcul auto.
 
-Envoi du devis : la synthèse du projet (autofinancement) est jointe par défaut. Elle apparaît comme une page juste après le devis, avant les autres documents joints : sur la page du lien envoyé au client et dans le PDF du devis (une page A4 paysage). Ses chiffres sont copiés dans le devis à chaque enregistrement de la fiche, car le lien public ne lit que le devis et les coordonnées du client. Décochez « Synthèse de votre projet » dans les documents joints du devis pour ne pas l'envoyer. Mode de paiement par défaut : Chèque, Virement, Financement.
+Envoi du devis : la synthèse du projet (autofinancement) est jointe par défaut. Elle apparaît comme une page juste après le devis, avant les autres documents joints : sur la page du lien envoyé au client et dans le PDF du devis (une page A4 paysage). Le client peut tout télécharger en un seul PDF (devis, synthèse, documents joints) : bouton « ⬇ Télécharger le devis (PDF) » dans l'e-mail (lien `?voir=…&pdf=1`, qui ouvre directement la fenêtre d'enregistrement en PDF) et en haut de la page du devis. Ses chiffres sont copiés dans le devis à chaque enregistrement de la fiche, car le lien public ne lit que le devis et les coordonnées du client. Décochez « Synthèse de votre projet » dans les documents joints du devis pour ne pas l'envoyer. Mode de paiement par défaut : Chèque, Virement, Financement.
 
 ## Suivi commercial
 

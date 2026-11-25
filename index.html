@@ -450,6 +450,7 @@ body.pm .sheet-head h2{font-size:30px} body.pm .ribbon{font-size:22px} body.pm .
 .btn.ia-off{opacity:.6}
 .ia-off-txt{color:var(--warn,#b45309);margin:4px 0 0}
 .ph-refok{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;background:var(--lime-soft);border-radius:10px;padding:8px 10px;font-size:13.5px}
+.sign-dl{display:flex;flex-direction:row;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}.sign-dl>div{flex:1 1 260px}
 </style>
 
 </head>
@@ -1524,6 +1525,7 @@ function optSelectHtml(){const o=opts(); return `<select class="dvOpt" aria-labe
 /* ===== Signature électronique simple ===== */
 const signUrl=tok=>location.origin+location.pathname.replace(/index\.html$/,'')+'?signer='+tok;
 const voirUrl=tok=>location.origin+location.pathname.replace(/index\.html$/,'')+'?voir='+tok;
+const pdfUrl=tok=>voirUrl(tok)+'&pdf=1';
 const frDateTime=iso=>{const d=new Date(iso); return d.toLocaleDateString('fr-FR')+' à '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})};
 function newToken(){const a=new Uint8Array(24); crypto.getRandomValues(a); return [...a].map(x=>x.toString(16).padStart(2,'0')).join('')}
 function sigBlockHtml(c){
@@ -1563,11 +1565,13 @@ async function signPage(tok,mode){
   const {data,error}=await sb.rpc('ite_devis_public',{p_token:tok});
   if(error||!data){root.innerHTML=`<div class="sign-card" style="margin-top:40px"><h1>Lien non valable</h1><p>Ce lien n'est plus actif. Contactez votre conseiller pour en recevoir un nouveau.</p></div>`;return}
   CFG.defaults={entreprise:data.entreprise||{}}; SIGN={tok,data,mode:mode||(SIGN&&SIGN.mode)||'signer'}; renderSignPage();
+  if(/[?&]pdf=1/.test(location.search)&&!SIGN.pdfDone){SIGN.pdfDone=1; setTimeout(signPrint,700)}
 }
 function signView(){const c=Object.assign({},SIGN.data.data), s=SIGN.data.signature; return {c:s?Object.assign(c,{devis:s.devis}):c, s}}
 function renderSignPage(){
   const root=document.getElementById('signRoot'), {c,s}=signView(), e=ent(), t=devisTotals(c), ann=SIGN.data.annexes||[];
   root.innerHTML=`<header class="sign-top"><img src="${LOGO_SRC}" alt="${esc(e.nomCourt)}"><div><h1>Devis n° ${esc(c.devis.numero)}</h1><p>${esc([c.prenom,c.nom].filter(Boolean).join(' '))} · Total TTC <b>${eur2(t.ttc)}</b> · Reste à régler <b>${eur2(t.reste)}</b></p></div></header>
+  <section class="sign-card sign-dl"><div><b>Télécharger le devis</b><p class="hint" style="margin:2px 0 0">Devis${synthOn(c.devis)&&c.devis.synth?', synthèse de votre projet':''}${ann.length?' et documents joints':''}, en un seul PDF. Dans la fenêtre qui s'ouvre, choisissez « Enregistrer au format PDF ».</p></div><button class="btn primary" type="button" id="sgDl">⬇ Télécharger le devis (PDF)</button></section>
   ${s?`<section class="sign-card" id="signBox">${signedHtml(s)}</section>`:SIGN.mode==='voir'?'':`<section class="sign-card"><p style="margin:0">Lisez votre devis${ann.length||synthOn(c.devis)?' et ses documents joints':''} ci-dessous, puis signez en bas de la page.</p><a class="btn primary" href="#signBox">Aller à la signature</a></section>`}
   <div class="dv-paper sign-paper"><div class="zoomer">${devisDocHtml(c,s)}${synthOn(c.devis)&&c.devis.synth?synthPageHtml(synthData(c)):''}${ann.map(a=>a.pages.map(p=>`<img class="annex-page" src="${p}" alt="${esc(a.titre)}" loading="lazy">`).join('')).join('')}</div></div>
   ${s?'':SIGN.mode==='voir'?`<section class="sign-card" id="signature">${askHtml(c)}</section>`:`<section class="sign-card" id="signBox">${signFormHtml(c)}</section>`}`;
@@ -1598,7 +1602,7 @@ function initPad(){
   cv.onpointerup=cv.onpointercancel=()=>{down=false};
 }
 function checkSign(){const b=document.getElementById('sgGo'); if(b) b.disabled=!(padInk&&document.getElementById('sgOk').checked&&document.getElementById('sgNom').value.trim())}
-function signPrint(){const {c,s}=signView(); pageCss(); document.getElementById('printRoot').innerHTML=devisDocHtml(c,s)+(synthOn(c.devis)&&c.devis.synth?synthPrintHtml(synthData(c)):'')+annexPrintHtml(SIGN.data.annexes||[]); doPrint('Devis '+c.devis.numero+' signé')}
+function signPrint(){const {c,s}=signView(); pageCss(); document.getElementById('printRoot').innerHTML=devisDocHtml(c,s)+(synthOn(c.devis)&&c.devis.synth?synthPrintHtml(synthData(c)):'')+annexPrintHtml(SIGN.data.annexes||[]); doPrint('Devis '+c.devis.numero+(s?' signé':'')+' '+[c.nom,c.prenom].filter(Boolean).join(' '))}
 /* La synthèse imprimée tient sur une page A4 paysage (281 × 194 mm utiles) */
 function fitSynthPrint(){document.querySelectorAll('#printRoot .synth-print').forEach(el=>{
   const m=document.createElement('div'); m.className='synth-print synth-measure'; m.innerHTML=el.innerHTML; document.body.appendChild(m);
@@ -1612,7 +1616,7 @@ document.addEventListener('input',e=>{if(e.target.closest('#signBox')) checkSign
 document.addEventListener('change',e=>{if(e.target.closest('#signBox')) checkSign()});
 document.addEventListener('click',async e=>{
   const b=e.target.closest('#signRoot button'); if(!b) return;
-  if(b.id==='sgPrint') return signPrint();
+  if(b.id==='sgPrint'||b.id==='sgDl') return signPrint();
   if(b.id==='sgAsk'){b.disabled=true; b.textContent='Envoi…'; let ok=false;
     try{const r=await fetch('/api/request-signature',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:SIGN.tok})}); const j=await r.json().catch(()=>({})); ok=r.ok&&j.ok}catch(e){}
     const box=document.getElementById('signature');
@@ -1663,7 +1667,8 @@ ${row('Total TTC',eur2(t.ttc))}${t.region?row('Aides région','- '+eur2(t.region
 </table>${t.cee&&!d.deduireCee?`<p style="margin:8px 0 0;font-size:12px;color:#4f5c48">Prime CEE de ${eur2(t.cee)} versée selon les termes indiqués dans le devis.</p>`:''}
 </td></tr></table></td></tr>
 <tr><td style="padding:22px 28px 6px;text-align:center">
-<a href="${esc(link)}" style="background:#2f8f1f;color:#ffffff;text-decoration:none;font-weight:bold;font-size:16px;padding:14px 28px;border-radius:999px;display:inline-block">Consulter mon devis</a></td></tr>
+<a href="${esc(link)}" style="background:#2f8f1f;color:#ffffff;text-decoration:none;font-weight:bold;font-size:16px;padding:14px 28px;border-radius:999px;display:inline-block">Consulter mon devis</a>
+<p style="margin:12px 0 0"><a href="${esc(link+'&pdf=1')}" style="color:#1e6312;text-decoration:none;font-weight:bold;font-size:15px;padding:11px 24px;border:2px solid #2f8f1f;border-radius:999px;display:inline-block">⬇ Télécharger le devis (PDF)</a></p></td></tr>
 <tr><td style="padding:18px 28px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #d6e3c9"><tr><td style="padding:16px 0 0;text-align:center">
 <p style="margin:0 0 10px;font-size:14px;line-height:1.5">Ce devis vous intéresse ? Demandez la signature électronique : vous recevrez aussitôt par e-mail le lien pour le signer en ligne.</p>
 <a href="${esc(link)}#signature" style="color:#1e6312;text-decoration:none;font-weight:bold;font-size:14px;padding:10px 20px;border-radius:999px;border:2px solid #2f8f1f;display:inline-block">Demander la signature électronique</a></td></tr></table></td></tr>
@@ -1676,7 +1681,7 @@ ${docs.length?`<tr><td style="padding:14px 28px 0"><p style="margin:0 0 6px;font
 }
 function devisMailText(c,msg,link,docs){const d=c.devis,t=devisTotals(c);
   return [`Bonjour ${[d.civilite,c.nom].filter(Boolean).join(' ')},`,'',msg,'',`Devis n° ${d.numero} du ${frDate(d.date)}`,`Total TTC : ${eur2(t.ttc)}`,t.region?`Aides région : - ${eur2(t.region)}`:null,`Reste à régler : ${eur2(t.reste)}`,'',
-    `Consulter mon devis : ${link}`,'',`Ce devis vous intéresse ? Demandez la signature électronique depuis la page du devis : ${link}#signature`,'',docs.length?'Documents joints : '+docs.join(', '):null,docs.length?'':null,'Bien cordialement,',profile&&profile.nom?profile.nom:null,SOCIETE].filter(x=>x!==null).join('\n')}
+    `Consulter mon devis : ${link}`,`Télécharger le devis (PDF) : ${link}&pdf=1`,'',`Ce devis vous intéresse ? Demandez la signature électronique depuis la page du devis : ${link}#signature`,'',docs.length?'Documents joints : '+docs.join(', '):null,docs.length?'':null,'Bien cordialement,',profile&&profile.nom?profile.nom:null,SOCIETE].filter(x=>x!==null).join('\n')}
 async function dmDocs(c){return (synthOn(c.devis)?[SYN_TITRE]:[]).concat(annexOn(await getAnnexes(),c.devis).map(a=>a.titre))}
 async function ensureToken(c){
   if(c._token) return true;
