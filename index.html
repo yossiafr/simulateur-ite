@@ -792,12 +792,13 @@ function compute(d){
   const pv=n(d.valeurBien)*n(d.tauxPV)/100;
   const total=mens*duree;
   const ech=x=>mens>0?x/mens:0;
-  const pct=x=>total>0?x/total:0;
-  return {mens,mensAuto,mensHA,assur,taeg,forced,capital,capDiff,taux:n(d.taux),duree,diff,ecoAuto,ecoMens,ecoGlobale,ecoDiff,aides,cee,ceeAuto:ceeAuto(d),region,travaux,pv,total,
+  const projet=capital; /* montant du projet, aide région déduite : base de la couverture */
+  const pct=x=>projet>0?x/projet:0;
+  return {projet,mens,mensAuto,mensHA,assur,taeg,forced,capital,capDiff,taux:n(d.taux),duree,diff,ecoAuto,ecoMens,ecoGlobale,ecoDiff,aides,cee,ceeAuto:ceeAuto(d),region,travaux,pv,total,
     echEco:ech(ecoGlobale),echEcoDiff:ech(ecoDiff),echCee:ech(cee),echRegion:ech(region),echAides:ech(aides),echPv:ech(pv),
     partMens:mens>0?ecoMens/mens:0, effort:mens-ecoMens,
     pEco:pct(ecoGlobale),pAid:pct(aides),pPv:pct(pv),
-    couv:pct(ecoGlobale+aides+pv),couvAff:Math.min(1,pct(ecoGlobale+aides+pv)),couvCash:pct(ecoGlobale+aides),couvTotal:pct(ecoGlobale+aides+pv),reste:total-ecoGlobale-aides-pv, ok:mens>0&&duree>0};
+    couv:pct(ecoGlobale+aides+pv),couvAff:Math.min(1,pct(ecoGlobale+aides+pv)),couvCash:pct(ecoGlobale+aides),couvTotal:pct(ecoGlobale+aides+pv),reste:projet-ecoGlobale-aides-pv, ok:projet>0};
 }
 
 /* ===== Format ===== */
@@ -860,7 +861,7 @@ document.getElementById('pane-form').addEventListener('change',e=>{if(['tel','ad
 function renderSheet(){document.getElementById('pane-sheet').innerHTML=sheetHtml(cur())}
 function sheetHtml(c){
   const r=compute(c);
-  const gain=r.ecoGlobale+r.aides+r.pv, scale=Math.max(1,r.total,gain);
+  const gain=r.ecoGlobale+r.aides+r.pv, scale=Math.max(1,r.projet,gain);
   const bw=v=>(Math.max(0,v)/scale*100).toFixed(2)+'%';
   return `
   <div class="sheet">
@@ -883,46 +884,45 @@ function sheetHtml(c){
         <h3>${ico('flame')}Économies de chauffage</h3>
         <div class="row"><span>Économie mensuelle estimée</span><span class="val num">${eur(r.ecoMens)}</span></div>
         <div class="row"><span>Sur la durée (${r.diff+r.duree} mois)</span><span class="val num">${eur(r.ecoGlobale)}</span></div>
-        <div class="cover"><span>Couvre environ</span><b class="num">${ech1(r.echEco)}</b><span>${plural(r.echEco,'échéance')}</span></div>
-        <p class="foot">Soit ${pctf(r.partMens)} de chaque mensualité.</p>
+        <div class="cover"><span>Couvre environ</span><b class="num">${pctf(r.pEco)}</b><span>du projet</span></div>
+        <p class="foot">${eur(r.ecoMens)} par mois en moyenne.</p>
       </div>
       <div class="box">
         <h3>${ico('coins')}Aides (CEE + région)</h3>
         <div class="row"><span>Prime CEE</span><span class="val num">${eur(r.cee)}</span></div>
         <div class="row"><span>Aide région</span><span class="val num">${eur(r.region)}</span></div>
-        <div class="cover"><span>Couvre environ</span><b class="num">${ech1(r.echAides)}</b><span>${plural(r.echAides,'échéance')}</span></div>
+        <div class="cover"><span>Couvre environ</span><b class="num">${pctf(r.pAid)}</b><span>du projet</span></div>
         <p class="foot">Prime CEE seule : l'aide région est déjà déduite du montant financé.</p>
       </div>
       <div class="box">
         <h3>${ico('house')}Plus-value immobilière estimée</h3>
         <div class="row"><span class="pv-badge num">+${ech1(n(c.tauxPV))} %</span><span style="font-size:12px;color:var(--muted)">en moyenne<br>(après ITE)*</span></div>
         <div class="row"><span>Sur un bien de ${eur(n(c.valeurBien))}</span><span class="val num">${eur(r.pv)}</span></div>
-        <div class="cover"><span>Équivalent à</span><b class="num">${ech1(r.echPv)}</b><span>${plural(r.echPv,'échéance')}</span></div>
+        <div class="cover"><span>Équivalent à</span><b class="num">${pctf(r.pPv)}</b><span>du projet</span></div>
       </div>
     </div>
     <p class="foot">*Notaires de France, transactions 2024. Écart de valeur selon le DPE, non garanti par l'ITE seule. Plus-value réalisable à la revente.</p>
 
     <div class="band">
-      <div class="cell"><span class="lbl">Votre mensualité (financement)</span><span class="money num">${eurc(r.mens)}</span><span class="pct-sub">${r.duree} échéances · ${eur(r.total)} au total${r.forced?'':` (crédit de ${eur(r.capital)} à ${tx3(r.taux)} %, TAEG ${tx2(r.taeg)} %${r.assur?`, dont assurance ${eurc(r.assur)}/mois`:''})`}</span></div>
+      <div class="cell"><span class="lbl">Montant de votre projet</span><span class="money num">${eur(r.projet)}</span><span class="pct-sub">Travaux ${eur(r.travaux)}${r.region?` − aide région ${eur(r.region)}`:''}</span></div>
       <div class="cell"><span class="lbl">Gain total estimé : économies + prime CEE + plus-value*</span><span class="money num">${eur(gain)}</span><span class="pct-sub">dont ${eur(r.ecoGlobale)} d'économies de chauffage sur ${ech1((r.diff+r.duree)/12)} ans</span></div>
-      <div class="cell gauge-cell">${gaugeSvg(r)}<span class="pct-sub">${r.couv>=1?`<b>Votre projet est entièrement couvert</b> : l'isolation vous rapporte ${eur(gain)}* pour ${eur(r.total)} payés.`:`Votre projet est couvert à <b>${pctf(r.couvAff)}</b> : ${eur(gain)}* rapportés pour ${eur(r.total)} payés.`}</span></div>
+      <div class="cell gauge-cell">${gaugeSvg(r)}<span class="pct-sub">${r.couv>=1?`<b>Votre projet est entièrement couvert</b> : l'isolation vous rapporte ${eur(gain)}* pour un projet de ${eur(r.projet)}.`:`Votre projet est couvert à <b>${pctf(r.couvAff)}</b> : ${eur(gain)}* rapportés pour un projet de ${eur(r.projet)}.`}</span></div>
     </div>
 
-    <div class="balance" role="img" aria-label="Comparaison entre le total payé (${eur(r.total)}) et ce que l'isolation rapporte (${eur(gain)})">
-      <div class="bl-row"><span class="bl-lbl">Vous payez</span><div class="bl-track"><span class="bl-pay" style="width:${bw(r.total)}"></span></div><b class="bl-val num">${eur(r.total)}</b></div>
+    <div class="balance" role="img" aria-label="Comparaison entre le montant du projet (${eur(r.projet)}) et ce que l'isolation rapporte (${eur(gain)})">
+      <div class="bl-row"><span class="bl-lbl">Votre projet</span><div class="bl-track"><span class="bl-pay" style="width:${bw(r.projet)}"></span></div><b class="bl-val num">${eur(r.projet)}</b></div>
       <div class="bl-row"><span class="bl-lbl">L'isolation vous rapporte</span><div class="bl-track">${[['seg-eco',r.ecoGlobale,'Économies'],['seg-aid',r.aides,'CEE'],['seg-pv',r.pv,'Plus-value*']].map(([k,v,l])=>v>0?`<span class="${k}" style="width:${bw(v)}">${v/scale>.12?`<em>${l}</em>`:''}</span>`:'').join('')}</div><b class="bl-val num gain">${eur(gain)}</b></div>
       <div class="eq">
         <span class="chip"><i class="seg-eco"></i>Économies <b class="num">${eur(r.ecoGlobale)}</b></span><span class="op">+</span>
         <span class="chip"><i class="seg-aid"></i>Prime CEE <b class="num">${eur(r.aides)}</b></span><span class="op">+</span>
         <span class="chip"><i class="seg-pv"></i>Plus-value* <b class="num">${eur(r.pv)}</b></span><span class="op">=</span>
-        <span class="chip tot">${eur(gain)} <small>soit ${pctf(r.couvTotal)} de ce que vous payez</small></span>
+        <span class="chip tot">${eur(gain)} <small>soit ${pctf(r.couvTotal)} du montant du projet</small></span>
       </div>
     </div>
 
     <div class="details">
-      <div class="kv"><span>Effort réel par mois</span><b class="num">${eur(Math.max(0,r.effort))}</b></div>
       <div class="kv"><span>Montant des travaux</span><b class="num">${eur(r.travaux)}</b></div>
-      ${r.region?`<div class="kv"><span>Aide région déduite</span><b class="num">− ${eur(r.region)}</b></div><div class="kv"><span>Montant financé</span><b class="num">${eur(r.capital)}</b></div>`:''}
+      ${r.region?`<div class="kv"><span>Aide région déduite</span><b class="num">− ${eur(r.region)}</b></div><div class="kv"><span>Montant du projet</span><b class="num">${eur(r.projet)}</b></div>`:''}
       <div class="kv"><span>Facture chauffage actuelle</span><b class="num">${eur(n(c.factureAn))}/an</b></div>
       <div class="kv"><span>Économie retenue</span><b class="num">${c.ecoForce!==''&&c.ecoForce!=null?'saisie manuelle':ech1(n(c.tauxEco))+' %'}</b></div>
     </div>
@@ -1030,24 +1030,23 @@ function mailHtml(c,r,sig){
   <tr><td style="background:${G};background:linear-gradient(160deg,${G},${D});border-radius:12px;padding:16px 18px">
     <div style="${F}color:#ffffff;font-size:13px;letter-spacing:1px;text-transform:uppercase;font-weight:bold">${esc(document.getElementById('brandName').textContent.replace(/\s+/g,' ').trim())}</div>
     <div style="${F}color:#ffffff;font-size:22px;font-weight:bold;margin-top:4px">Isolation de votre maison : un besoin qui s'autofinance</div></td></tr>
-  ${sect('Votre financement',row('Montant des travaux',eur(r.travaux))+(r.region?row('Aide région déduite','− '+eur(r.region))+row('Montant financé',eur(r.capital)):'')+(r.forced?'':row('Taux d\'intérêt',tx3(r.taux)+' % (TAEG '+tx2(r.taeg)+' %)'))+row('Différé avant la 1<sup>re</sup> échéance',r.diff+' mois')+row('Votre mensualité'+(r.assur&&!r.forced?' (dont assurance '+eurc(r.assur)+')':''),eurc(r.mens)+' × '+r.duree,true)+row('Total remboursé',eur(r.total)))}
-  ${sect('Économies de chauffage',row('Économie mensuelle estimée',eur(r.ecoMens),true)+row('Économie globale sur '+ech1((r.diff+r.duree)/12)+' ans',eur(r.ecoGlobale)),`Couvre environ <b>${ech1(r.echEco)}</b> ${plural(r.echEco,'échéance')}`)}
-  ${sect('Prime CEE',row('Prime CEE',eur(r.cee)),`Couvre environ <b>${ech1(r.echAides)}</b> ${plural(r.echAides,'échéance')}`)}
-  ${sect('Plus-value immobilière estimée (+'+ech1(n(c.tauxPV))+' %)*',row('Sur un bien de '+eur(n(c.valeurBien)),eur(r.pv),true),`Équivalent à <b>${ech1(r.echPv)}</b> ${plural(r.echPv,'échéance')}, réalisable à la revente`)}
+  ${sect('Votre projet',row('Montant des travaux',eur(r.travaux))+(r.region?row('Aide région déduite','− '+eur(r.region)):'')+row('Montant de votre projet',eur(r.projet),true)+row('Différé avant la 1<sup>re</sup> échéance',r.diff+' mois'))}
+  ${sect('Économies de chauffage',row('Économie mensuelle estimée',eur(r.ecoMens),true)+row('Économie globale sur '+ech1((r.diff+r.duree)/12)+' ans',eur(r.ecoGlobale)),`Couvre environ <b>${pctf(r.pEco)}</b> du projet`)}
+  ${sect('Prime CEE',row('Prime CEE',eur(r.cee)),`Couvre environ <b>${pctf(r.pAid)}</b> du projet`)}
+  ${sect('Plus-value immobilière estimée (+'+ech1(n(c.tauxPV))+' %)*',row('Sur un bien de '+eur(n(c.valeurBien)),eur(r.pv),true),`Équivalent à <b>${pctf(r.pPv)}</b> du projet, réalisable à la revente`)}
   <tr><td style="padding:12px 0 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${D};border-radius:12px"><tr>
     <td style="${F}padding:16px 18px;color:#ffffff;font-size:14px">Votre projet est couvert à<div style="font-size:40px;font-weight:bold;color:#c9ea6a;line-height:1.1">${pctf(r.couvAff)}</div>
-    ${pctf(r.couvCash)} par les économies d'énergie et la prime CEE (${eur(r.ecoGlobale+r.aides)}), complété par la valorisation de votre patrimoine (${eur(r.pv)}*), pour ${eur(r.total)} payés au total.<br>Effort réel : environ ${eur(Math.max(0,r.effort))} par mois.</td></tr></table></td></tr>
+    ${pctf(r.couvCash)} par les économies d'énergie et la prime CEE (${eur(r.ecoGlobale+r.aides)}), complété par la valorisation de votre patrimoine (${eur(r.pv)}*), pour un projet de ${eur(r.projet)}.</td></tr></table></td></tr>
   <tr><td style="${F}font-size:11px;color:#6b7863;padding:10px 0 0;font-style:italic">*Plus-value estimée : Notaires de France, transactions 2024. Écart de valeur selon le DPE, non garanti par l'ITE seule, réalisable uniquement à la revente. Simulation indicative et non contractuelle, aides sous réserve d'éligibilité.</td></tr>
   <tr><td style="${F}font-size:14px;color:#1d2a17;padding:14px 0 0">Je reste à votre disposition pour toute question.<br><br>Bien cordialement,<br>${esc(sig||'').replace(/\n/g,'<br>')}</td></tr></table>`;
 }
 function mailText(c,r,sig){
   return [c.nom?`Bonjour ${[c.prenom,c.nom].filter(Boolean).join(' ')},`:'Bonjour,','',
   'Voici la simulation de financement de l\'isolation par l\'extérieur de votre maison.','',
-  `Mensualité : ${eurc(r.mens)} × ${r.duree} (total ${eur(r.total)})${r.forced?'':` · taux ${tx3(r.taux)} %, TAEG ${tx2(r.taeg)} %`}${r.assur&&!r.forced?`, dont assurance ${eurc(r.assur)}/mois`:''}`,
-  `Économie de chauffage : ${eur(r.ecoMens)}/mois, soit ${eur(r.ecoGlobale)} sur la durée (${ech1(r.echEco)} échéances)`,
-  r.region?`Aide région : ${eur(r.region)}, déduite du montant financé (${eur(r.travaux)} de travaux, ${eur(r.capital)} financés)`:null,
-  `Prime CEE : ${eur(r.cee)} (${ech1(r.echAides)} échéances)`,
-  `Plus-value estimée : ${eur(r.pv)} (${ech1(r.echPv)} échéances, à la revente)`,
+  `Montant de votre projet : ${eur(r.projet)}`+(r.region?` (${eur(r.travaux)} de travaux − aide région ${eur(r.region)})`:''),
+  `Économie de chauffage : ${eur(r.ecoMens)}/mois, soit ${eur(r.ecoGlobale)} sur la durée (${pctf(r.pEco)} du projet)`,
+  `Prime CEE : ${eur(r.cee)} (${pctf(r.pAid)} du projet)`,
+  `Plus-value estimée : ${eur(r.pv)} (${pctf(r.pPv)} du projet, à la revente)`,
   `Votre projet est couvert à ${pctf(r.couvAff)}, dont ${pctf(r.couvCash)} par les économies et les aides et le reste par la plus-value estimée (à la revente, non garantie*).`,'*Notaires de France, transactions 2024.','','Simulation indicative et non contractuelle.','','Bien cordialement,',sig||''].filter(x=>x!=null).join('\n');
 }
 function iaOffTxt(){return MODE!=='cloud'?'IA disponible seulement sur la version en ligne (Vercel).':(()=>{const m=CFG.iaManque||[], v=m.filter(x=>/^[A-Z_]+$/.test(x)), f=m.filter(x=>!/^[A-Z_]+$/.test(x));
