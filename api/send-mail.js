@@ -49,7 +49,7 @@ export default async function handler(req, res) {
   if (!smtpOk()) return send(res, 501, { erreur: "Envoi automatique non configuré (variables SMTP et SUPABASE dans Vercel)." });
   const profil = await appelant(req).catch(() => null);
   if (!profil) return send(res, 401, { erreur: "Session expirée : reconnectez-vous." });
-  const { to, subject, html, text, fromName, logo } = req.body || {};
+  const { to, subject, html, text, fromName, logo, copie } = req.body || {};
   const dest = String(to || "").trim();
   if (!emailValide(dest)) return send(res, 400, { erreur: "Adresse e-mail du client invalide." });
   if (!html || String(html).length > 300000) return send(res, 400, { erreur: "Message vide ou trop long." });
@@ -62,7 +62,7 @@ export default async function handler(req, res) {
     await transport().sendMail({
       from: nom ? `"${nom}" <${adresse}>` : adresse,
       to: dest,
-      bcc: adresse, // copie dans la boîte de l'entreprise
+      ...(copie === false ? {} : { bcc: adresse }), // copie dans la boîte de l'entreprise, sauf pour les devis
       replyTo: adresse,
       subject: String(subject || "Votre simulation").replace(/[\r\n]/g, " ").slice(0, 200),
       html: String(html), text: String(text || ""), attachments,
