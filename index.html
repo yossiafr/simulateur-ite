@@ -152,6 +152,26 @@ label small{font-weight:400}
 .band .pct-sub{font-size:13px}
 .band .pct-sub b{color:var(--lime)}
 
+.three.plus{gap:26px}
+.three.plus .box+.box::before{content:'+';position:absolute;left:-23px;top:50%;transform:translateY(-50%);width:20px;height:20px;border-radius:50%;background:var(--green);color:var(--on-green);display:grid;place-items:center;font:900 16px/1 var(--display);z-index:1}
+@media (max-width:820px){.three.plus{gap:22px}.three.plus .box+.box::before{left:50%;top:-21px;transform:translateX(-50%)}}
+.gauge-cell{flex-direction:row!important;align-items:center;gap:14px!important}.gauge{width:112px;height:112px;flex:none}
+.balance{border:1px solid var(--line);border-radius:18px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.bl-row{display:grid;grid-template-columns:150px minmax(0,1fr) 92px;gap:12px;align-items:center}
+.bl-lbl{font-family:var(--display);font-weight:800;font-size:13.5px}
+.bl-track{display:flex;height:30px;border-radius:10px;overflow:hidden;background:var(--surface-2)}
+.bl-track span{height:100%;display:flex;align-items:center;justify-content:center;min-width:0;overflow:hidden}
+.bl-track em{font-style:normal;font-weight:800;font-size:12px;color:#1d2a17;white-space:nowrap;overflow:hidden;text-overflow:clip;padding:0 4px}.bl-track .seg-eco em{color:#fff}
+.bl-pay{background:#5d6b57}
+.bl-val{font-family:var(--display);font-size:18px;text-align:right;white-space:nowrap}.bl-val.gain{color:var(--green-deep)}
+:root[data-theme="dark"] .bl-val.gain{color:var(--lime)}
+.eq{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;font-size:13px}
+.eq .chip{background:var(--surface-2);border-radius:999px;padding:5px 12px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.eq .chip i{width:12px;height:12px;border-radius:3px;display:inline-block}
+.eq .chip b{font-family:var(--display)}
+.eq .op{font:900 18px var(--display);color:var(--green)}
+.eq .chip.tot{white-space:normal;flex-wrap:wrap;max-width:100%;background:var(--green);color:var(--on-green);font:900 16px var(--display)}.eq .chip.tot small{font:600 12px var(--body,inherit);opacity:.9}
+@media (max-width:620px){.bl-track em{display:none}.bl-row{grid-template-columns:minmax(0,1fr) auto}.bl-row .bl-track{grid-column:1/-1;order:3}}
 .meter{display:flex;flex-direction:column;gap:8px}
 .meter .bar{display:flex;height:22px;border-radius:999px;overflow:hidden;background:var(--surface-2);border:1px solid var(--line);position:relative}
 .meter .bar span{height:100%}
@@ -290,6 +310,8 @@ label small{font-weight:400}
 :is(.synth-pg,.synth-print) .steps{grid-template-columns:repeat(4,1fr)} :is(.synth-pg,.synth-print) .three{grid-template-columns:repeat(3,1fr)}
 :is(.synth-pg,.synth-print) .band{grid-template-columns:1fr 1fr 1.4fr} :is(.synth-pg,.synth-print) .details{grid-template-columns:repeat(4,1fr)}
 :is(.synth-pg,.synth-print) .sheet-head h2{font-size:30px} :is(.synth-pg,.synth-print) .ribbon{font-size:22px} :is(.synth-pg,.synth-print) .band .pct{font-size:48px}
+:is(.synth-pg,.synth-print) .three.plus{gap:26px} :is(.synth-pg,.synth-print) .three.plus .box+.box::before{left:-23px;top:50%;transform:translateY(-50%)}
+:is(.synth-pg,.synth-print) .bl-row{grid-template-columns:150px minmax(0,1fr) 92px} :is(.synth-pg,.synth-print) .bl-row .bl-track{grid-column:auto;order:0} :is(.synth-pg,.synth-print) .bl-track em{display:inline}
 .synth-print{display:none}
 .synth-measure{display:block;position:absolute;left:-20000px;top:0;visibility:hidden}
 @page synthp{size:A4 landscape;margin:8mm}
@@ -838,9 +860,8 @@ document.getElementById('pane-form').addEventListener('change',e=>{if(['tel','ad
 function renderSheet(){document.getElementById('pane-sheet').innerHTML=sheetHtml(cur())}
 function sheetHtml(c){
   const r=compute(c);
-  const total=Math.max(1,r.couvTotal);
-  const w=x=>(x/total*100).toFixed(2)+'%';
-  const mark=(1/total*100).toFixed(2)+'%';
+  const gain=r.ecoGlobale+r.aides+r.pv, scale=Math.max(1,r.total,gain);
+  const bw=v=>(Math.max(0,v)/scale*100).toFixed(2)+'%';
   return `
   <div class="sheet">
     <div class="sheet-head">
@@ -857,7 +878,7 @@ function sheetHtml(c){
       <div class="step"><div class="k"><i>4</i>1ʳᵉ échéance</div><div class="big">${r.diff} mois après</div><p>la fin des travaux</p></div>
     </div>
 
-    <div class="three">
+    <div class="three plus">
       <div class="box">
         <h3>${ico('flame')}Économies de chauffage</h3>
         <div class="row"><span>Économie mensuelle estimée</span><span class="val num">${eur(r.ecoMens)}</span></div>
@@ -883,18 +904,19 @@ function sheetHtml(c){
 
     <div class="band">
       <div class="cell"><span class="lbl">Votre mensualité (financement)</span><span class="money num">${eurc(r.mens)}</span><span class="pct-sub">${r.duree} échéances · ${eur(r.total)} au total${r.forced?'':` (crédit de ${eur(r.capital)} à ${tx3(r.taux)} %, TAEG ${tx2(r.taeg)} %${r.assur?`, dont assurance ${eurc(r.assur)}/mois`:''})`}</span></div>
-      <div class="cell"><span class="lbl">Économie globale générée sur la durée du financement (${ech1((r.diff+r.duree)/12)} ans)</span><span class="money num">${eur(r.ecoGlobale)}</span></div>
-      <div class="cell"><span class="lbl">Votre projet est couvert à</span><span class="pct num">${pctf(r.couvAff)}</span>
-        <span class="pct-sub"><b>${pctf(r.couvCash)}</b> par les économies d'énergie et la prime CEE (${eur(r.ecoGlobale+r.aides)}), complété par la valorisation de votre patrimoine (${eur(r.pv)}*), pour ${eur(r.total)} payés au total.</span></div>
+      <div class="cell"><span class="lbl">Gain total estimé : économies + prime CEE + plus-value*</span><span class="money num">${eur(gain)}</span><span class="pct-sub">dont ${eur(r.ecoGlobale)} d'économies de chauffage sur ${ech1((r.diff+r.duree)/12)} ans</span></div>
+      <div class="cell gauge-cell">${gaugeSvg(r)}<span class="pct-sub">${r.couv>=1?`<b>Votre projet est entièrement couvert</b> : l'isolation vous rapporte ${eur(gain)}* pour ${eur(r.total)} payés.`:`Votre projet est couvert à <b>${pctf(r.couvAff)}</b> : ${eur(gain)}* rapportés pour ${eur(r.total)} payés.`}</span></div>
     </div>
 
-    <div class="meter">
-      <div class="bar" role="img" aria-label="Répartition de la couverture du financement">
-        <span class="seg-eco" style="width:${w(r.pEco)}"></span><span class="seg-aid" style="width:${w(r.pAid)}"></span><span class="seg-pv" style="width:${w(r.pPv)}"></span>
-        ${r.couv>1?`<span class="mark" style="left:${mark}" title="100 % du financement"></span>`:''}
+    <div class="balance" role="img" aria-label="Comparaison entre le total payé (${eur(r.total)}) et ce que l'isolation rapporte (${eur(gain)})">
+      <div class="bl-row"><span class="bl-lbl">Vous payez</span><div class="bl-track"><span class="bl-pay" style="width:${bw(r.total)}"></span></div><b class="bl-val num">${eur(r.total)}</b></div>
+      <div class="bl-row"><span class="bl-lbl">L'isolation vous rapporte</span><div class="bl-track">${[['seg-eco',r.ecoGlobale,'Économies'],['seg-aid',r.aides,'CEE'],['seg-pv',r.pv,'Plus-value*']].map(([k,v,l])=>v>0?`<span class="${k}" style="width:${bw(v)}">${v/scale>.12?`<em>${l}</em>`:''}</span>`:'').join('')}</div><b class="bl-val num gain">${eur(gain)}</b></div>
+      <div class="eq">
+        <span class="chip"><i class="seg-eco"></i>Économies <b class="num">${eur(r.ecoGlobale)}</b></span><span class="op">+</span>
+        <span class="chip"><i class="seg-aid"></i>Prime CEE <b class="num">${eur(r.aides)}</b></span><span class="op">+</span>
+        <span class="chip"><i class="seg-pv"></i>Plus-value* <b class="num">${eur(r.pv)}</b></span><span class="op">=</span>
+        <span class="chip tot">${eur(gain)} <small>soit ${pctf(r.couvTotal)} de ce que vous payez</small></span>
       </div>
-      <div class="legend"><span><i class="seg-eco"></i>Économies ${pctf(r.pEco)}</span><span><i class="seg-aid"></i>Prime CEE ${pctf(r.pAid)}</span>
-        <span><i class="seg-pv"></i>Plus-value estimée* ${pctf(r.pPv)}</span>${r.couv>1?'<span>Trait vertical : 100 % du montant payé</span>':`<span>Reste à couvrir : ${eur(r.reste)}</span>`}</div>
     </div>
 
     <div class="details">
@@ -907,6 +929,11 @@ function sheetHtml(c){
     <p class="note">Simulation indicative et non contractuelle. Économies estimées à partir de la facture de chauffage déclarée${n(c.hausse)?` et d'une hausse de l'énergie de ${ech1(n(c.hausse))} %/an`:', à prix de l\'énergie constant'}. Montant des aides sous réserve d'éligibilité.</p>
   </div>`;
 }
+/* Jauge : part du total payé couverte par les économies, la prime CEE et la plus-value (plafonnée à 100 %) */
+function gaugeSvg(r){
+  const R=42, C=2*Math.PI*R, parts=[[r.pEco,'#ffffff'],[r.pAid,'#c9ea6a'],[r.pPv,'#e8f6c4']]; let off=0, used=0;
+  const arcs=parts.map(([p,col])=>{const v=Math.max(0,Math.min(p,1-used)); used+=v; const a=`<circle cx="50" cy="50" r="${R}" fill="none" stroke="${col}" stroke-width="12" stroke-dasharray="${(v*C).toFixed(2)} ${C.toFixed(2)}" stroke-dashoffset="${(-off*C).toFixed(2)}" transform="rotate(-90 50 50)"${col==='#e8f6c4'?' stroke-opacity=".75"':''}/>`; off+=v; return v>0?a:''}).join('');
+  return `<svg class="gauge" viewBox="0 0 100 100" role="img" aria-label="Projet couvert à ${pctf(r.couvAff)}"><circle cx="50" cy="50" r="${R}" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="12"/>${arcs}<text x="50" y="50" text-anchor="middle" dominant-baseline="central" font-size="18" font-weight="900" fill="#c9ea6a" font-family="inherit">${pctf(r.couvAff).replace(/\s/g,' ')}</text><text x="50" y="68" text-anchor="middle" font-size="8.5" fill="#fff" font-weight="700">couvert</text></svg>`}
 function ico(k){
   const p={flame:'<path d="M12 2c1 4 6 6 6 12a6 6 0 0 1-12 0c0-3 2-5 3-6 0 3 2 4 3 4-2-4 0-8 0-10z" fill="var(--green)"/>',
     coins:'<ellipse cx="9" cy="8" rx="6" ry="2.5" fill="var(--lime)" stroke="var(--green)"/><path d="M3 8v4c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5V8" fill="var(--lime)" stroke="var(--green)"/><path d="M9 14.5v3c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5v-6c0-1.4-2.7-2.5-6-2.5" fill="none" stroke="var(--green)"/>',
