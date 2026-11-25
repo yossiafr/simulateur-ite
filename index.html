@@ -545,9 +545,10 @@ body.pm .sheet-head h2{font-size:30px} body.pm .ribbon{font-size:22px} body.pm .
             <legend>Financement</legend>
             <div class="fields">
               <label>Montant des travaux TTC<div class="in"><input id="coutTravaux" data-k="coutTravaux" type="number" min="0" step="100"><span class="u">€</span></div></label>
-              <label>Taux d'intérêt annuel<div class="in"><input id="taux" data-k="taux" type="number" min="0" max="25" step="0.1"><span class="u">%</span></div></label>
+              <label>Taux d'intérêt annuel<div class="in"><input id="taux" data-k="taux" type="number" min="0" max="25" step="0.001"><span class="u">%</span></div></label>
               <label>Durée du financement<div class="in"><input id="duree" data-k="duree" type="number" min="1" step="1"><span class="u">mois</span></div></label>
               <label>Différé avant 1ʳᵉ échéance<div class="in"><input id="differe" data-k="differe" type="number" min="0" max="24" step="1"><span class="u">mois</span></div></label>
+              <label>Assurance facultative <small>vide ou 0 = sans</small><div class="in"><input id="tauxAssur" data-k="tauxAssur" type="number" min="0" max="2" step="0.01" placeholder="0"><span class="u">% / mois</span></div><span class="calc-hint">Sofinco : 0,15 % par mois du montant financé</span></label>
               <label class="full">Mensualité (forcer une valeur) <small>laisser vide pour le calcul auto</small><div class="in"><input id="mensForce" data-k="mensForce" type="number" min="0" step="1" placeholder="auto"><span class="u">€/mois</span></div><span class="calc-hint" id="mensHint"></span></label>
             </div>
           </fieldset>
@@ -620,7 +621,7 @@ body.pm .sheet-head h2{font-size:30px} body.pm .ribbon{font-size:22px} body.pm .
 const KEY='ite-crm-v1';
 const DEFAULTS={nom:'',prenom:'',tel:'',email:'',adresse:'',cp:'',ville:'',statut:'prospect',dateRdv:'',notes:'',rfr:'',nbPers:'',revM:'',statutM:'',revMme:'',statutMme:'',
   typeLogement:'Maison individuelle',annee:'',surface:'',surfaceMurs:'',dpe:'',energie:'Gaz',factureAn:'',tauxEco:25,ecoForce:'',
-  coutTravaux:'',mensForce:'',taux:6,duree:120,differe:6,cee:'',aideRegion:'',valeurBien:'',tauxPV:10,hausse:0};
+  coutTravaux:'',mensForce:'',taux:6.686,duree:120,differe:6,tauxAssur:'',cee:'',aideRegion:'',valeurBien:'',tauxPV:10,hausse:0};
 const STATUTS={prospect:'Prospect',rdv:'RDV fixé',devis:'Devis envoyé',signe:'Signé',perdu:'Perdu'};
 const inIframe=(()=>{try{return window.self!==window.top}catch(e){return true}})();
 if(inIframe) document.querySelectorAll('.local-only').forEach(e=>e.hidden=true);
@@ -631,7 +632,7 @@ const known=new Set(), timers=new Map();
 const isAdmin=()=>MODE==='cloud'&&!!profile&&profile.role==='admin';
 const isTp=()=>MODE==='cloud'&&!!profile&&profile.role==='telepro';
 const ROLES={admin:'Admin',commercial:'Commercial',telepro:'Télépro'};
-const DEF_KEYS=['tauxEco','taux','duree','differe','tauxPV','hausse'];
+const DEF_KEYS=['tauxEco','taux','duree','differe','tauxAssur','tauxPV','hausse'];
 function blank(){const d={};DEF_KEYS.forEach(k=>{if(CFG.defaults[k]!=null&&CFG.defaults[k]!=='')d[k]=CFG.defaults[k]});
   return Object.assign({},DEFAULTS,d,{id:uid(),created:Date.now(),updated:Date.now(),_owner:me?me.id:undefined})}
 const ownerName=id=>{const p=team.find(t=>t.id===id);return p?(p.nom||p.email):''};
@@ -640,7 +641,7 @@ function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2
 function sample(){return Object.assign({},DEFAULTS,{id:uid(),created:Date.now(),updated:Date.now(),
   nom:'Exemple',prenom:'Client',tel:'06 00 00 00 00',ville:'Montauban',cp:'82000',statut:'rdv',
   annee:1978,surface:110,surfaceMurs:140,dpe:'F',energie:'Gaz',factureAn:2400,tauxEco:25,
-  coutTravaux:22000,mensForce:'',taux:6,duree:120,differe:6,cee:4500,aideRegion:'',valeurBien:220000,tauxPV:10,hausse:0,
+  coutTravaux:22000,mensForce:'',taux:6.686,duree:120,differe:6,cee:4500,aideRegion:'',valeurBien:220000,tauxPV:10,hausse:0,
   notes:'Fiche d\'exemple : remplacez par les données de votre client.'})}
 const PLAF={idf:[[24031,29253,40851],[35270,42933,60051],[42357,51564,71846],[49455,60208,84562],[56580,68877,96817]],idfSup:[7116,8663,12257],
   aut:[[17363,22259,31185],[25393,32553,45842],[30540,39148,55196],[35676,45735,64550],[40835,52348,73907]],autSup:[5151,6598,9357]};
@@ -722,11 +723,20 @@ const cur=()=>clients.find(c=>c.id===currentId);
 const n=v=>{const x=parseFloat(String(v).replace(',','.'));return isFinite(x)?x:0};
 
 /* ===== Calcul ===== */
+/* TAEG (hors assurance facultative) : taux annuel i tel que capital = Σ mensualité / (1+i)^(t/12), t = mois de chaque échéance */
+function taegCalc(cap,m,duree,first){if(!(cap>0)||!(m>0)||!(duree>0)) return 0; const pv=i=>{let s=0; for(let k=0;k<duree;k++) s+=m/Math.pow(1+i,(first+k)/12); return s};
+  let a=0,b=1; if(pv(a)<cap) return 0; for(let k=0;k<80;k++){const x=(a+b)/2; if(pv(x)>cap) a=x; else b=x} return (a+b)/2*100}
 function compute(d){
   const duree=Math.max(0,Math.round(n(d.duree))), diff=Math.max(0,Math.round(n(d.differe)));
   const region=regionVal(d), travaux=n(d.coutTravaux), capital=Math.max(0,travaux-region), ti=n(d.taux)/100/12;
-  const capDiff=capital*Math.pow(1+ti,diff); /* intérêts du différé capitalisés */
-  const mensAuto=duree>0?(ti>0?capDiff*ti/(1-Math.pow(1+ti,-duree)):capDiff/duree):0;
+  /* Méthode du prêteur (simulation Sofinco) : 1re échéance « diff » mois après le déblocage ; les intérêts courus au-delà
+     du 1er mois (30 jours par mois, taux débiteur / 365, intérêts simples) s'ajoutent au capital, puis mensualités constantes.
+     Vérifié : 16 650 €, 6,686 %, 120 mois, 1re échéance à 6 mois → 195,87 €/mois, TAEG 6,880 %. */
+  const capDiff=capital*(1+n(d.taux)/100*Math.max(0,diff-1)*30/365);
+  const mensHA=duree>0?Math.round((ti>0?capDiff*ti/(1-Math.pow(1+ti,-duree)):capDiff/duree)*100)/100:0;
+  const assur=capital>0?Math.floor(capital*n(d.tauxAssur))/100:0; /* assurance facultative : % par mois du montant financé */
+  const mensAuto=mensHA+assur;
+  const taeg=taegCalc(capital,mensHA,duree,Math.max(1,diff));
   const forced=d.mensForce!==''&&d.mensForce!=null;
   const mens=forced?n(d.mensForce):mensAuto;
   const ecoAuto=n(d.factureAn)*n(d.tauxEco)/100/12;
@@ -739,7 +749,7 @@ function compute(d){
   const total=mens*duree;
   const ech=x=>mens>0?x/mens:0;
   const pct=x=>total>0?x/total:0;
-  return {mens,mensAuto,forced,capital,capDiff,taux:n(d.taux),duree,diff,ecoAuto,ecoMens,ecoGlobale,ecoDiff,aides,cee,ceeAuto:ceeAuto(d),region,travaux,pv,total,
+  return {mens,mensAuto,mensHA,assur,taeg,forced,capital,capDiff,taux:n(d.taux),duree,diff,ecoAuto,ecoMens,ecoGlobale,ecoDiff,aides,cee,ceeAuto:ceeAuto(d),region,travaux,pv,total,
     echEco:ech(ecoGlobale),echEcoDiff:ech(ecoDiff),echCee:ech(cee),echRegion:ech(region),echAides:ech(aides),echPv:ech(pv),
     partMens:mens>0?ecoMens/mens:0, effort:mens-ecoMens,
     pEco:pct(ecoGlobale),pAid:pct(aides),pPv:pct(pv),
@@ -749,6 +759,9 @@ function compute(d){
 /* ===== Format ===== */
 const eur=v=>new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(Math.round(v||0));
 const pctf=v=>new Intl.NumberFormat('fr-FR',{maximumFractionDigits:0}).format((v||0)*100)+' %';
+const tx2=v=>new Intl.NumberFormat('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}).format(v||0);
+const tx3=v=>new Intl.NumberFormat('fr-FR',{maximumFractionDigits:3}).format(v||0);
+const eurc=v=>new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',minimumFractionDigits:2,maximumFractionDigits:2}).format(v||0);
 const ech1=v=>new Intl.NumberFormat('fr-FR',{maximumFractionDigits:1}).format(v||0);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fullName=c=>[c.prenom,c.nom].filter(Boolean).join(' ')||'Client sans nom';
@@ -786,14 +799,14 @@ function updateHeader(){
 }
 function updateHint(){
   const r=compute(cur());
-  document.getElementById('mensHint').textContent=r.capital>0?`Calcul auto à ${ech1(r.taux)} % sur ${eur(r.capital)} financés${r.region?` (travaux ${eur(r.travaux)} − aide région ${eur(r.region)})`:''} : ${eur(r.mensAuto)} / mois sur ${r.duree} mois · coût du crédit ${eur(r.mensAuto*r.duree-r.capital)}`:'Saisissez le montant des travaux pour calculer la mensualité';
+  document.getElementById('mensHint').textContent=r.capital>0?`Calcul auto à ${tx3(r.taux)} % sur ${eurc(r.capital)} financés${r.region?` (travaux ${eur(r.travaux)} − aide région ${eur(r.region)})`:''} : ${eurc(r.mensHA)} / mois × ${r.duree}${r.diff>1?`, 1ʳᵉ échéance ${r.diff} mois après la fin des travaux`:''} · TAEG ${tx2(r.taeg)} % · coût du crédit ${eurc(r.mensHA*r.duree-r.capital)}${r.assur?` · + assurance ${eurc(r.assur)} / mois, soit ${eurc(r.mensAuto)} / mois`:''}`:'Saisissez le montant des travaux pour calculer la mensualité';
   document.getElementById('ecoHint').textContent=`Calcul auto : ${eur(r.ecoAuto)} / mois`+(r.mens>0?` · utilisé : ${eur(r.ecoMens)} soit ${pctf(r.partMens)} de la mensualité`:'');
 }
 document.getElementById('pane-form').addEventListener('input',e=>{
   if(e.target.dataset.crk){const c=cur(), x=(c.credits||[])[+e.target.dataset.cr]; if(x){x[e.target.dataset.crk]=e.target.value; c.updated=Date.now(); persist(c); renderFoyer()} return}
   const k=e.target.dataset.k; if(!k) return;
   const c=cur(); c[k]=e.target.value; c.updated=Date.now(); persist(c);
-  updateHeader(); updateHint(); renderList(); if(['rfr','nbPers','cp','revM','revMme','coutTravaux','taux','duree','mensForce','differe'].includes(k)) renderFoyer(); if(['rfr','nbPers','cp','surfaceMurs','cee'].includes(k)) ceeHint(); if(['surfaceMurs','aideRegion'].includes(k)) regionHint(); if(['dateRappel','statut'].includes(k)){relHint(); renderFilters()}
+  updateHeader(); updateHint(); renderList(); if(['rfr','nbPers','cp','revM','revMme','coutTravaux','taux','duree','mensForce','differe','tauxAssur'].includes(k)) renderFoyer(); if(['rfr','nbPers','cp','surfaceMurs','cee'].includes(k)) ceeHint(); if(['surfaceMurs','aideRegion'].includes(k)) regionHint(); if(['dateRappel','statut'].includes(k)){relHint(); renderFilters()}
   if(!document.getElementById('pane-sheet').hidden) renderSheet();
 });
 document.getElementById('pane-form').addEventListener('submit',e=>e.preventDefault());
@@ -847,7 +860,7 @@ function sheetHtml(c){
     <p class="foot">*Notaires de France, transactions 2024. Écart de valeur selon le DPE, non garanti par l'ITE seule. Plus-value réalisable à la revente.</p>
 
     <div class="band">
-      <div class="cell"><span class="lbl">Votre mensualité (financement)</span><span class="money num">${eur(r.mens)}</span><span class="pct-sub">${r.duree} échéances · ${eur(r.total)} au total${r.forced?'':` (crédit de ${eur(r.capital)} à ${ech1(r.taux)} %)`}</span></div>
+      <div class="cell"><span class="lbl">Votre mensualité (financement)</span><span class="money num">${eurc(r.mens)}</span><span class="pct-sub">${r.duree} échéances · ${eur(r.total)} au total${r.forced?'':` (crédit de ${eur(r.capital)} à ${tx3(r.taux)} %, TAEG ${tx2(r.taeg)} %${r.assur?`, dont assurance ${eurc(r.assur)}/mois`:''})`}</span></div>
       <div class="cell"><span class="lbl">Économie globale générée sur la durée du financement (${ech1((r.diff+r.duree)/12)} ans)</span><span class="money num">${eur(r.ecoGlobale)}</span></div>
       <div class="cell"><span class="lbl">Votre projet est couvert à</span><span class="pct num">${pctf(r.couvAff)}</span>
         <span class="pct-sub"><b>${pctf(r.couvCash)}</b> par les économies d'énergie et la prime CEE (${eur(r.ecoGlobale+r.aides)}), complété par la valorisation de votre patrimoine (${eur(r.pv)}*), pour ${eur(r.total)} payés au total.</span></div>
@@ -968,7 +981,7 @@ function mailHtml(c,r,sig){
   <tr><td style="background:${G};background:linear-gradient(160deg,${G},${D});border-radius:12px;padding:16px 18px">
     <div style="${F}color:#ffffff;font-size:13px;letter-spacing:1px;text-transform:uppercase;font-weight:bold">${esc(document.getElementById('brandName').textContent.replace(/\s+/g,' ').trim())}</div>
     <div style="${F}color:#ffffff;font-size:22px;font-weight:bold;margin-top:4px">Isolation de votre maison : un besoin qui s'autofinance</div></td></tr>
-  ${sect('Votre financement',row('Montant des travaux',eur(r.travaux))+(r.region?row('Aide région déduite','− '+eur(r.region))+row('Montant financé',eur(r.capital)):'')+(r.forced?'':row('Taux d\'intérêt',ech1(r.taux)+' %'))+row('Différé avant la 1<sup>re</sup> échéance',r.diff+' mois')+row('Votre mensualité',eur(r.mens)+' × '+r.duree,true)+row('Total remboursé',eur(r.total)))}
+  ${sect('Votre financement',row('Montant des travaux',eur(r.travaux))+(r.region?row('Aide région déduite','− '+eur(r.region))+row('Montant financé',eur(r.capital)):'')+(r.forced?'':row('Taux d\'intérêt',tx3(r.taux)+' % (TAEG '+tx2(r.taeg)+' %)'))+row('Différé avant la 1<sup>re</sup> échéance',r.diff+' mois')+row('Votre mensualité'+(r.assur&&!r.forced?' (dont assurance '+eurc(r.assur)+')':''),eurc(r.mens)+' × '+r.duree,true)+row('Total remboursé',eur(r.total)))}
   ${sect('Économies de chauffage',row('Économie mensuelle estimée',eur(r.ecoMens),true)+row('Économie globale sur '+ech1((r.diff+r.duree)/12)+' ans',eur(r.ecoGlobale)),`Couvre environ <b>${ech1(r.echEco)}</b> ${plural(r.echEco,'échéance')}`)}
   ${sect('Prime CEE',row('Prime CEE',eur(r.cee)),`Couvre environ <b>${ech1(r.echAides)}</b> ${plural(r.echAides,'échéance')}`)}
   ${sect('Plus-value immobilière estimée (+'+ech1(n(c.tauxPV))+' %)*',row('Sur un bien de '+eur(n(c.valeurBien)),eur(r.pv),true),`Équivalent à <b>${ech1(r.echPv)}</b> ${plural(r.echPv,'échéance')}, réalisable à la revente`)}
@@ -981,7 +994,7 @@ function mailHtml(c,r,sig){
 function mailText(c,r,sig){
   return [c.nom?`Bonjour ${[c.prenom,c.nom].filter(Boolean).join(' ')},`:'Bonjour,','',
   'Voici la simulation de financement de l\'isolation par l\'extérieur de votre maison.','',
-  `Mensualité : ${eur(r.mens)} × ${r.duree} (total ${eur(r.total)})`,
+  `Mensualité : ${eurc(r.mens)} × ${r.duree} (total ${eur(r.total)})${r.forced?'':` · taux ${tx3(r.taux)} %, TAEG ${tx2(r.taeg)} %`}${r.assur&&!r.forced?`, dont assurance ${eurc(r.assur)}/mois`:''}`,
   `Économie de chauffage : ${eur(r.ecoMens)}/mois, soit ${eur(r.ecoGlobale)} sur la durée (${ech1(r.echEco)} échéances)`,
   r.region?`Aide région : ${eur(r.region)}, déduite du montant financé (${eur(r.travaux)} de travaux, ${eur(r.capital)} financés)`:null,
   `Prime CEE : ${eur(r.cee)} (${ech1(r.echAides)} échéances)`,
@@ -2347,7 +2360,7 @@ document.getElementById('pane-agenda').addEventListener('click',e=>{const t=e.ta
 /* ===== Administration ===== */
 function renderAdmin(){
   const pane=document.getElementById('pane-admin'); if(!isAdmin()){pane.innerHTML='';return}
-  const d=Object.assign({tauxEco:25,taux:6,duree:120,differe:6,tauxPV:10,hausse:0},CFG.defaults);
+  const d=Object.assign({tauxEco:25,taux:6.686,duree:120,differe:6,tauxAssur:0,tauxPV:10,hausse:0},CFG.defaults);
   const cnt=id=>clients.filter(c=>c._owner===id&&known.has(c.id)).length;
   const signes=id=>clients.filter(c=>c._owner===id&&known.has(c.id)&&c.statut==='signe').length;
   const f=(k,l,u,st)=>`<label>${l}<div class="in"><input id="def-${k}" data-def="${k}" type="number" step="${st}" value="${esc(d[k])}"><span class="u">${u}</span></div></label>`;
@@ -2377,7 +2390,7 @@ function renderAdmin(){
     <p class="hint">Décochez un onglet pour le masquer à tous les commerciaux ou à tous les télépros. La Fiche client reste toujours visible, et l'administrateur voit toujours tous les onglets. Le changement s'applique à leur prochaine connexion ou au rechargement de la page.</p>`})()}</fieldset>
   <fieldset class="span-all"><legend>Réglages par défaut des nouvelles fiches</legend>
     <div class="fields" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
-      ${f('tauxEco','Économie due à l\'ITE','%',1)}${f('taux','Taux d\'intérêt','%',0.1)}${f('duree','Durée','mois',1)}${f('differe','Différé','mois',1)}${f('tauxPV','Plus-value','%',0.5)}${f('hausse','Hausse énergie','%/an',0.5)}
+      ${f('tauxEco','Économie due à l\'ITE','%',1)}${f('taux','Taux d\'intérêt','%',0.1)}${f('duree','Durée','mois',1)}${f('differe','Différé','mois',1)}${f('tauxAssur','Assurance facultative','%/mois',0.01)}${f('tauxPV','Plus-value','%',0.5)}${f('hausse','Hausse énergie','%/an',0.5)}
     </div>
     <div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="btn primary" id="saveDefaults" type="button">Enregistrer les réglages</button></div>
     <p class="hint">S'appliquent aux nouvelles fiches de tous les commerciaux. Les fiches existantes gardent leurs valeurs.</p>
