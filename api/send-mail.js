@@ -1,19 +1,31 @@
 import nodemailer from "nodemailer";
+import fs from "fs";
+import path from "path";
 
 // Envoi des e-mails aux clients (simulation et devis) depuis l'adresse de l'entreprise.
 // Variables Vercel : SUPABASE_URL, SUPABASE_ANON_KEY (les mêmes que config.js), SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM (facultatif).
 // Fichier autonome : n'a besoin que de nodemailer (package.json).
 
-const SB_URL = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "").replace(/\/$/, "");
-const SB_ANON = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-const smtpOk = () => !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS && SB_URL && SB_ANON);
+// Adresse et clé publique Supabase : variables Vercel, sinon lues dans config.js (inclus via vercel.json).
+function lireConfig() {
+  try {
+    const t = fs.readFileSync(path.join(process.cwd(), "config.js"), "utf8");
+    return { url: (t.match(/url\s*:\s*["']([^"']+)["']/) || [])[1] || "", anon: (t.match(/anonKey\s*:\s*["']([^"']+)["']/) || [])[1] || "" };
+  } catch (e) { return { url: "", anon: "" }; }
+}
+const CFGJS = lireConfig();
+const SB_URL = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || CFGJS.url).replace(/\/$/, "");
+const SB_ANON = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || CFGJS.anon;
+const manque = () => [["SMTP_HOST", process.env.SMTP_HOST], ["SMTP_USER", process.env.SMTP_USER], ["SMTP_PASS", process.env.SMTP_PASS],
+  ["SUPABASE_URL", SB_URL], ["SUPABASE_ANON_KEY", SB_ANON]].filter(([, v]) => !v).map(([k]) => k);
+const smtpOk = () => manque().length === 0;
 const emailValide = (e) => /^[^\s@<>",;]+@[^\s@<>",;]+\.[^\s@<>",;]+$/.test(e);
 const send = (res, status, body) => { res.setHeader("Cache-Control", "no-store"); res.status(status).json(body); };
 
 export function transport() {
   const port = +(process.env.SMTP_PORT || 465);
   return nodemailer.createTransport({ host: process.env.SMTP_HOST, port, secure: port === 465,
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } });
+    auth: { user: String(process.env.SMTP_USER).trim(), pass: String(process.env.SMTP_PASS).replace(/\s+/g, "") } }); // mot de passe d'application Google : espaces ignorés
 }
 export const adresseEnvoi = () => process.env.SMTP_FROM || process.env.SMTP_USER;
 export { SB_URL, SB_ANON, smtpOk, emailValide, send };
@@ -32,7 +44,7 @@ export async function appelant(req) {
 }
 
 export default async function handler(req, res) {
-  if (req.method === "GET") return send(res, 200, { mail: smtpOk(), from: smtpOk() ? adresseEnvoi() : "" });
+  if (req.method === "GET") return send(res, 200, { mail: smtpOk(), from: smtpOk() ? adresseEnvoi() : "", manque: manque() });
   if (req.method !== "POST") return send(res, 405, { erreur: "Méthode non autorisée" });
   if (!smtpOk()) return send(res, 501, { erreur: "Envoi automatique non configuré (variables SMTP et SUPABASE dans Vercel)." });
   const profil = await appelant(req).catch(() => null);

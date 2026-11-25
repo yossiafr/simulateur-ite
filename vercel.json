@@ -1,5 +1,13 @@
 {
   "crons": [
-    { "path": "/api/rappels", "schedule": "0 16 * * *" }
-  ]
+    {
+      "path": "/api/rappels",
+      "schedule": "0 16 * * *"
+    }
+  ],
+  "functions": {
+    "api/*.js": {
+      "includeFiles": "config.js"
+    }
+  }
 }

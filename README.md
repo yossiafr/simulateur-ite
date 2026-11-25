@@ -115,14 +115,14 @@ Dans Vercel › Settings › Environment Variables, puis Redeploy :
 
 | Key | Valeur |
 | --- | --- |
-| `SUPABASE_URL` | la même adresse que dans `config.js` |
-| `SUPABASE_ANON_KEY` | la même clé publique que dans `config.js` |
+| `SUPABASE_URL` | facultatif : sinon lue dans `config.js` |
+| `SUPABASE_ANON_KEY` | facultatif : sinon lue dans `config.js` |
 | `SMTP_HOST` | serveur d'envoi de votre messagerie (Google Workspace `smtp.gmail.com`, OVH `ssl0.ovh.net`, IONOS `smtp.ionos.fr`, Microsoft 365 `smtp.office365.com`) |
 | `SMTP_PORT` | `465` (Microsoft 365 : `587`) |
 | `SMTP_USER` | `contact@compagnons-ecologiques.fr` |
 | `SMTP_PASS` | le mot de passe de cette boîte (Google : mot de passe d'application) |
 
-Sans ces réglages, le bouton copie l'e-mail mis en page et ouvre votre messagerie.
+Une fois réglé, « Envoyer au client » (synthèse) et « Envoyer depuis contact@ » (devis) partent directement du CRM, avec une copie dans la boîte contact@. Le bouton « Ouvrir plutôt ma messagerie » reste en secours. Sans ces réglages, le CRM indique quelle variable manque dans Vercel et propose d'ouvrir votre messagerie. Les espaces du mot de passe d'application Google sont ignorés.
 
 Les documents `documents-cef.json` (fiche produit, RGE, décennale) sont ajoutés automatiquement aux documents joints à la première connexion de l'administrateur.
 

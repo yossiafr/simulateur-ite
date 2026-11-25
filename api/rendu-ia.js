@@ -1,11 +1,11 @@
-import { appelant, send } from "./send-mail.js";
+import { appelant, send, SB_URL } from "./send-mail.js";
 
 // Rendu réaliste du crépi par l'IA de Google (Gemini, retouche d'image).
 // Variables Vercel : GEMINI_API_KEY (clé Google AI Studio), et SUPABASE_URL / SUPABASE_ANON_KEY (déjà utilisées pour les e-mails).
 // GEMINI_MODEL facultatif (par défaut gemini-2.5-flash-image).
 const KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_KEY || "";
 const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash-image";
-const okConf = () => !!(KEY && (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL));
+const okConf = () => !!(KEY && SB_URL);
 
 export const config = { maxDuration: 60 };
 
