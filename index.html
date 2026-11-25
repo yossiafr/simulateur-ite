@@ -449,6 +449,7 @@ body.pm .sheet-head h2{font-size:30px} body.pm .ribbon{font-size:22px} body.pm .
 @media print{.sheet-head h2{font-size:30px} .ribbon{font-size:22px} .band .pct{font-size:48px}}
 .btn.ia-off{opacity:.6}
 .ia-off-txt{color:var(--warn,#b45309);margin:4px 0 0}
+.ph-refok{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;background:var(--lime-soft);border-radius:10px;padding:8px 10px;font-size:13.5px}
 </style>
 
 </head>
@@ -1812,6 +1813,7 @@ function renderPhotos(){
   pane.innerHTML=`<div class="ph">
     <div class="ph-bar"><label class="btn primary">📷 Prendre une photo<input type="file" accept="image/*" capture="environment" data-ph="add" hidden></label>
       <label class="btn">Choisir une photo<input type="file" accept="image/*" data-ph="add" multiple hidden></label>
+      ${p?`<span id="phDelWrap"><button class="btn danger" type="button" data-ph="del">🗑 Supprimer cette photo</button></span>`:''}
       <div class="ph-thumbs">${L.map((x,i)=>`<button type="button" class="ph-th${x.id===phSel?' on':''}" data-phsel="${x.id}" aria-label="Photo ${i+1}"><img src="${x.rendu||x.image}" alt=""><span>${esc(x.titre||'Façade '+(i+1))}</span></button>`).join('')}</div></div>
     ${p?photoEditorHtml(p,L.indexOf(p)):`<div class="dv-empty"><h2 style="font-size:18px">Photos de la maison</h2><p class="hint" style="max-width:56ch">Prenez chaque façade bien en face, en entier. Sur la photo, vous placez une mesure connue (la hauteur d'une porte, par exemple), puis vous entourez la façade et les fenêtres : l'appli calcule la surface avec et sans les ouvrants. Vous pouvez aussi montrer au client la maison avec le crépi de son choix.</p><p class="hint${CFG.ia?'':' ia-off-txt'}" style="max-width:56ch">✨ ${CFG.ia?'IA active : après avoir ajouté une photo, utilisez « Détecter façade et ouvrants (IA) » et « Rendu réaliste par IA ».':esc(iaOffTxt())+' Les boutons IA sont visibles après l\'ajout d\'une photo.'}</p></div>`}
     <fieldset class="ph-tot"><legend>Métrage total de la maison</legend>
@@ -1825,7 +1827,7 @@ function photoEditorHtml(p,i){
   const r=phCalc(p), m=p.mesures, ref=m.ref||{};
   const tool=(k,l)=>`<button type="button" class="${phTool===k?'on':''}" data-phtool="${k}">${l}</button>`;
   return `<div class="ph-ed"><div class="ph-main">
-    <div class="ph-tools seg">${tool('ref','1. Mesure connue')}${tool('mur','2. Façade')}${tool('ouv','3. Fenêtre / porte')}</div>
+    <div class="ph-tools seg">${tool('ref',ref.ok?'1. Mesure connue ✓':'1. Mesure connue')}${tool('mur','2. Façade')}${tool('ouv','3. Fenêtre / porte')}</div>
     <button class="btn primary${CFG.ia?'':' ia-off'}" type="button" data-ph="detect">✨ Détecter façade et ouvrants (IA)</button>
     ${CFG.ia?'':`<p class="hint ia-off-txt">${esc(iaOffTxt())}</p>`}
     <p class="hint ph-help" id="phHelp">${phHelp()}</p>
@@ -1834,8 +1836,10 @@ function photoEditorHtml(p,i){
       <span class="seg sm">${['photo','crepi'].map(v=>`<button type="button" class="${phView===v?'on':''}" data-phview="${v}" ${v==='crepi'&&!p.rendu?'disabled':''}>${v==='photo'?'Photo':'Avec crépi'}</button>`).join('')}</span></div>
   </div><div class="ph-side">
     <label>Nom de la photo<div class="in"><input data-phf="titre" value="${esc(p.titre||'Façade '+(i+1))}"></div></label>
-    <label>Longueur de la mesure connue<div class="in"><input data-phf="refm" type="number" step="0.01" value="${esc(ref.m??2.15)}"><span class="u">m</span></div></label>
-    <p class="hint" style="margin:-4px 0 0">${ref.a&&ref.b?'Mesure placée.':'Pas encore placée.'} Porte d'entrée : environ 2,15 m de haut. Le mieux est de mesurer une longueur au mètre.</p>
+    ${ref.ok?`<div class="ph-refok"><span>✓ Mesure validée : <b>${esc(String(ref.m).replace('.',','))} m</b></span><button class="btn small" type="button" data-ph="refEdit">Modifier la mesure</button></div>`
+    :`<label>Longueur de la mesure connue<div class="in"><input data-phf="refm" type="number" step="0.01" min="0" value="${esc(ref.m??2.15)}"><span class="u">m</span></div></label>
+    <p class="hint" style="margin:-4px 0 0">${ref.a&&ref.b?'Mesure placée : vérifiez la longueur puis validez.':'Pas encore placée : touchez ses deux extrémités sur la photo.'} Porte d'entrée : environ 2,15 m de haut. Le mieux est de mesurer une longueur au mètre.</p>
+    <button class="btn primary" type="button" data-ph="refOk" ${ref.a&&ref.b&&n(ref.m)>0?'':'disabled'}>Valider la mesure</button>`}
     <div class="ph-res">${r?`${r.murs.map((v,k)=>`<div><span>Façade ${k+1}</span><b>${m2(v)}</b><button class="btn small danger" type="button" data-ph="delmur" data-i="${k}" aria-label="Supprimer la façade">✕</button></div>`).join('')}
       ${r.ouvs.map((v,k)=>`<div class="o"><span>Ouvrant ${k+1}</span><b>- ${m2(v)}</b><button class="btn small danger" type="button" data-ph="delouv" data-i="${k}" aria-label="Supprimer l'ouvrant">✕</button></div>`).join('')}
       <div class="t"><span>Avec ouvrants</span><b>${m2(r.brute)}</b></div><div class="t"><span>Sans ouvrants</span><b class="hl">${m2(r.net)}</b></div>`
@@ -1845,10 +1849,10 @@ function photoEditorHtml(p,i){
       <button class="btn primary" type="button" data-ph="crepi" ${(m.murs||[]).length?'':'disabled'}>Appliquer le crépi sur les façades</button>
       <button class="btn${CFG.ia?'':' ia-off'}" type="button" data-ph="ia" ${p.image?'':'disabled'}>✨ Rendu réaliste par IA</button>
       <p class="hint" style="margin:0">${(m.murs||[]).length?'Seules les façades entourées sont colorées, sans les ouvrants.':'Entourez d\'abord au moins une façade.'}</p></fieldset>
-    <span id="phDelWrap"><button class="btn small danger" type="button" data-ph="del">Supprimer la photo</button></span>
   </div></div>`;
 }
-function phHelp(){return {ref:'Touchez les deux extrémités d\'une longueur connue (par exemple le bas et le haut de la porte), puis indiquez sa longueur réelle.',
+function phHelp(){const r=((ph()||{}).mesures||{}).ref; if(phTool==='ref'&&r&&r.ok) return 'Mesure connue validée. Pour la changer, cliquez sur « Modifier la mesure ».';
+  return {ref:'Touchez les deux extrémités d\'une longueur connue (par exemple le bas et le haut de la porte), puis indiquez sa longueur réelle.',
   mur:'Touchez les coins de la façade un par un (4 coins, ou 5 pour un pignon), puis « Terminer la façade ». Un point se déplace en le faisant glisser.',
   ouv:'Pour chaque fenêtre ou porte, touchez deux coins opposés. Un point se déplace en le faisant glisser.'}[phTool]}
 async function drawPhoto(){
@@ -1865,12 +1869,12 @@ async function drawPhoto(){
   (m.murs||[]).forEach(P=>{path(P,1); g.fillStyle='rgba(47,143,31,.22)'; g.fill(); g.strokeStyle='#2f8f1f'; g.stroke(); dots(P,'#2f8f1f')});
   (m.ouvs||[]).forEach(P=>{path(P,1); g.fillStyle='rgba(31,74,168,.30)'; g.fill(); g.strokeStyle='#1f4aa8'; g.stroke(); dots(P,'#1f4aa8')});
   if(m.ref&&m.ref.a){const P=[m.ref.a,m.ref.b||m.ref.a]; path(P); g.strokeStyle='#e0532f'; g.lineWidth=lw*1.4; g.stroke(); dots(P,'#e0532f');
-    if(m.ref.b){g.font=`bold ${15/k}px Arial`; g.fillStyle='#e0532f'; g.fillText(String(m.ref.m??'').replace('.',',')+' m',(m.ref.a[0]+m.ref.b[0])/2+10/k,(m.ref.a[1]+m.ref.b[1])/2)}}
+    if(m.ref.b){g.font=`bold ${15/k}px Arial`; g.fillStyle='#e0532f'; g.fillText((m.ref.ok?'✓ ':'')+String(m.ref.m??'').replace('.',',')+' m',(m.ref.a[0]+m.ref.b[0])/2+10/k,(m.ref.a[1]+m.ref.b[1])/2)}}
   if(phDraft.length){path(phDraft); g.strokeStyle='#e0a100'; g.setLineDash([8/k,6/k]); g.stroke(); g.setLineDash([]); dots(phDraft,'#e0a100')}
 }
 function phPoint(e){const cv=document.getElementById('phCv'), b=cv.getBoundingClientRect(), p=ph(); return loadImg(p.image).then(img=>{const k=b.width/img.naturalWidth; return {pt:[(e.clientX-b.left)/k,(e.clientY-b.top)/k],k}})}
 function phHit(pt,k){const p=ph(), m=p.mesures, r=12/k, all=[];
-  if(m.ref){['a','b'].forEach(s=>m.ref[s]&&all.push([m.ref,s]))}
+  if(m.ref&&!m.ref.ok){['a','b'].forEach(s=>m.ref[s]&&all.push([m.ref,s]))}
   (m.murs||[]).forEach(P=>P.forEach((q,i)=>all.push([P,i]))); (m.ouvs||[]).forEach(P=>P.forEach((q,i)=>all.push([P,i])));
   phDraft.forEach((q,i)=>all.push([phDraft,i]));
   let best=null,bd=r; all.forEach(([o,key])=>{const q=o[key]; const d=dist(q,pt); if(d<bd){bd=d;best=[o,key]}}); return best}
@@ -1881,7 +1885,7 @@ phPane.addEventListener('pointerdown',async e=>{
   const {pt,k}=await phPoint(e), hit=phHit(pt,k);
   if(hit){phDrag={hit,id:e.pointerId}; e.target.setPointerCapture(e.pointerId); return}
   const m=p.mesures;
-  if(phTool==='ref'){ if(!m.ref||m.ref.b){m.ref={a:pt,m:(m.ref&&m.ref.m)||2.15}; drawPhoto(); return} m.ref.b=pt; phChanged(true); return}
+  if(phTool==='ref'){ if(m.ref&&m.ref.ok){toast('Mesure validée. Cliquez sur « Modifier la mesure » pour la changer.'); return} if(!m.ref||m.ref.b){m.ref={a:pt,m:(m.ref&&m.ref.m)||2.15}; drawPhoto(); return} m.ref.b=pt; phChanged(true); return}
   if(phTool==='mur'){ if(phDraft.length>=3&&dist(pt,phDraft[0])<14/k){m.murs=(m.murs||[]).concat([phDraft]); phDraft=[]; phChanged(true); return} phDraft.push(pt); if(phDraft.length===1||phDraft.length===3) renderPhotos(); else drawPhoto(); return}
   if(phTool==='ouv'){ if(!phDraft.length){phDraft=[pt]; renderPhotos(); return} const a=phDraft[0]; m.ouvs=(m.ouvs||[]).concat([[a,[pt[0],a[1]],pt,[a[0],pt[1]]]]); phDraft=[]; phChanged(true)}
 });
@@ -1898,12 +1902,15 @@ phPane.addEventListener('click',async e=>{
     if(c.devis&&!c._sig){const old=n(c.devis.surface); c.devis.lignes.forEach(l=>{if(n(l.qte)===old&&old>0&&/m²|m2|U/i.test(l.unite))l.qte=v}); c.devis.surface=v; syncDevis(c)}
     c.metrage=phTotals(); c.updated=Date.now(); persist(c); fillForm(); renderList(); toast(`Surface de ${v.replace('.',',')} m² reportée${c.devis&&!c._sig?' dans la fiche et le devis':' dans la fiche'}`); return}
   if(!p) return;
+  if(a==='refOk'){const r=p.mesures.ref; if(!(r&&r.a&&r.b&&n(r.m)>0)) return toast('Placez les deux extrémités et indiquez la longueur.'); r.m=String(r.m).replace(',','.'); r.ok=true; if(phTool==='ref') phTool='mur'; phDraft=[]; phChanged(true); toast('Mesure validée ('+String(r.m).replace('.',',')+' m). Entourez maintenant la façade.'); return}
+  if(a==='refEdit'){if(p.mesures.ref) p.mesures.ref.ok=false; phTool='ref'; phDraft=[]; phChanged(true); return}
   if(a==='undo'){phDraft.pop(); renderPhotos(); return}
   if(a==='close'){p.mesures.murs=(p.mesures.murs||[]).concat([phDraft]); phDraft=[]; phChanged(true); return}
   if(a==='delmur'){p.mesures.murs.splice(+b.dataset.i,1); phChanged(true); return}
   if(a==='delouv'){p.mesures.ouvs.splice(+b.dataset.i,1); phChanged(true); return}
-  if(a==='del'){document.getElementById('phDelWrap').innerHTML='<span class="confirm">Supprimer cette photo ? <button class="btn danger small" type="button" data-ph="delYes">Oui</button></span>'; return}
-  if(a==='delYes') return deletePhoto(p.id);
+  if(a==='del'){document.getElementById('phDelWrap').innerHTML='<span class="confirm">Supprimer définitivement « '+esc(p.titre||'cette photo')+' » et ses mesures ? <button class="btn danger small" type="button" data-ph="delYes">Oui, supprimer</button><button class="btn small" type="button" data-ph="delNo">Annuler</button></span>'; return}
+  if(a==='delYes'){await deletePhoto(p.id); toast('Photo supprimée'); return}
+  if(a==='delNo'){renderPhotos(); return}
   if(a==='crepi'){if(!p.mesures.couleur) p.mesures.couleur='#d9cdb4'; b.disabled=true; b.textContent='Calcul…';
     p.rendu=await renderCrepi(p,p.mesures.couleur); queuePhoto(p,['mesures','rendu']); phView='crepi'; renderPhotos(); return}
   if((a==='detect'||a==='ia')&&!CFG.ia) return toast(iaOffTxt());
@@ -1931,7 +1938,7 @@ phPane.addEventListener('click',async e=>{
 });
 phPane.addEventListener('input',e=>{const p=ph(), f=e.target.dataset.phf; if(!p||!f) return;
   if(f==='titre'){p.titre=e.target.value; queuePhoto(p,['titre']); return}
-  if(f==='refm'){p.mesures.ref=Object.assign(p.mesures.ref||{},{m:e.target.value}); queuePhoto(p,['mesures']); drawPhoto(); clearTimeout(phPane._t); phPane._t=setTimeout(()=>{const y=window.scrollY; renderPhotos(); window.scrollTo(0,y); const i=phPane.querySelector('[data-phf=refm]'); if(i){i.focus(); i.setSelectionRange?.(99,99)}},700); return}
+  if(f==='refm'){p.mesures.ref=Object.assign(p.mesures.ref||{},{m:e.target.value}); queuePhoto(p,['mesures']); drawPhoto(); clearTimeout(phPane._t); phPane._t=setTimeout(()=>{const y=window.scrollY; renderPhotos(); window.scrollTo(0,y); const i=phPane.querySelector('[data-phf=refm]'); if(i){i.focus(); try{i.setSelectionRange(99,99)}catch(e){}}},700); return}
 });
 phPane.addEventListener('change',async e=>{const p=ph();
   if(e.target.dataset.phf==='couleur'&&p){p.mesures.couleur=e.target.value; queuePhoto(p,['mesures']); renderPhotos(); return}
