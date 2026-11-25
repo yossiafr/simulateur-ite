@@ -283,7 +283,17 @@ label small{font-weight:400}
 .pad-wrap canvas{width:100%;max-width:520px;height:180px;background:#fff;border:2px dashed var(--line);border-radius:12px;touch-action:none;cursor:crosshair}
 .sign-paper{padding:16px}.sign-paper .zoomer{width:800px;margin:0 auto;display:flex;flex-direction:column;gap:16px;align-items:center}
 .sign-paper .dv{margin:0}
-.sign-synth{display:flex;flex-direction:column;gap:10px}.sign-synth>h2{font-size:18px;margin:0}
+.synth-pg,.synth-print{--bg:#fff;--surface:#fff;--surface-2:#eef5e6;--fg:#1d2a17;--muted:#4f5c48;--line:#d6e3c9;--lime-soft:#e8f6c4;--lime:#c9ea6a;--green:#2f8f1f;--green-deep:#1e6312;color-scheme:light;
+  width:1062px;box-sizing:border-box;background:#fff;color:#1d2a17;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.synth-pg{zoom:.7476;padding:20px 16px;box-shadow:0 2px 14px rgba(0,0,0,.15)}
+:is(.synth-pg,.synth-print) .sheet{border:0;padding:0 4px;gap:12px}
+:is(.synth-pg,.synth-print) .steps{grid-template-columns:repeat(4,1fr)} :is(.synth-pg,.synth-print) .three{grid-template-columns:repeat(3,1fr)}
+:is(.synth-pg,.synth-print) .band{grid-template-columns:1fr 1fr 1.4fr} :is(.synth-pg,.synth-print) .details{grid-template-columns:repeat(4,1fr)}
+:is(.synth-pg,.synth-print) .sheet-head h2{font-size:30px} :is(.synth-pg,.synth-print) .ribbon{font-size:22px} :is(.synth-pg,.synth-print) .band .pct{font-size:48px}
+.synth-print{display:none}
+.synth-measure{display:block;position:absolute;left:-20000px;top:0;visibility:hidden}
+@page synthp{size:A4 landscape;margin:8mm}
+@media print{#printRoot .synth-print{display:block;page:synthp;break-before:page}}
 .annex-page{width:210mm;max-width:100%;background:#fff;box-shadow:0 2px 14px rgba(0,0,0,.15)}
 .annex{display:none}
 @page annexe{size:A4 portrait;margin:0}
@@ -696,7 +706,14 @@ function persist(c){
   if(MODE==='local'){try{localStorage.setItem(KEY,JSON.stringify(clients))}catch(e){} return}
   if(c) queueSave(c);
 }
-function payload(c){const d={};Object.keys(c).forEach(k=>{if(k!=='id'&&k[0]!=='_')d[k]=c[k]});return d}
+function payload(c){const d={};Object.keys(c).forEach(k=>{if(k!=='id'&&k[0]!=='_')d[k]=c[k]});
+  if(d.devis&&!c._sig) try{d.devis=Object.assign({},d.devis,{synth:synthSnap(c)})}catch(e){} return d}
+/* Chiffres de la synthèse copiés dans le devis : la page publique du devis ne lit que le devis et les coordonnées */
+const SYN_KEYS=['typeLogement','annee','surface','surfaceMurs','dpe','energie','factureAn','tauxEco','ecoForce','coutTravaux','mensForce','taux','duree','differe','tauxAssur','valeurBien','tauxPV','hausse'];
+function synthSnap(c){const o={}; SYN_KEYS.forEach(k=>{if(c[k]!=null) o[k]=c[k]}); o.aideRegion=regionVal(c); o.cee=ceeVal(c); return o}
+function synthData(c){return Object.assign({},DEFAULTS,c,(c.devis&&c.devis.synth)||{})}
+function synthPageHtml(c){try{return `<div class="synth-pg" role="region" aria-label="${SYN_TITRE}">${sheetHtml(c)}</div>`}catch(e){return ''}}
+function synthPrintHtml(c){try{return `<div class="synth-print">${sheetHtml(c)}</div>`}catch(e){return ''}}
 function setSaved(t){const el=document.getElementById('savedInfo');if(el)el.textContent=t}
 function queueSave(c){clearTimeout(timers.get(c.id));setSaved('Enregistrement…');timers.set(c.id,setTimeout(()=>saveNow(c),600))}
 async function saveNow(c){
@@ -1338,7 +1355,7 @@ dvPane.addEventListener('click',async e=>{
   if(b.id==='dvDelNo'){renderDevis();return}
   if(b.id==='dvDelYes'){delete c.devis; persist(c); renderDevis(); toast('Devis supprimé'); return}
   if(b.id==='dvPrint'){pageCss(); const v=c._sig?Object.assign({},c,{devis:c._sig.devis}):c;
-    document.getElementById('printRoot').innerHTML=devisDocHtml(v,c._sig)+annexPrintHtml(annexOn(await getAnnexes(),v.devis));
+    document.getElementById('printRoot').innerHTML=devisDocHtml(v,c._sig)+(synthOn(v.devis)?synthPrintHtml(c):'')+annexPrintHtml(annexOn(await getAnnexes(),v.devis));
     doPrint('Devis '+v.devis.numero+' '+[c.nom,c.prenom].filter(Boolean).join(' ')+(c._sig?' signé':'')); return}
 });
 
@@ -1551,8 +1568,7 @@ function renderSignPage(){
   const root=document.getElementById('signRoot'), {c,s}=signView(), e=ent(), t=devisTotals(c), ann=SIGN.data.annexes||[];
   root.innerHTML=`<header class="sign-top"><img src="${LOGO_SRC}" alt="${esc(e.nomCourt)}"><div><h1>Devis n° ${esc(c.devis.numero)}</h1><p>${esc([c.prenom,c.nom].filter(Boolean).join(' '))} · Total TTC <b>${eur2(t.ttc)}</b> · Reste à régler <b>${eur2(t.reste)}</b></p></div></header>
   ${s?`<section class="sign-card" id="signBox">${signedHtml(s)}</section>`:SIGN.mode==='voir'?'':`<section class="sign-card"><p style="margin:0">Lisez votre devis${ann.length||synthOn(c.devis)?' et ses documents joints':''} ci-dessous, puis signez en bas de la page.</p><a class="btn primary" href="#signBox">Aller à la signature</a></section>`}
-  <div class="dv-paper sign-paper"><div class="zoomer">${devisDocHtml(c,s)}${ann.map(a=>a.pages.map(p=>`<img class="annex-page" src="${p}" alt="${esc(a.titre)}" loading="lazy">`).join('')).join('')}</div></div>
-  ${synthOn(c.devis)?`<section class="sign-synth" id="synthese"><h2>${SYN_TITRE}</h2>${(()=>{try{return sheetHtml(Object.assign({},DEFAULTS,c))}catch(e){return ''}})()}</section>`:''}
+  <div class="dv-paper sign-paper"><div class="zoomer">${devisDocHtml(c,s)}${synthOn(c.devis)&&c.devis.synth?synthPageHtml(synthData(c)):''}${ann.map(a=>a.pages.map(p=>`<img class="annex-page" src="${p}" alt="${esc(a.titre)}" loading="lazy">`).join('')).join('')}</div></div>
   ${s?'':SIGN.mode==='voir'?`<section class="sign-card" id="signature">${askHtml(c)}</section>`:`<section class="sign-card" id="signBox">${signFormHtml(c)}</section>`}`;
   fitSign(); if(!s&&SIGN.mode!=='voir') initPad();
   if(location.hash==='#signature'&&!s) setTimeout(()=>document.getElementById('signature')?.scrollIntoView({block:'center'}),300);
@@ -1581,9 +1597,13 @@ function initPad(){
   cv.onpointerup=cv.onpointercancel=()=>{down=false};
 }
 function checkSign(){const b=document.getElementById('sgGo'); if(b) b.disabled=!(padInk&&document.getElementById('sgOk').checked&&document.getElementById('sgNom').value.trim())}
-function signPrint(){const {c,s}=signView(); pageCss(); document.getElementById('printRoot').innerHTML=devisDocHtml(c,s)+annexPrintHtml(SIGN.data.annexes||[]); doPrint('Devis '+c.devis.numero+' signé')}
+function signPrint(){const {c,s}=signView(); pageCss(); document.getElementById('printRoot').innerHTML=devisDocHtml(c,s)+(synthOn(c.devis)&&c.devis.synth?synthPrintHtml(synthData(c)):'')+annexPrintHtml(SIGN.data.annexes||[]); doPrint('Devis '+c.devis.numero+' signé')}
+/* La synthèse imprimée tient sur une page A4 paysage (281 × 194 mm utiles) */
+function fitSynthPrint(){document.querySelectorAll('#printRoot .synth-print').forEach(el=>{
+  const m=document.createElement('div'); m.className='synth-print synth-measure'; m.innerHTML=el.innerHTML; document.body.appendChild(m);
+  const h=m.scrollHeight; m.remove(); el.style.zoom=h>733?(733/h).toFixed(4):1})}
 async function doPrint(title){
-  document.body.classList.add('print-devis'); const old=document.title; document.title=title;
+  fitSynthPrint(); document.body.classList.add('print-devis'); const old=document.title; document.title=title;
   await Promise.all([...document.querySelectorAll('#printRoot img')].map(i=>i.decode?i.decode().catch(()=>{}):0));
   setTimeout(()=>{window.print(); document.title=old; document.body.classList.remove('print-devis')},60);
 }
