@@ -122,7 +122,7 @@ Dans Vercel › Settings › Environment Variables, puis Redeploy :
 | `SMTP_USER` | `contact@compagnons-ecologiques.fr` |
 | `SMTP_PASS` | le mot de passe de cette boîte (Google : mot de passe d'application) |
 
-Une fois réglé, « Envoyer au client » (synthèse) et « Envoyer depuis contact@ » (devis) partent directement du CRM, avec une copie dans la boîte contact@. Le bouton « Ouvrir plutôt ma messagerie » reste en secours. Sans ces réglages, le CRM indique quelle variable manque dans Vercel et propose d'ouvrir votre messagerie. Les espaces du mot de passe d'application Google sont ignorés.
+Une fois réglé, « Envoyer au client » (synthèse) et « Envoyer depuis contact@ » (devis) partent directement du CRM. La synthèse garde une copie dans la boîte contact@ ; le devis part sans copie (les réponses du client arrivent quand même dans contact@). Le bouton « Ouvrir plutôt ma messagerie » reste en secours. Sans ces réglages, le CRM indique quelle variable manque dans Vercel et propose d'ouvrir votre messagerie. Les espaces du mot de passe d'application Google sont ignorés.
 
 Les documents `documents-cef.json` (fiche produit, RGE, décennale) sont ajoutés automatiquement aux documents joints à la première connexion de l'administrateur.
 

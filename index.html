@@ -1700,7 +1700,7 @@ async function openDevisMail(c){
     <div class="mail-preview" id="dmPrev"></div>
     <div class="ob-bar">${CFG.mail?`<button class="btn primary" type="button" id="dmSend">Envoyer depuis ${esc(from)}</button>`:''}
       <button class="btn${CFG.mail?'':' primary'}" type="button" id="dmCopy">${CFG.mail?'Ouvrir plutôt ma messagerie':'Copier et ouvrir ma messagerie'}</button><button class="btn" type="button" id="dmClose">Fermer</button></div>
-    ${CFG.mail?`<p class="hint">Envoyé depuis ${esc(from)}, avec une copie dans cette boîte. Les réponses du client y arrivent aussi.</p>`:`<p class="hint">${esc(mailOffTxt())} L'e-mail mis en page est copié : collez-le dans le message.</p>`}</div>`;
+    ${CFG.mail?`<p class="hint">Envoyé depuis ${esc(from)}, sans copie dans cette boîte. Les réponses du client y arrivent.</p>`:`<p class="hint">${esc(mailOffTxt())} L'e-mail mis en page est copié : collez-le dans le message.</p>`}</div>`;
   box.hidden=false; await refreshDm(); box.scrollIntoView({behavior:'smooth',block:'start'});
 }
 async function refreshDm(){const c=cur(), p=document.getElementById('dmPrev'); if(!p||!c) return;
@@ -1722,7 +1722,7 @@ async function mailAction(id,c){
     const b=document.getElementById('dmSend'); b.disabled=true; const lbl=b.textContent; b.textContent='Envoi…';
     try{const {data:{session}}=await sb.auth.getSession();
       const res=await fetch('/api/send-mail',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(session?session.access_token:'')},
-        body:JSON.stringify({to,subject:sub,html:devisMailHtml(c,msg,link,'cid:logo-cef',docs),text:devisMailText(c,msg,link,docs),fromName:SOCIETE,logo:await logoPng()})});
+        body:JSON.stringify({to,subject:sub,html:devisMailHtml(c,msg,link,'cid:logo-cef',docs),text:devisMailText(c,msg,link,docs),fromName:SOCIETE,logo:await logoPng(),copie:false})});
       const out=await res.json().catch(()=>({})); if(!res.ok) throw new Error(out.erreur||('Erreur '+res.status));
       done(); toast('Devis envoyé à '+to); renderDevis();
     }catch(err){toast('Envoi impossible : '+err.message); b.disabled=false; b.textContent=lbl}
