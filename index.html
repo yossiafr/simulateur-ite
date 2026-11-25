@@ -586,6 +586,7 @@ body.pm .sheet-head h2{font-size:30px} body.pm .ribbon{font-size:22px} body.pm .
       <label>Objet<div class="in"><input id="mailSubject"></div></label>
       <label class="full">Votre signature <small>(mémorisée)</small><textarea id="mailSig" rows="2" placeholder="Prénom Nom · Conseiller · 06 …"></textarea></label>
     </div>
+    <p class="hint" id="mailOff" hidden></p>
     <ol class="steps-mail" id="mailSteps">
       <li>« Copier et ouvrir ma messagerie » copie le récapitulatif mis en page et ouvre un nouveau message au client.</li>
       <li>Dans le corps du message, faites <b>Coller</b> (Ctrl+V ou Cmd+V), puis envoyez.</li>
@@ -1001,6 +1002,7 @@ function mailText(c,r,sig){
   `Plus-value estimée : ${eur(r.pv)} (${ech1(r.echPv)} échéances, à la revente)`,
   `Votre projet est couvert à ${pctf(r.couvAff)}, dont ${pctf(r.couvCash)} par les économies et les aides et le reste par la plus-value estimée (à la revente, non garantie*).`,'*Notaires de France, transactions 2024.','','Simulation indicative et non contractuelle.','','Bien cordialement,',sig||''].filter(x=>x!=null).join('\n');
 }
+function mailOffTxt(){return 'Envoi direct depuis le CRM pas encore actif'+((CFG.manque||[]).length?' : il manque dans Vercel '+CFG.manque.join(', ')+' (puis Redeploy).':'.')+' En attendant, passez par votre messagerie.'}
 function openMail(){
   const c=cur();
   document.getElementById('mailTo').value=c.email||'';
@@ -1009,6 +1011,8 @@ function openMail(){
   const direct=MODE==='cloud'&&CFG.mail;
   document.getElementById('mailSend').hidden=!direct;
   document.getElementById('mailSteps').hidden=direct;
+  const off=document.getElementById('mailOff'); off.hidden=direct||MODE!=='cloud'; off.textContent=mailOffTxt();
+  document.getElementById('mailGo').textContent=direct?'Ouvrir plutôt ma messagerie':'Copier et ouvrir ma messagerie';
   refreshMail();
   document.getElementById('mailModal').hidden=false;
   document.getElementById('mailTo').focus();
@@ -1665,8 +1669,8 @@ async function openDevisMail(c){
     ${fld('Message personnalisé','id="dmMsg"',getSet().devisMsg2||DM_MSG,{area:1,rows:6,cls:'full'})}</div>
     <div class="mail-preview" id="dmPrev"></div>
     <div class="ob-bar">${CFG.mail?`<button class="btn primary" type="button" id="dmSend">Envoyer depuis ${esc(from)}</button>`:''}
-      <button class="btn${CFG.mail?'':' primary'}" type="button" id="dmCopy">Copier et ouvrir ma messagerie</button><button class="btn" type="button" id="dmClose">Fermer</button></div>
-    ${CFG.mail?`<p class="hint">Envoyé depuis ${esc(from)}, avec une copie dans cette boîte. Les réponses du client y arrivent aussi.</p>`:`<p class="hint">L'envoi direct depuis ${esc(from)} n'est pas encore activé sur le site (voir le guide de mise en ligne). En attendant, l'e-mail mis en page est copié : collez-le dans votre messagerie.</p>`}</div>`;
+      <button class="btn${CFG.mail?'':' primary'}" type="button" id="dmCopy">${CFG.mail?'Ouvrir plutôt ma messagerie':'Copier et ouvrir ma messagerie'}</button><button class="btn" type="button" id="dmClose">Fermer</button></div>
+    ${CFG.mail?`<p class="hint">Envoyé depuis ${esc(from)}, avec une copie dans cette boîte. Les réponses du client y arrivent aussi.</p>`:`<p class="hint">${esc(mailOffTxt())} L'e-mail mis en page est copié : collez-le dans le message.</p>`}</div>`;
   box.hidden=false; await refreshDm(); box.scrollIntoView({behavior:'smooth',block:'start'});
 }
 async function refreshDm(){const c=cur(), p=document.getElementById('dmPrev'); if(!p||!c) return;
@@ -2545,7 +2549,7 @@ async function boot(){
     try{await loadScript('/config.js')}catch(e){}
     const C=window.ITE_CONFIG||{};
     if(C.url&&C.anonKey&&!/xxxx/.test(C.url)){conf={url:C.url,anon:C.anonKey,mail:false,api:false};
-      if(!/[?&](signer|voir)=/.test(location.search)) try{const r=await fetch('/api/send-mail',{cache:'no-store'}); const j=r.ok?await r.json():null; if(j&&j.mail){conf.mail=true; conf.from=j.from}}catch(e){}
+      if(!/[?&](signer|voir)=/.test(location.search)) try{const r=await fetch('/api/send-mail',{cache:'no-store'}); const j=r.ok?await r.json():null; if(j&&j.mail){conf.mail=true; conf.from=j.from} else conf.manque=j&&Array.isArray(j.manque)?j.manque:['les fonctions /api (dossier api/ sur GitHub)']}catch(e){conf.manque=['les fonctions /api']}
       if(!/[?&](signer|voir)=/.test(location.search)) try{const r=await fetch('/api/rendu-ia',{cache:'no-store'}); const j=r.ok?await r.json():null; if(j&&j.ia) conf.ia=true}catch(e){}}
     /* 2) sinon fonctions Vercel /api (version complète) */
     else try{const r=await fetch('/api/config',{cache:'no-store'}); const j=await r.json().catch(()=>null);
@@ -2556,7 +2560,7 @@ async function boot(){
   if(conf){
     try{await loadScript('/supabase-2.119.0.js')}catch(e){try{await loadScript('/vendor/supabase-2.119.0.js')}catch(e2){}}
     if(window.supabase){
-      MODE='cloud'; CFG.mail=!!conf.mail; CFG.api=!!conf.api; CFG.from=conf.from||''; CFG.ia=!!conf.ia;
+      MODE='cloud'; CFG.mail=!!conf.mail; CFG.manque=conf.manque||[]; CFG.api=!!conf.api; CFG.from=conf.from||''; CFG.ia=!!conf.ia;
       document.querySelector('.wrap').hidden=true;
       document.querySelectorAll('.local-only').forEach(e=>e.hidden=false);
       sb=window.supabase.createClient(conf.url,conf.anon);
