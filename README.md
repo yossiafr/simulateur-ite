@@ -1,6 +1,6 @@
 # Simulateur d'autofinancement ITE
 
-Mini-CRM pour les commerciaux en isolation thermique par l'extérieur. On saisit le client, son logement et sa facture de chauffage. L'appli calcule la mensualité du crédit, les économies, les aides (CEE, aide région), la plus-value estimée et le pourcentage du projet couvert. Elle produit une synthèse imprimable et un e-mail mis en page pour le client.
+Mini-CRM pour les experts techniques en isolation thermique par l'extérieur. On saisit le client, son logement et sa facture de chauffage. L'appli calcule la mensualité du crédit, les économies, les aides (CEE, aide région), la plus-value estimée et le pourcentage du projet couvert. Elle produit une synthèse imprimable et un e-mail mis en page pour le client.
 
 Technique : page web unique (`index.html`), base et connexions Supabase, hébergement Vercel. Trois fonctions serveur facultatives dans `api/`.
 
@@ -16,7 +16,7 @@ Les valeurs par défaut se règlent dans l'onglet Administration.
 
 ## Onglets visibles
 
-Administration › Onglets visibles : décochez un onglet (Synthèse, Photos, Carte, Devis, Dossier, Agenda) pour le masquer à tous les commerciaux ou à tous les télépros. La Fiche client reste toujours visible et l'administrateur voit toujours tout. Le changement s'applique au prochain chargement de la page. C'est un masquage d'affichage : les droits sur les données restent ceux du rôle.
+Administration › Onglets visibles : décochez un onglet (Synthèse, Photos, Carte, Devis, Dossier, Agenda) pour le masquer à tous les experts techniques ou à tous les télépros. La Fiche client reste toujours visible et l'administrateur voit toujours tout. Le changement s'applique au prochain chargement de la page. C'est un masquage d'affichage : les droits sur les données restent ceux du rôle.
 
 ## Foyer et revenus
 
@@ -30,12 +30,12 @@ Envoi du devis : la synthèse du projet (autofinancement) est jointe par défaut
 
 ## Suivi commercial
 
-- **Tableau de bord** (onglet réservé à l'admin) : RDV, RDV honorés, ventes, taux de transformation, CA signé, panier moyen ; un tableau par télépro (RDV pris, confirmés, honorés, vendus, note moyenne), un par commercial, et la comparaison note du télépro / vente. Période : semaine, mois, mois dernier, 3 mois, tout.
+- **Tableau de bord** (onglet réservé à l'admin) : RDV, RDV honorés, ventes, taux de transformation, CA signé, panier moyen ; un tableau par télépro (RDV pris, confirmés, honorés, vendus, note moyenne), un par expert technique, et la comparaison note du télépro / vente. Période : semaine, mois, mois dernier, 3 mois, tout.
 - **Alerte doublon** : à la création d'un client (fiche ou prise de RDV), l'appli signale un client existant avec le même téléphone ou la même adresse, même s'il est suivi par quelqu'un d'autre (seuls le nom, la ville, le statut et le responsable sont montrés).
 - **Relances** : champ « Date de rappel » sur la fiche et filtre « 🔔 À relancer » dans la liste. Y apparaissent les rappels du jour ou en retard et les devis envoyés depuis 7 jours ou plus sans signature. Un RDV statué « À rappeler » programme un rappel à J+2.
 - **Dossier** : onglet pour photographier ou joindre les pièces (avis d'imposition, taxe foncière, pièce d'identité, facture d'énergie, RIB, autre). Les photos sont réduites automatiquement. Non visible des télépros.
-- **Tournée** : dans l'Agenda, vue « Tournée » : carte des RDV de la semaine (ou d'un jour), une couleur par commercial, reliés dans l'ordre de la journée depuis son domicile.
-- **Rappel la veille** : chaque jour vers 17 h, un e-mail de rappel part depuis contact@ vers les clients qui ont un RDV confirmé le lendemain (date, heure, adresse, nom du commercial). Fichiers `api/rappels.js` et `vercel.json`. Variables Vercel en plus : `SUPABASE_SERVICE_ROLE_KEY` (Supabase › Project Settings › API, clé secrète service_role) et `CRON_SECRET` (un mot de passe long de votre choix). Le client doit avoir un e-mail sur sa fiche.
+- **Tournée** : dans l'Agenda, vue « Tournée » : carte des RDV de la semaine (ou d'un jour), une couleur par expert technique, reliés dans l'ordre de la journée depuis son domicile.
+- **Rappel la veille** : chaque jour vers 17 h, un e-mail de rappel part depuis contact@ vers les clients qui ont un RDV confirmé le lendemain (date, heure, adresse, nom de l'expert technique). Fichiers `api/rappels.js` et `vercel.json`. Variables Vercel en plus : `SUPABASE_SERVICE_ROLE_KEY` (Supabase › Project Settings › API, clé secrète service_role) et `CRON_SECRET` (un mot de passe long de votre choix). Le client doit avoir un e-mail sur sa fiche.
 
 ## Devis
 
@@ -61,25 +61,25 @@ Sans réglage, l'onglet Carte utilise la vue Street View publique de Google. Si 
 
 ## Droits
 
-| | Télépro | Commercial | Admin |
+| | Télépro | Expert technique | Admin |
 |---|---|---|---|
 | Créer un client et voir ses propres clients | oui (identité et logement) | oui | oui |
 | Financement, aides, synthèse, photos, devis, e-mails | non | oui | oui |
 | Carte et agenda | oui | oui | oui |
-| Placer un RDV | oui, sans choisir le commercial | oui, pour lui | oui, pour qui il veut |
+| Placer un RDV | oui, sans choisir l'expert technique | oui, pour lui | oui, pour qui il veut |
 | Voir les RDV des autres | créneaux des autres télépros en gris, code postal et ville seulement | non | oui |
-| Confirmer un RDV de télépro et choisir le commercial | non | non | oui |
+| Confirmer un RDV de télépro et choisir l'expert technique | non | non | oui |
 | Voir et modifier les clients des autres | non | non | oui |
 | Réattribuer ou supprimer une fiche | non | non | oui |
 | Gérer les comptes et les réglages | non | non | oui |
 
-Un RDV pris par un télépro reste « À confirmer » (pointillés dans l'agenda de l'admin, bandeau « RDV à confirmer »). L'admin l'ouvre, choisit le commercial et clique « Confirmer le RDV » : le RDV passe dans l'agenda du commercial et la fiche client lui est attribuée. Le télépro voit alors son RDV « Confirmé », sans pouvoir le modifier.
+Un RDV pris par un télépro reste « À confirmer » (pointillés dans l'agenda de l'admin, bandeau « RDV à confirmer »). L'admin l'ouvre, choisit l'expert technique et clique « Confirmer le RDV » : le RDV passe dans l'agenda de l'expert technique et la fiche client lui est attribuée. Le télépro voit alors son RDV « Confirmé », sans pouvoir le modifier.
 
-Domicile des commerciaux : dans Administration, colonne « Domicile », saisir l'adresse de chaque commercial (visible seulement par lui et l'admin). Sur chaque RDV, l'appli affiche le trajet par la route : depuis le domicile pour le premier RDV de la journée, avec l'heure de départ conseillée (trajet + 10 min), sinon depuis le RDV précédent. Lors de la confirmation d'un RDV de télépro, le trajet s'affiche dès qu'on choisit le commercial.
+Domicile des experts techniques : dans Administration, colonne « Domicile », saisir l'adresse de chaque expert technique (visible seulement par lui et l'admin). Sur chaque RDV, l'appli affiche le trajet par la route : depuis le domicile pour le premier RDV de la journée, avec l'heure de départ conseillée (trajet + 10 min), sinon depuis le RDV précédent. Lors de la confirmation d'un RDV de télépro, le trajet s'affiche dès qu'on choisit l'expert technique.
 
-Fiche RDV en PDF (admin) : dans un RDV, bouton « 📄 Fiche RDV (PDF) ». Une page A4 avec en tête le commercial, la date et l'heure, puis le client, ses coordonnées, le logement, le foyer fiscal et sa couleur, les revenus et crédits, le commentaire du RDV et les notes. La note en étoiles n'y figure pas, pour pouvoir la remettre au commercial. Dans la fenêtre d'impression, choisir « Enregistrer au format PDF ».
+Fiche RDV en PDF (admin) : dans un RDV, bouton « 📄 Fiche RDV (PDF) ». Une page A4 avec en tête l'expert technique, la date et l'heure, puis le client, ses coordonnées, le logement, le foyer fiscal et sa couleur, les revenus et crédits, le commentaire du RDV et les notes. La note en étoiles n'y figure pas, pour pouvoir la remettre à l'expert technique. Dans la fenêtre d'impression, choisir « Enregistrer au format PDF ».
 
-En prenant un RDV, le bouton « Proposer les meilleurs créneaux » cherche sur les deux semaines suivantes les créneaux libres les plus proches des RDV déjà placés. Distance et temps de trajet réels par la route, calculés par le service d'itinéraire gratuit de l'IGN (Géoplateforme, sans clé ni abonnement) ; temps de trajet + 10 min de marge réservés entre deux RDV. Si le service ne répond pas, l'appli revient à une estimation (vol d'oiseau × 1,3, 55 km/h). Les adresses sont localisées avec la Base Adresse Nationale (gratuite). Le télépro note le RDV de 1 étoile (pas terrible) à 4 étoiles (très bon). La note n'est visible que par l'admin et le télépro qui a pris le RDV, jamais par le commercial (table séparée protégée par la base).
+En prenant un RDV, le bouton « Proposer les meilleurs créneaux » cherche sur les deux semaines suivantes les créneaux libres les plus proches des RDV déjà placés. Distance et temps de trajet réels par la route, calculés par le service d'itinéraire gratuit de l'IGN (Géoplateforme, sans clé ni abonnement) ; temps de trajet + 10 min de marge réservés entre deux RDV. Si le service ne répond pas, l'appli revient à une estimation (vol d'oiseau × 1,3, 55 km/h). Les adresses sont localisées avec la Base Adresse Nationale (gratuite). Le télépro note le RDV de 1 étoile (pas terrible) à 4 étoiles (très bon). La note n'est visible que par l'admin et le télépro qui a pris le RDV, jamais par l'expert technique (table séparée protégée par la base).
 
 Ces droits sont appliqués par la base elle-même (Row Level Security), pas seulement par l'écran.
 
@@ -97,9 +97,9 @@ Tous les fichiers utiles sont à la racine : `index.html`, `config.js`, `supabas
 4. **Retour dans Supabase** › Authentication › URL Configuration : mettre l'adresse du site Vercel (par exemple `https://simulateur-ite.vercel.app`) dans « Site URL ». C'est l'adresse du lien « mot de passe oublié ».
 5. Se connecter avec le compte administrateur, vérifier les réglages par défaut (onglet Administration).
 
-### Ajouter un commercial ou un télépro
+### Ajouter un expert technique ou un télépro
 
-Dans Supabase › Authentication › Users › Add user › Create new user : son e-mail et un mot de passe provisoire, cocher « Auto Confirm User ». Dans l'appli, onglet Administration : il apparaît désactivé. Saisir son nom, choisir son rôle (Commercial, Télépro ou Admin), cocher « Actif », puis lui communiquer son e-mail et son mot de passe. Il peut le changer avec « Mot de passe oublié ».
+Dans Supabase › Authentication › Users › Add user › Create new user : son e-mail et un mot de passe provisoire, cocher « Auto Confirm User ». Dans l'appli, onglet Administration : il apparaît désactivé. Saisir son nom, choisir son rôle (Expert technique, Télépro ou Admin), cocher « Actif », puis lui communiquer son e-mail et son mot de passe. Il peut le changer avec « Mot de passe oublié ».
 
 ### Version complète (facultatif)
 
@@ -128,7 +128,7 @@ Les documents `documents-cef.json` (fiche produit, RGE, décennale) sont ajouté
 
 ## Lien depuis le site Webflow
 
-Le plus simple est un bouton ou un lien « Espace commerciaux » qui pointe vers l'adresse Vercel. Dans Webflow : sélectionner le bouton › Link Settings › URL, coller l'adresse, cocher « Open in new tab ».
+Le plus simple est un bouton ou un lien « Espace experts techniques » qui pointe vers l'adresse Vercel. Dans Webflow : sélectionner le bouton › Link Settings › URL, coller l'adresse, cocher « Open in new tab ».
 
 Pour une adresse à votre nom (par exemple `simulateur.votre-site.fr`) : Vercel › Project › Settings › Domains › Add, puis créez chez votre hébergeur de domaine l'enregistrement CNAME que Vercel indique. Pensez ensuite à mettre cette adresse dans Supabase › URL Configuration.
 
@@ -144,6 +144,9 @@ Dans l'ancienne version (fichier HTML), cliquez sur « Sauvegarde » : un fichie
 - `config.js` : adresse du projet Supabase et clé publique `anon`.
 - `supabase-2.119.0.js` : bibliothèque Supabase pour le navigateur.
 - `api/config.js` : (version complète) donne au navigateur l'adresse Supabase et la clé publique.
-- `api/send-mail.js` : envoi de l'e-mail au client (commercial connecté uniquement).
+- `api/send-mail.js` : envoi de l'e-mail au client (expert technique connecté uniquement).
 - `api/admin-users.js` : création de comptes et changement de mot de passe (administrateur uniquement).
 - `supabase/schema.sql` : tables, rôles et règles de sécurité.
+
+
+Note : à l'écran, le rôle « commercial » s'appelle « Expert technique ». Le nom interne du rôle (`commercial` dans Supabase) ne change pas.

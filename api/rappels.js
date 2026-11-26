@@ -49,14 +49,14 @@ export default async function handler(req, res) {
         <p>Bonjour ${esc(client)},</p>
         <p>Nous vous rappelons votre rendez-vous pour votre projet d'isolation thermique par l'extérieur :</p>
         <table role="presentation" style="margin:14px 0;background:#eef5e6;border-radius:10px;width:100%"><tr><td style="padding:14px 18px;font-size:15px;line-height:1.6">
-          📅 <b>${esc(dateLongue(d))} à ${esc(heure(d))}</b><br>📍 ${esc(lieu)}<br>👤 Votre conseiller : <b>${esc(com.nom || "")}</b></td></tr></table>
+          📅 <b>${esc(dateLongue(d))} à ${esc(heure(d))}</b><br>📍 ${esc(lieu)}<br>👤 Votre expert technique : <b>${esc(com.nom || "")}</b></td></tr></table>
         <p>Pour que l'étude soit complète, merci de préparer si possible votre dernier avis d'imposition, une facture de chauffage et votre taxe foncière.</p>
         <p>Un empêchement ? Répondez simplement à cet e-mail pour décaler le rendez-vous.</p>
         <p>À demain,<br>${esc(societe)}</p>
         <p style="margin:24px 0 0;font-size:11px;color:#6b7766">${esc(e.pied1 || "")}<br>${esc(e.pied2 || "")}</p></td></tr></table></div>`;
       try {
         await t.sendMail({ from, to: c.email, replyTo: adresse, subject: `Rappel : votre rendez-vous du ${dateLongue(d)} à ${heure(d)}`, html,
-          text: `Bonjour ${client},\nRappel de votre rendez-vous le ${dateLongue(d)} à ${heure(d)}, ${lieu}, avec ${com.nom || "votre conseiller"}.\nUn empêchement ? Répondez à cet e-mail.\n${societe}` });
+          text: `Bonjour ${client},\nRappel de votre rendez-vous le ${dateLongue(d)} à ${heure(d)}, ${lieu}, avec ${com.nom || "votre expert technique"}.\nUn empêchement ? Répondez à cet e-mail.\n${societe}` });
         await fetch(SB_URL + "/rest/v1/ite_rdv?id=eq." + r.id, { method: "PATCH", headers: H(), body: JSON.stringify({ rappel_envoye: new Date().toISOString() }) });
         envoyes++;
       } catch (err) { erreurs.push(String(err.message || err)); }
