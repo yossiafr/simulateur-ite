@@ -20,6 +20,11 @@ html.clw body::before{content:"Chargement du devis…";display:block;text-align:
 @media (max-width:600px){.top .title{display:none}header.top{margin-bottom:12px}}
 /* iOS zoome sur un champ dont le texte fait moins de 16 px et ne dézoome plus : 16 px sur écran tactile */
 @media (pointer:coarse){input,select,textarea,.in input,.in select,label textarea,.sig-link input{font-size:16px}}
+
+.dpe-look{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin:0 0 12px}.dpe-look #dpeRes{flex-basis:100%}
+.dpe-item{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-top:6px;font-size:13px}
+.dpe-item .cl{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:6px;color:#fff;font-weight:800}
+.dpe-item .tx{flex:1 1 220px;min-width:0}
 </style>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -569,6 +574,7 @@ body.pm .sheet-head h2{font-size:30px} body.pm .ribbon{font-size:22px} body.pm .
 
           <fieldset>
             <legend>Logement & énergie</legend>
+            <div class="dpe-look"><button class="btn small" type="button" id="dpeLook">🔎 Infos du logement depuis l'adresse</button><span class="hint" style="margin:0">Base officielle des DPE (ADEME), si un DPE a été fait sur cette adresse depuis 2021.</span><div id="dpeRes"></div></div>
             <div class="fields">
               <label>Type<div class="in"><select id="typeLogement" data-k="typeLogement"><option>Maison individuelle</option><option>Maison mitoyenne</option><option>Appartement</option></select></div></label>
               <label>Année de construction<div class="in"><input id="annee" data-k="annee" type="number" min="1800" max="2030"></div></label>
@@ -963,6 +969,41 @@ function ico(k){
 
 /* ===== Navigation ===== */
 
+
+/* ===== Infos du logement depuis l'adresse : base officielle des DPE logements (ADEME, open data, sans clé) ===== */
+const DPE_COL={A:'#009c6d',B:'#52b153',C:'#a5cc74',D:'#f4e70f',E:'#f0b50f',F:'#eb8235',G:'#d7221f'};
+const dpeNorm=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\b(bis|ter)\b/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\b(rue|r|avenue|av|ave|boulevard|bd|chemin|ch|route|rte|impasse|imp|allee|place|pl|de|du|des|la|le|les|d|l)\b/g,' ').replace(/\s+/g,' ').trim();
+function dpeEnergie(t){t=String(t||'').toLowerCase(); if(/gaz naturel|^gaz/.test(t)) return 'Gaz'; if(/fioul/.test(t)) return 'Fioul'; if(/propane|gpl|butane/.test(t)) return 'Propane'; if(/bois|granul|bûche|buche|plaquette/.test(t)) return 'Bois / granulés'; if(/pompe|pac/.test(t)) return 'Pompe à chaleur'; if(/lectri/.test(t)) return 'Électricité'; return ''}
+async function dpeSearch(c){
+  const base='https://data.ademe.fr/data-fair/api/v1/datasets/dpe03existant/lines', sel='numero_dpe,date_etablissement_dpe,adresse_ban,code_postal_ban,nom_commune_ban,etiquette_dpe,annee_construction,periode_construction,surface_habitable_logement,type_batiment,type_energie_principale_chauffage,complement_adresse_logement';
+  /* Plusieurs formes de requête, de la plus précise à la plus simple, au cas où l'API refuse un paramètre */
+  const q=encodeURIComponent(c.adresse+' '+c.cp), qs=encodeURIComponent(`code_postal_ban:"${c.cp}"`);
+  const tries=[`${base}?q=${encodeURIComponent(c.adresse)}&q_mode=complete&qs=${qs}&size=30&select=${sel}&sort=-date_etablissement_dpe`,`${base}?q=${q}&size=50&select=${sel}`,`${base}?q=${q}&size=50`];
+  let rows=null, last;
+  for(const u of tries){try{const r=await fetch(u); if(!r.ok){last=new Error('HTTP '+r.status); continue} const j=await r.json(); rows=(j.results||[]).filter(x=>!x.code_postal_ban||String(x.code_postal_ban)===c.cp); if(rows.length||u===tries[tries.length-1]) break}catch(e){last=e}}
+  if(!rows) throw last||new Error('DPE');
+  const want=dpeNorm(c.adresse), num=(want.match(/^\d+/)||[''])[0];
+  const score=x=>{const a=dpeNorm(x.adresse_ban); let s=0; if(num&&(a.match(/^\d+/)||[''])[0]===num) s+=2; const w=want.replace(/^\d+\s*/,'').split(' ').filter(Boolean); if(w.length&&w.every(t=>a.includes(t))) s+=2; if(x.type_batiment==='maison') s+=1; return s};
+  return rows.map(x=>Object.assign(x,{_s:score(x)})).filter(x=>x._s>=4).sort((a,b)=>b._s-a._s||String(b.date_etablissement_dpe).localeCompare(String(a.date_etablissement_dpe)));
+}
+function dpeApply(x){const set=(id,v)=>{const el=document.getElementById(id); if(!el||v==null||v==='') return; el.value=v; el.dispatchEvent(new Event('input',{bubbles:true}))};
+  if(x.etiquette_dpe&&DPE_COL[x.etiquette_dpe]) set('dpe',x.etiquette_dpe);
+  const an=n(x.annee_construction); if(an>1700) set('annee',String(an));
+  if(n(x.surface_habitable_logement)>0) set('surface',String(Math.round(n(x.surface_habitable_logement))));
+  const en=dpeEnergie(x.type_energie_principale_chauffage); if(en) set('energie',en);
+  if(x.type_batiment==='appartement') set('typeLogement','Appartement'); else if(x.type_batiment==='maison'&&!/Maison/.test(document.getElementById('typeLogement').value)) set('typeLogement','Maison individuelle');
+  toast('Infos du DPE reportées dans la fiche')}
+document.addEventListener('click',async e=>{
+  const ap=e.target.closest&&e.target.closest('[data-dpe-i]'); if(ap){const x=(dpeLook.res||[])[+ap.dataset.dpeI]; if(x) dpeApply(x); return}
+  if(!e.target||e.target.id!=='dpeLook') return; const c=cur(), out=document.getElementById('dpeRes'), b=e.target;
+  if(!c||!String(c.adresse||'').trim()||!/^\d{5}$/.test(String(c.cp||'').trim())){out.innerHTML='<p class="hint" style="margin:4px 0 0">Saisissez d\'abord l\'adresse et le code postal du client.</p>';return}
+  b.disabled=true; out.innerHTML='<p class="hint" style="margin:4px 0 0">Recherche dans la base des DPE…</p>';
+  try{const res=await dpeSearch({adresse:String(c.adresse).trim(),cp:String(c.cp).trim()}); dpeLook.res=res;
+    out.innerHTML=res.length?res.slice(0,5).map((x,i)=>`<div class="dpe-item"><span class="cl" style="background:${DPE_COL[x.etiquette_dpe]||'#888'}">${esc(x.etiquette_dpe||'?')}</span><span class="tx"><b>${esc(x.adresse_ban||'')}</b>${x.complement_adresse_logement?' · '+esc(x.complement_adresse_logement):''}<br>${esc([x.type_batiment,x.annee_construction?'construit en '+x.annee_construction:x.periode_construction,x.surface_habitable_logement?Math.round(n(x.surface_habitable_logement))+' m²':'',x.type_energie_principale_chauffage,x.date_etablissement_dpe?'DPE du '+frDate(String(x.date_etablissement_dpe).slice(0,10)):''].filter(Boolean).join(' · '))}</span><button class="btn small primary" type="button" data-dpe-i="${i}">Utiliser</button></div>`).join('')
+      :'<p class="hint" style="margin:4px 0 0">Aucun DPE trouvé pour cette adresse : la maison n\'a sans doute pas eu de DPE depuis juillet 2021. À remplir à la main.</p>'}
+  catch(err){out.innerHTML='<p class="hint" style="margin:4px 0 0">Base des DPE injoignable pour le moment, réessayez plus tard.</p>'}
+  b.disabled=false});
+const dpeLook={res:[]};
 function foldList(on){const a=document.querySelector('aside.list'), b=document.getElementById('listToggle'); if(!a||!b) return;
   const f=matchMedia('(max-width:900px)').matches&&on, was=a.classList.contains('folded'); a.classList.toggle('folded',f); b.setAttribute('aria-expanded',String(!f)); b.textContent=f?'Changer de client ▾':'Fermer la liste ▴';
   if(f&&!was&&foldList.k) a.scrollIntoView({block:'start'}); foldList.k=1}
