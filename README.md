@@ -30,6 +30,14 @@ Envoi du devis : la synthèse du projet (autofinancement) est jointe par défaut
 
 **Infos du logement depuis l'adresse** : dans la fiche, section Logement & énergie, le bouton « 🔎 Infos du logement depuis l'adresse » cherche l'adresse et le code postal dans la base officielle des DPE logements de l'ADEME (open data, gratuite, sans clé). Pour chaque DPE trouvé (depuis juillet 2021) : étiquette, année de construction, surface, énergie de chauffage, date du DPE ; « Utiliser » remplit la fiche. Si la maison n'a jamais eu de DPE, rien n'est trouvé. (Kelvin, demandé au départ, est payant et sans accès public.)
 
+## Simulateur de primes public (site)
+
+Page `prime.html` (adresse : https://VOTRE-SITE/prime.html), pour les prospects, en 7 étapes : maison ou appartement, plus de 2 ans, code postal, surface habitable et niveaux (surface de murs estimée, ou saisie si connue), personnes du foyer, tranche de revenu fiscal (plafonds 2026, Île-de-France ou non), puis l'estimation : prime CEE + aide région, avec les tarifs réglés dans Administration (€/m²). À la fin, le prospect laisse ses coordonnées : `api/lead.js` crée la fiche dans le CRM (statut Prospect, attribuée à l'administrateur, détails dans les notes) et envoie une alerte à l'adresse d'envoi (contact@). Variable Vercel nécessaire : `SUPABASE_SERVICE_ROLE_KEY` (la même que pour les rappels).
+
+Intégration dans Webflow : ajouter un élément « Embed » avec
+`<iframe src="https://VOTRE-SITE/prime.html" style="width:100%;height:960px;border:0" title="Simulateur de primes"></iframe>`
+ou simplement un bouton qui ouvre ce lien.
+
 ## Suivi commercial
 
 - **Tableau de bord** (onglet réservé à l'admin) : RDV, RDV honorés, ventes, taux de transformation, CA signé, panier moyen ; un tableau par télépro (RDV pris, confirmés, honorés, vendus, note moyenne), un par expert technique, et la comparaison note du télépro / vente. Période : semaine, mois, mois dernier, 3 mois, tout.
