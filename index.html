@@ -620,7 +620,7 @@ body.pm .sheet-head h2{font-size:30px} body.pm .ribbon{font-size:22px} body.pm .
           <fieldset class="no-tp">
             <legend>Financement</legend>
             <div class="fields">
-              <label>Montant des travaux TTC<div class="in"><input id="coutTravaux" data-k="coutTravaux" type="number" min="0" step="100"><span class="u">€</span></div></label>
+              <label class="full">Montant des travaux TTC <small>calculé selon le barème, modifiable</small><div class="in"><input id="coutTravaux" data-k="coutTravaux" type="number" min="0" step="100" placeholder="auto"><span class="u">€</span></div><span class="calc-hint" id="travauxHint"></span></label>
               <label>Taux d'intérêt annuel<div class="in"><input id="taux" data-k="taux" type="number" min="0" max="25" step="0.001"><span class="u">%</span></div></label>
               <label>Durée du financement<div class="in"><input id="duree" data-k="duree" type="number" min="1" step="1"><span class="u">mois</span></div></label>
               <label>Différé avant 1ʳᵉ échéance<div class="in"><input id="differe" data-k="differe" type="number" min="0" max="24" step="1"><span class="u">mois</span></div></label>
@@ -732,6 +732,22 @@ function couleurFoyer(c){const rfr=+c.rfr, np=Math.round(+c.nbPers); if(!(rfr>0)
 function ceeAuto(c){const f=couleurFoyer(c), m2=n(c.surfaceMurs); if(!f||!(m2>0)) return null; const e=ent(), t=f.k<2?n(e.ceeBJ):n(e.ceeVR); return {val:Math.round(t*m2*100)/100,t,m2,f}}
 function regionAuto(c){const m2=n(c.surfaceMurs), t=n(ent().regionM2); if(!(m2>0)||!(t>0)) return null; return {val:Math.round(t*m2*100)/100,t,m2}}
 const regionVal=c=>c.aideRegion!==''&&c.aideRegion!=null?n(c.aideRegion):((regionAuto(c)||{}).val||0);
+const PRECA=['Très modeste','Modeste','Intermédiaire','Classique'];
+function precaAuto(c){const f=couleurFoyer(c); return f?PRECA[f.k]:''}
+/* Montant des travaux selon le barème (Administration › Tarifs de base) : m² de murs × (isolant + main d'œuvre), prix TTC */
+function travauxAuto(c){const m2=n(c.surfaceMurs); if(!(m2>0)) return null; const e=ent(), pi=n(e.prixIsolant), pm=n(e.prixMO); return {val:Math.round(m2*(pi+pm)*100)/100,m2,pi,pm}}
+function travauxHint(){const c=cur(), el=document.getElementById('travauxHint'); if(!c||!el) return; const a=travauxAuto(c);
+  el.textContent=c.devis?'Montant repris du devis '+(c.devis.numero||'')+' (TTC)':a?(n(c.coutTravaux)===a.val?'Barème : ':'Montant saisi à la main · barème : ')+`${String(a.m2).replace('.',',')} m² × ${eur(a.pi+a.pm)} TTC/m² (isolant ${eur(a.pi)} + main d'œuvre ${eur(a.pm)}) = ${eur(a.val)}`:'Saisissez les m² de murs à isoler pour le calcul selon le barème'}
+/* Saisie dans la fiche : précarité du devis selon la couleur du foyer, travaux selon le barème. Rien ne change sur un devis signé. */
+function autoFiche(c,k,old){let ch=false;
+  if(['rfr','nbPers','cp'].includes(k)&&c.devis&&c.statut!=='signe'){const p=precaAuto(c); if(p&&c.devis.precarite!==p){c.devis.precarite=p; ch=true}}
+  if(k==='surfaceMurs'){
+    if(c.devis){ if(c.statut!=='signe'){const o=n(c.devis.surface), v=c.surfaceMurs; c.devis.lignes.forEach(l=>{if(n(l.qte)===o&&/m²|m2/i.test(l.unite||'')) l.qte=v}); c.devis.surface=v; syncDevis(c); ch=true} }
+    else{const prev=travauxAuto(Object.assign({},c,{surfaceMurs:old})), t=travauxAuto(c);
+      if(String(c.coutTravaux??'')===''||c.travauxAuto===true||(prev&&n(c.coutTravaux)===prev.val)){c.coutTravaux=t?String(t.val):''; c.travauxAuto=true; ch=true}}
+  }
+  if(k==='coutTravaux'){c.travauxAuto=String(c.coutTravaux??'')===''; if(c.travauxAuto&&!c.devis){const t=travauxAuto(c); if(t){c.coutTravaux=String(t.val); ch=true}}}
+  return ch}
 function regionHint(){const c=cur(), el=document.getElementById('regionHint'); if(!c||!el) return; const a=regionAuto(c);
   el.textContent=(a?`Calcul auto : ${eur(a.t)}/m² × ${a.m2.toLocaleString('fr-FR')} m² = ${eur(a.val)}`+(c.aideRegion!==''&&c.aideRegion!=null?` · valeur forcée utilisée : ${eur(n(c.aideRegion))}`:''):'Calcul auto dès que la surface de murs est connue')+' · déduite du montant à financer';
   document.getElementById('aideRegion').placeholder=a?String(Math.round(a.val)):'auto'}
@@ -874,7 +890,7 @@ function fillForm(){
   const c=cur(); if(!c) return;
   document.querySelectorAll('[data-k]').forEach(el=>{let v=c[el.dataset.k]??''; if(el.type==='datetime-local'&&/^\d{4}-\d{2}-\d{2}$/.test(v)) v+='T09:00'; el.value=v});
   if(isAdmin()){const s=document.getElementById('ownerSel');s.innerHTML=team.filter(p=>(p.actif&&p.role!=='telepro')||p.id===c._owner).map(p=>`<option value="${p.id}">${esc(p.nom||p.email)}${p.role==='admin'?' (admin)':p.role==='telepro'?' (télépro)':''}</option>`).join('');s.value=c._owner||me.id}
-  updateHeader(); updateHint(); renderFoyer(); ceeHint(); regionHint(); relHint(); const dw=document.getElementById('dblWarn'); dw.hidden=true; dw.innerHTML='';
+  updateHeader(); updateHint(); renderFoyer(); ceeHint(); regionHint(); travauxHint(); relHint(); const dw=document.getElementById('dblWarn'); dw.hidden=true; dw.innerHTML='';
 }
 function relHint(){const c=cur(), el=document.getElementById('relHint'); if(el&&c){const r=relance(c); el.textContent=r?'🔔 '+r:''; el.style.color=r?'#b5541b':''}}
 function updateHeader(){
@@ -890,8 +906,10 @@ function updateHint(){
 document.getElementById('pane-form').addEventListener('input',e=>{
   if(e.target.dataset.crk){const c=cur(), x=(c.credits||[])[+e.target.dataset.cr]; if(x){x[e.target.dataset.crk]=e.target.value; c.updated=Date.now(); persist(c); renderFoyer()} return}
   const k=e.target.dataset.k; if(!k) return;
-  const c=cur(); c[k]=e.target.value; c.updated=Date.now(); persist(c);
-  updateHeader(); updateHint(); renderList(); if(['rfr','nbPers','cp','revM','revMme','coutTravaux','taux','duree','mensForce','differe','tauxAssur'].includes(k)) renderFoyer(); if(['rfr','nbPers','cp','surfaceMurs','cee'].includes(k)) ceeHint(); if(['surfaceMurs','aideRegion'].includes(k)) regionHint(); if(['dateRappel','statut'].includes(k)){relHint(); renderFilters()}
+  const c=cur(), old=c[k]; c[k]=e.target.value; const auto=autoFiche(c,k,old); c.updated=Date.now(); persist(c);
+  if(auto&&(e.target.id!=='coutTravaux'||e.target.value==='')){const ct=document.getElementById('coutTravaux'); if(ct) ct.value=c.coutTravaux??''}
+  if(['surfaceMurs','coutTravaux'].includes(k)) travauxHint();
+  updateHeader(); updateHint(); renderList(); if(auto||['rfr','nbPers','cp','revM','revMme','coutTravaux','taux','duree','mensForce','differe','tauxAssur'].includes(k)) renderFoyer(); if(['rfr','nbPers','cp','surfaceMurs','cee'].includes(k)) ceeHint(); if(['surfaceMurs','aideRegion'].includes(k)) regionHint(); if(['dateRappel','statut'].includes(k)){relHint(); renderFilters()}
   if(!document.getElementById('pane-sheet').hidden) renderSheet();
 });
 document.getElementById('pane-form').addEventListener('submit',e=>e.preventDefault());
@@ -1343,7 +1361,7 @@ async function createDevis(){
   const surf=n(c.surfaceMurs)||0;
   c.devis={numero:no,numClient:(e.prefixeClient||'CEF')+'-'+no,date:today,civilite:'M.',
     adresseTravaux:[c.adresse,[c.cp,c.ville].filter(Boolean).join(' ')].filter(Boolean).join('\n'),
-    zone:'H1',precarite:'',chauffage:CHAUFFAGE[c.energie]||c.energie||'',logement:logementTxt(c),
+    zone:'H1',precarite:precaAuto(c),chauffage:CHAUFFAGE[c.energie]||c.energie||'',logement:logementTxt(c),
     surface:surf,marque:e.marque,reference:e.reference,epaisseur:e.epaisseur,resistance:e.resistance,acermi:e.acermi,kwhCumac:'',
     deduireCee:false,modePaiement:e.modePaiement,
     lignes:[
@@ -1407,6 +1425,7 @@ function fld(lbl,attr,val,o={}){
 }
 function renderDevis(){
   const pane=document.getElementById('pane-devis'), c=cur(); if(!c) return;
+  if(c.devis&&!c._sig&&!c.devis.precarite&&precaAuto(c)&&c.statut!=='signe'){c.devis.precarite=precaAuto(c); persist(c)}
   if(c.devis&&!c._sig&&Array.isArray(c.devis.lignes)) c.devis.lignes.forEach(l=>{if(l.unite==='U'&&/^Marque\s*:/.test(l.desc||'')) l.unite='m²'});
   if(!c.devis){
     pane.innerHTML=`<div class="dv-empty"><h2 style="font-size:18px">Pas encore de devis pour ${esc(fullName(c))}</h2>
@@ -1427,7 +1446,7 @@ function renderDevis(){
       ${fld('Adresse des travaux','data-d="adresseTravaux"',d.adresseTravaux,{area:1,cls:'full'})}
     </div></fieldset>
     <fieldset><legend>Situation du client</legend><div class="fields">
-      ${fld('Zone climatique','data-d="zone"',d.zone,{opts:['H1','H2','H3']})}${fld('Précarité','data-d="precarite"',d.precarite,{opts:['','Très modeste','Modeste','Intermédiaire','Classique']})}
+      ${fld('Zone climatique','data-d="zone"',d.zone,{opts:['H1','H2','H3']})}${fld('Précarité <small>auto selon le revenu fiscal</small>','data-d="precarite"',d.precarite,{opts:['','Très modeste','Modeste','Intermédiaire','Classique']})}
       ${fld('Type de chauffage','data-d="chauffage"',d.chauffage)}${fld('Type de logement','data-d="logement"',d.logement)}
     </div></fieldset>
     <fieldset class="span-all"><legend>Opération BAR-EN-102</legend><div class="fields" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
