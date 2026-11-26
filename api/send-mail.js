@@ -1,10 +1,11 @@
 import nodemailer from "nodemailer";
+import { PDFDocument } from "pdf-lib";
 import fs from "fs";
 import path from "path";
 
 // Envoi des e-mails aux clients (simulation et devis) depuis l'adresse de l'entreprise.
 // Variables Vercel : SUPABASE_URL, SUPABASE_ANON_KEY (les mêmes que config.js), SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM (facultatif).
-// Fichier autonome : n'a besoin que de nodemailer (package.json).
+// Dépendances (package.json) : nodemailer, pdf-lib (PDF joint au devis).
 
 // Adresse et clé publique Supabase : variables Vercel, sinon lues dans config.js (inclus via vercel.json).
 function lireConfig() {
@@ -43,13 +44,44 @@ export async function appelant(req) {
   return profil && profil.actif && profil.role !== "telepro" ? profil : null;
 }
 
+export const config = { maxDuration: 30 };
+
+// PDF joint au devis : pages envoyées par le CRM (devis + synthèse en images A4), puis les documents joints
+// lus dans Supabase avec la session du commercial (mêmes droits que dans le CRM).
+const A4 = [595.28, 841.89];
+async function construirePdf(pdf, req) {
+  const doc = await PDFDocument.create();
+  const ajout = async (dataUrl, orient) => {
+    const m = /^data:image\/(jpeg|png);base64,([A-Za-z0-9+/=]+)$/.exec(String(dataUrl || ""));
+    if (!m) return;
+    const bytes = Buffer.from(m[2], "base64");
+    const img = m[1] === "png" ? await doc.embedPng(bytes) : await doc.embedJpg(bytes);
+    const paysage = orient ? orient === "l" : img.width > img.height;
+    const [W, H] = paysage ? [A4[1], A4[0]] : A4;
+    const page = doc.addPage([W, H]);
+    const k = Math.min(W / img.width, H / img.height), w = img.width * k, h = img.height * k;
+    page.drawImage(img, { x: (W - w) / 2, y: (H - h) / 2, width: w, height: h });
+  };
+  for (const p of (Array.isArray(pdf.pages) ? pdf.pages : []).slice(0, 30)) await ajout(p && p.img, p && p.o);
+  const ids = (Array.isArray(pdf.annexes) ? pdf.annexes : []).map(String).filter((x) => /^[0-9a-f-]{36}$/i.test(x)).slice(0, 20);
+  if (ids.length) {
+    const r = await fetch(SB_URL + "/rest/v1/ite_annexes?select=id,pages&id=in.(" + ids.join(",") + ")",
+      { headers: { apikey: SB_ANON, Authorization: req.headers.authorization || "" } });
+    const liste = r.ok ? await r.json() : [];
+    for (const id of ids) { const a = liste.find((x) => x.id === id); if (a) for (const pg of a.pages || []) await ajout(pg); }
+  }
+  if (!doc.getPageCount()) return null;
+  doc.setTitle(String(pdf.nom || "Devis").replace(/\.pdf$/i, ""));
+  return Buffer.from(await doc.save());
+}
+
 export default async function handler(req, res) {
   if (req.method === "GET") return send(res, 200, { mail: smtpOk(), from: smtpOk() ? adresseEnvoi() : "", manque: manque() });
   if (req.method !== "POST") return send(res, 405, { erreur: "Méthode non autorisée" });
   if (!smtpOk()) return send(res, 501, { erreur: "Envoi automatique non configuré (variables SMTP et SUPABASE dans Vercel)." });
   const profil = await appelant(req).catch(() => null);
   if (!profil) return send(res, 401, { erreur: "Session expirée : reconnectez-vous." });
-  const { to, subject, html, text, fromName, logo, copie } = req.body || {};
+  const { to, subject, html, text, fromName, logo, copie, pdf } = req.body || {};
   const dest = String(to || "").trim();
   if (!emailValide(dest)) return send(res, 400, { erreur: "Adresse e-mail du client invalide." });
   if (!html || String(html).length > 300000) return send(res, 400, { erreur: "Message vide ou trop long." });
@@ -58,6 +90,12 @@ export default async function handler(req, res) {
   const attachments = [];
   if (typeof logo === "string" && /^data:image\/(png|jpeg);base64,/.test(logo) && logo.length < 400000)
     attachments.push({ filename: "logo.png", path: logo, cid: "logo-cef" });
+  if (pdf && typeof pdf === "object") {
+    let fichier = null;
+    try { fichier = await construirePdf(pdf, req); } catch (e) { return send(res, 500, { erreur: "PDF du devis impossible à créer : " + (e.message || e) }); }
+    const nomPdf = String(pdf.nom || "Devis.pdf").replace(/[\\/:*?"<>|\r\n]/g, "").slice(0, 120) || "Devis.pdf";
+    if (fichier) attachments.push({ filename: /\.pdf$/i.test(nomPdf) ? nomPdf : nomPdf + ".pdf", content: fichier, contentType: "application/pdf" });
+  }
   try {
     await transport().sendMail({
       from: nom ? `"${nom}" <${adresse}>` : adresse,
