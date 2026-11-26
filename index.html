@@ -1188,7 +1188,11 @@ function logementTxt(c){const age=n(c.annee)?(new Date().getFullYear()-n(c.annee
 function devisTotals(c){
   const d=c.devis; let ttc=0,ht=0;
   d.lignes.forEach(l=>{const t=n(l.qte)*n(l.pu);ttc+=t;ht+=t/(1+n(l.tva)/100)});
-  const tva=ttc-ht, region=regionVal(c), cee=ceeVal(c);
+  /* page publique : sans surface ni revenus, le calcul auto est impossible, on reprend les montants copiés à l'envoi */
+  const sy=d.synth||{}, set=v=>v!==''&&v!=null;
+  const region=set(c.aideRegion)||regionAuto(c)||!set(sy.aideRegion)?regionVal(c):n(sy.aideRegion);
+  const cee=set(c.cee)||ceeAuto(c)||!set(sy.cee)?ceeVal(c):n(sy.cee);
+  const tva=ttc-ht;
   const reste=ttc-region-(d.deduireCee?cee:0);
   const taux=[...new Set(d.lignes.map(l=>n(l.tva)))];
   return {ttc,ht,tva,region,cee,reste,taux};
