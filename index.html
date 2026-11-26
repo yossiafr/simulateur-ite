@@ -25,6 +25,19 @@ html.clw body::before{content:"Chargement du devis…";display:block;text-align:
 .dpe-item{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-top:6px;font-size:13px}
 .dpe-item .cl{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:6px;color:#fff;font-weight:800}
 .dpe-item .tx{flex:1 1 220px;min-width:0}
+
+/* Simulateur de primes (pas à pas) */
+.pz-bar{height:6px;background:var(--lime-soft);border-radius:99px;overflow:hidden}.pz-bar i{display:block;height:100%;background:var(--green);transition:width .25s}
+.pz-k{font-size:12.5px;font-weight:600;color:var(--green);text-transform:uppercase;letter-spacing:.05em}
+.pz h2{font-size:20px;margin:2px 0 10px}
+.pz-opts{display:grid;gap:8px}.pz-opts.two{grid-template-columns:1fr 1fr}@media (max-width:520px){.pz-opts.two{grid-template-columns:1fr}}
+.pz-opt{display:flex;align-items:center;gap:10px;text-align:left;font:inherit;color:inherit;background:var(--surface);border:2px solid var(--line);border-radius:12px;padding:11px 13px;cursor:pointer}
+.pz-opt:hover{border-color:var(--green)}.pz-opt.on{border-color:var(--green);background:var(--lime-soft)}
+.pz-opt .dot{flex:none;width:13px;height:13px;border-radius:50%}.pz-opt small{display:block;color:var(--muted)}
+.pz-nav{display:flex;justify-content:space-between;gap:8px;margin-top:6px}
+.pz-res{background:linear-gradient(160deg,var(--green),var(--green-deep));color:#fff;border-radius:14px;padding:16px 18px}
+.pz-res .big{font:800 40px/1.05 var(--display);color:var(--lime)}
+.pz-res .ln{display:flex;justify-content:space-between;gap:10px;border-top:1px solid rgba(255,255,255,.25);padding-top:7px;margin-top:7px}
 </style>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -533,6 +546,7 @@ body.pm .sheet-head h2{font-size:30px} body.pm .ribbon{font-size:22px} body.pm .
       <div class="toolbar">
         <h1 id="clientTitle">Nouveau client</h1>
         <span class="saved" id="savedInfo"></span>
+        <button class="btn no-tp" id="btnPrime" type="button">🧮 Simulateur de primes</button>
         <button class="btn" id="btnDup" type="button">Dupliquer</button>
         <span id="delWrap"><button class="btn danger" id="btnDel" type="button">Supprimer</button></span>
         <button class="btn local-only no-tp" id="btnPrint" type="button">Imprimer / PDF</button>
@@ -1004,6 +1018,48 @@ document.addEventListener('click',async e=>{
   catch(err){out.innerHTML='<p class="hint" style="margin:4px 0 0">Base des DPE injoignable pour le moment, réessayez plus tard.</p>'}
   b.disabled=false});
 const dpeLook={res:[]};
+
+/* ===== Simulateur de primes pas à pas (outil interne, remplit la fiche) ===== */
+const PZ={i:0,d:{}};
+const PZ_STEPS=['logement','cp','surface','foyer','revenus','resultat'];
+const pzMursEstim=d=>{const s=n(d.surface), nv=Math.max(1,n(d.niveaux)||1); return s>0?Math.round(4*Math.sqrt(s/nv)*2.5*nv*0.85):0}; /* maison carrée, 2,5 m par niveau, 15 % d'ouvertures */
+const pzMurs=d=>d.connu?n(d.murs):pzMursEstim(d);
+function pzCouleur(d){if(n(d.rfr)>0) return couleurFoyer({rfr:d.rfr,nbPers:d.nbPers,cp:d.cp}); if(d.k!=null) return {k:d.k,nom:COUL[d.k][0],txt:COUL[d.k][1],col:COUL[d.k][2]}; return null}
+function pzCalc(d){const f=pzCouleur(d), m=pzMurs(d), e=ent(); if(!f||!(m>0)) return null; const cee=Math.round((f.k<2?n(e.ceeBJ):n(e.ceeVR))*m), reg=Math.round(n(e.regionM2)*m); return {f,m,cee,reg,tot:cee+reg}}
+function pzOpt(k,v,t,sub,dot){return `<button type="button" class="pz-opt${PZ.d[k]===v?' on':''}" data-pz-k="${k}" data-pz-v="${esc(String(v))}">${dot?`<span class="dot" style="background:${dot}"></span>`:''}<span><b>${t}</b>${sub?`<small>${sub}</small>`:''}</span></button>`}
+function pzOk(){const d=PZ.d, s=PZ_STEPS[PZ.i]; return s==='logement'?!!d.type&&!!d.age:s==='cp'?/^\d{5}$/.test(String(d.cp||'').trim()):s==='surface'?pzMurs(d)>0:s==='foyer'?Math.round(n(d.nbPers))>=1:s==='revenus'?!!pzCouleur(d):true}
+function pzRender(){const d=PZ.d, s=PZ_STEPS[PZ.i], N=PZ_STEPS.length; let h=`<div class="pz-bar"><i style="width:${Math.round((PZ.i+1)/N*100)}%"></i></div><div class="pz"><div class="pz-k">${s==='resultat'?'Estimation':'Étape '+(PZ.i+1)+' sur '+(N-1)}</div>`;
+  if(s==='logement') h+=`<h2>Le logement</h2><div class="pz-opts two">${pzOpt('type','Maison individuelle','Maison individuelle')+pzOpt('type','Maison mitoyenne','Maison mitoyenne')}</div><div class="pz-opts two" style="margin-top:8px">${pzOpt('age','oui','Construite il y a plus de 2 ans')+pzOpt('age','non','Moins de 2 ans','pas de prime CEE')}</div>`;
+  if(s==='cp') h+=`<h2>Code postal du logement</h2><label>Code postal<div class="in"><input id="pzCp" inputmode="numeric" maxlength="5" value="${esc(d.cp||'')}"></div></label><p class="hint" style="margin:0">Les plafonds de revenus sont différents en Île-de-France.</p>`;
+  if(s==='surface') h+=`<h2>Surface à isoler</h2><div class="grid"><label>Surface habitable<div class="in"><input id="pzSurf" type="number" min="0" value="${esc(d.surface||'')}"><span class="u">m²</span></div></label><label>Niveaux<div class="in"><input id="pzNiv" type="number" min="1" max="4" value="${esc(d.niveaux||'1')}"></div></label></div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:14px"><input type="checkbox" id="pzConnu" ${d.connu?'checked':''} style="width:18px;height:18px;margin:0"><span>Je connais la surface de murs à isoler</span></div>${d.connu?`<label>Surface de murs à isoler<div class="in"><input id="pzMurs" type="number" min="0" value="${esc(d.murs||'')}"><span class="u">m²</span></div></label>`:`<p class="hint" id="pzEst" style="margin:0">${pzMursEstim(d)?`Environ <b>${pzMursEstim(d)} m²</b> de murs, estimés d'après la surface (à mesurer à la visite).`:'Saisissez la surface habitable pour estimer la surface de murs.'}</p>`}`;
+  if(s==='foyer') h+=`<h2>Le foyer</h2><label>Personnes dans le foyer<div class="in"><input id="pzNp" type="number" min="1" max="15" value="${esc(d.nbPers||'')}"></div></label><p class="hint" style="margin:0">Toutes les personnes de l'avis d'imposition.</p>`;
+  if(s==='revenus'){const f=couleurFoyer({rfr:1,nbPers:d.nbPers,cp:d.cp}), L=f?f.lim:[0,0,0], g=v=>String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g,'\u202f')+'\u00a0€', c=pzCouleur(d);
+    h+=`<h2>Revenu fiscal de référence</h2><label>Montant exact (si le client a son avis)<div class="in"><input id="pzRfr" type="number" min="0" step="100" value="${esc(d.rfr||'')}"><span class="u">€</span></div></label>
+    <p class="hint" style="margin:0">ou choisissez la tranche :</p><div class="pz-opts">${[['Jusqu\'à '+g(L[0])],['De '+g(L[0]+1)+' à '+g(L[1])],['De '+g(L[1]+1)+' à '+g(L[2])],['Plus de '+g(L[2])]].map((x,j)=>pzOpt('k',j,x[0],COUL[j][0]+' · '+COUL[j][1],COUL[j][2])).join('')}</div>${c&&n(d.rfr)>0?`<p class="hint" style="margin:0">Foyer <b style="color:${c.col}">${c.nom}</b> (${c.txt})</p>`:''}`}
+  if(s==='resultat'){const r=pzCalc(d), off=d.age!=='oui';
+    h+=r?`<h2>Primes estimées</h2>${off?'<p class="err" style="margin:0 0 8px">Logement de moins de 2 ans : pas de prime CEE pour l\'isolation.</p>':''}<div class="pz-res"><span class="hint" style="color:#fff">Foyer ${r.f.nom.toLowerCase()} · ${r.m} m² de murs${d.connu?'':' (estimés)'}</span><div style="margin-top:6px">Total des aides</div><div class="big num">${eur(off?r.reg:r.tot)}</div>
+      <div class="ln"><span>Prime CEE</span><b class="num">${eur(off?0:r.cee)}</b></div><div class="ln"><span>Aide région</span><b class="num">${eur(r.reg)}</b></div></div>
+      <p class="hint" style="margin:0">Tarifs de l'Administration : CEE ${eur(n(ent().ceeBJ))}/m² (bleu, jaune) ou ${eur(n(ent().ceeVR))}/m² (violet, rose), aide région ${eur(n(ent().regionM2))}/m². « Enregistrer dans la fiche » reporte type, code postal, surfaces, foyer${n(d.rfr)>0?' et revenu fiscal':' et la prime CEE'}.</p>`:'<p>Il manque des informations.</p>'}
+  h+=`<div class="pz-nav">${PZ.i>0?'<button class="btn" type="button" id="pzPrev">Retour</button>':'<button class="btn" type="button" id="pzClose">Fermer</button>'}${s==='resultat'?'<button class="btn primary" type="button" id="pzSave">Enregistrer dans la fiche</button>':`<button class="btn primary" type="button" id="pzNext" ${pzOk()?'':'disabled'}>Continuer</button>`}</div></div>`;
+  pzModal().querySelector('.modal').innerHTML=h}
+function pzModal(){let m=document.getElementById('primeModal'); if(m) return m; m=document.createElement('div'); m.className='modal-bg'; m.id='primeModal'; m.innerHTML='<div class="modal" role="dialog" aria-modal="true" aria-label="Simulateur de primes" style="width:min(560px,100%)"></div>'; document.body.appendChild(m);
+  m.addEventListener('click',e=>{if(e.target===m||e.target.id==='pzClose'){m.hidden=true;return}
+    const o=e.target.closest('[data-pz-k]'); if(o){const k=o.dataset.pzK; PZ.d[k]=k==='k'?+o.dataset.pzV:o.dataset.pzV; if(k==='k') PZ.d.rfr=''; pzRender(); return}
+    if(e.target.id==='pzConnu'){PZ.d.connu=e.target.checked; pzRender(); return}
+    if(e.target.id==='pzNext'&&pzOk()){PZ.i++; pzRender()} if(e.target.id==='pzPrev'){PZ.i--; pzRender()} if(e.target.id==='pzSave') pzSave()});
+  m.addEventListener('input',e=>{const k={pzCp:'cp',pzSurf:'surface',pzNiv:'niveaux',pzMurs:'murs',pzNp:'nbPers',pzRfr:'rfr'}[e.target.id]; if(!k) return; PZ.d[k]=e.target.value.trim(); if(k==='rfr'&&PZ.d.rfr) PZ.d.k=null;
+    const b=document.getElementById('pzNext'); if(b) b.disabled=!pzOk(); const est=document.getElementById('pzEst'); if(est) est.innerHTML=pzMursEstim(PZ.d)?`Environ <b>${pzMursEstim(PZ.d)} m²</b> de murs, estimés d'après la surface (à mesurer à la visite).`:'Saisissez la surface habitable pour estimer la surface de murs.';
+    if(k==='rfr'){const c=pzCouleur(PZ.d); document.querySelectorAll('#primeModal [data-pz-k="k"]').forEach(x=>x.classList.toggle('on',!!c&&+x.dataset.pzV===c.k))}});
+  m.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.tagName==='INPUT'){e.preventDefault(); document.getElementById('pzNext')?.click()} if(e.key==='Escape') m.hidden=true});
+  return m}
+function pzSave(){const d=PZ.d, r=pzCalc(d); const set=(id,v)=>{const el=document.getElementById(id); if(!el||v==null||v==='') return; el.value=v; el.dispatchEvent(new Event('input',{bubbles:true}))};
+  set('typeLogement',d.type); set('cp',String(d.cp).trim()); set('surface',d.surface); set('surfaceMurs',r?String(r.m):''); set('nbPers',d.nbPers);
+  if(n(d.rfr)>0) set('rfr',d.rfr); else if(r) set('cee',String(d.age==='oui'?r.cee:0));
+  pzModal().hidden=true; toast('Simulation reportée dans la fiche'); renderFoyer&&renderFoyer(); ceeHint(); regionHint()}
+document.addEventListener('click',e=>{if(e.target&&e.target.id==='btnPrime'){const c=cur(); if(!c) return;
+  PZ.i=0; PZ.d={type:/Maison/.test(c.typeLogement||'')?c.typeLogement:'Maison individuelle',age:n(c.annee)&&new Date().getFullYear()-n(c.annee)<2?'non':'oui',cp:c.cp||'',surface:c.surface||'',niveaux:'1',murs:c.surfaceMurs||'',connu:n(c.surfaceMurs)>0,nbPers:c.nbPers||'',rfr:c.rfr||'',k:null};
+  pzModal().hidden=false; pzRender()}});
 function foldList(on){const a=document.querySelector('aside.list'), b=document.getElementById('listToggle'); if(!a||!b) return;
   const f=matchMedia('(max-width:900px)').matches&&on, was=a.classList.contains('folded'); a.classList.toggle('folded',f); b.setAttribute('aria-expanded',String(!f)); b.textContent=f?'Changer de client ▾':'Fermer la liste ▴';
   if(f&&!was&&foldList.k) a.scrollIntoView({block:'start'}); foldList.k=1}

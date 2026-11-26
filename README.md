@@ -30,6 +30,8 @@ Envoi du devis : la synthèse du projet (autofinancement) est jointe par défaut
 
 **Infos du logement depuis l'adresse** : dans la fiche, section Logement & énergie, le bouton « 🔎 Infos du logement depuis l'adresse » cherche l'adresse et le code postal dans la base officielle des DPE logements de l'ADEME (open data, gratuite, sans clé). Pour chaque DPE trouvé (depuis juillet 2021) : étiquette, année de construction, surface, énergie de chauffage, date du DPE ; « Utiliser » remplit la fiche. Si la maison n'a jamais eu de DPE, rien n'est trouvé. (Kelvin, demandé au départ, est payant et sans accès public.)
 
+**Simulateur de primes** (outil interne) : bouton « 🧮 Simulateur de primes » en haut de la fiche client (caché aux télépros). Questionnaire en 5 étapes (logement et ancienneté, code postal, surface habitable et niveaux ou surface de murs connue, personnes du foyer, revenu fiscal exact ou tranche) puis estimation prime CEE + aide région avec les tarifs de l'Administration. « Enregistrer dans la fiche » reporte les réponses (type, CP, surfaces, foyer, revenu fiscal ; sans revenu exact, la prime CEE calculée).
+
 ## Suivi commercial
 
 - **Tableau de bord** (onglet réservé à l'admin) : RDV, RDV honorés, ventes, taux de transformation, CA signé, panier moyen ; un tableau par télépro (RDV pris, confirmés, honorés, vendus, note moyenne), un par expert technique, et la comparaison note du télépro / vente. Période : semaine, mois, mois dernier, 3 mois, tout.
