@@ -550,7 +550,7 @@ body.pm .sheet-head h2{font-size:30px} body.pm .ribbon{font-size:22px} body.pm .
               <label>Date de rappel<div class="in"><input id="dateRappel" data-k="dateRappel" type="date"></div><span class="calc-hint" id="relHint"></span></label>
               <div class="full" id="dblWarn" hidden></div>
               <label class="full">Notes<textarea id="notes" data-k="notes" rows="2"></textarea></label>
-              <label class="full" id="ownerWrap" hidden>Commercial responsable<div class="in"><select id="ownerSel"></select></div></label>
+              <label class="full" id="ownerWrap" hidden>Expert technique responsable<div class="in"><select id="ownerSel"></select></div></label>
             </div>
           </fieldset>
 
@@ -675,7 +675,7 @@ let clients=[], currentId=null, filter='all', repFilter='all';
 const known=new Set(), timers=new Map();
 const isAdmin=()=>MODE==='cloud'&&!!profile&&profile.role==='admin';
 const isTp=()=>MODE==='cloud'&&!!profile&&profile.role==='telepro';
-const ROLES={admin:'Admin',commercial:'Commercial',telepro:'Télépro'};
+const ROLES={admin:'Admin',commercial:'Expert technique',telepro:'Télépro'};
 const DEF_KEYS=['tauxEco','taux','duree','differe','tauxAssur','tauxPV','hausse'];
 function blank(){const d={};DEF_KEYS.forEach(k=>{if(CFG.defaults[k]!=null&&CFG.defaults[k]!=='')d[k]=CFG.defaults[k]});
   return Object.assign({},DEFAULTS,d,{id:uid(),created:Date.now(),updated:Date.now(),_owner:me?me.id:undefined})}
@@ -1009,7 +1009,7 @@ document.getElementById('btnExportJson').onclick=()=>download('clients-ite-'+new
 document.getElementById('btnExportCsv').onclick=()=>{
   const cols=[['Nom','nom'],['Prénom','prenom'],['Téléphone','tel'],['E-mail','email'],['Adresse','adresse'],['CP','cp'],['Ville','ville'],['Statut',c=>STATUTS[c.statut]],['Date RDV','dateRdv'],['RFR €','rfr'],['Personnes foyer','nbPers'],['Couleur foyer',c=>(couleurFoyer(c)||{}).nom||''],['Revenu M. €/mois','revM'],['Statut M.','statutM'],['Revenu Mme €/mois','revMme'],['Statut Mme','statutMme'],['Crédits €/mois',c=>(c.credits||[]).reduce((a,x)=>a+(+x.mens||0),0)||''],['DPE','dpe'],['Énergie','energie'],['Facture chauffage €/an','factureAn'],['Travaux €','coutTravaux'],['Taux %','taux'],['Mensualité €',c=>Math.round(compute(c).mens)],['Total payé €',c=>Math.round(compute(c).total)],['Durée mois','duree'],['CEE €','cee'],['Aide région €','aideRegion'],['Valeur bien €','valeurBien'],
     ['Économie mensuelle €',c=>Math.round(compute(c).ecoMens)],['Économie globale €',c=>Math.round(compute(c).ecoGlobale)],['Projet couvert %',c=>Math.round(compute(c).couv*100)],['Couvert par économies + aides %',c=>Math.round(compute(c).couvCash*100)],['Couvert par économies seules %',c=>Math.round(compute(c).pEco*100)],['Notes','notes']];
-  if(isAdmin()) cols.unshift(['Commercial',c=>ownerName(c._owner)]);
+  if(isAdmin()) cols.unshift(['Expert technique',c=>ownerName(c._owner)]);
   const cell=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
   const csv='﻿'+cols.map(c=>cell(c[0])).join(';')+'\n'+clients.map(c=>cols.map(([,k])=>cell(typeof k==='function'?k(c):c[k])).join(';')).join('\n');
   download('clients-ite-'+new Date().toISOString().slice(0,10)+'.csv',csv,'text/csv;charset=utf-8');
@@ -1349,7 +1349,7 @@ function entBlock(){
   return `<details class="span-all" style="background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 16px"><summary style="cursor:pointer;font-family:var(--display);font-weight:800">Réglages de l'entreprise pour les devis</summary>
     <div class="fields" style="margin-top:12px">${ENT_FIELDS.map(([k,l])=>fld(l,`data-e="${k}"`,e[k],(k==='termesCee'||k==='mentionAides'||k.startsWith('pied'))?{area:1,cls:'full',rows:k==='termesCee'?4:2}:{})).join('')}</div>
     <div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="btn primary" type="button" id="entSave">Enregistrer les réglages de l'entreprise</button></div>
-    <p class="hint">S'appliquent à tous les nouveaux devis${MODE==='cloud'?' de tous les commerciaux':''}. Les devis déjà créés gardent leurs lignes.</p></details>`;
+    <p class="hint">S'appliquent à tous les nouveaux devis${MODE==='cloud'?' de tous les experts techniques':''}. Les devis déjà créés gardent leurs lignes.</p></details>`;
 }
 const dvPane=document.getElementById('pane-devis');
 dvPane.addEventListener('input',e=>{
@@ -1424,7 +1424,7 @@ function optAdminHtml(reset=true){
     <div class="mv"><button class="btn small" type="button" data-ob="optUp" aria-label="Monter" ${i?'':'disabled'}>↑</button><button class="btn small" type="button" data-ob="optDown" aria-label="Descendre" ${i<OBO.length-1?'':'disabled'}>↓</button><button class="btn small danger" type="button" data-ob="optDel" aria-label="Supprimer l'option">✕</button></div>
     ${fld('Descriptif imprimé sur le devis','data-of="desc"',o.desc,{area:1,rows:2,cls:'desc'})}</div>`).join('')||'<p class="hint">Aucune option.</p>'}</div>
     <div class="ob-bar"><button class="btn" type="button" data-ob="optAdd">+ Nouvelle option</button><button class="btn primary" type="button" data-ob="optSave">Enregistrer les options</button></div>
-    <p class="hint">Ces options apparaissent dans la liste « Ajouter une option » de chaque devis${MODE==='cloud'?', pour tous les commerciaux':''}. Le prix reste modifiable sur chaque devis. Une option à 0 € s'affiche à 0 € : pensez à saisir vos prix.</p></div>`;
+    <p class="hint">Ces options apparaissent dans la liste « Ajouter une option » de chaque devis${MODE==='cloud'?', pour tous les experts techniques':''}. Le prix reste modifiable sur chaque devis. Une option à 0 € s'affiche à 0 € : pensez à saisir vos prix.</p></div>`;
 }
 function rerenderOpts(el){const box=el.closest('.ob-opts'); box.outerHTML=optAdminHtml(false)}
 
@@ -1601,7 +1601,7 @@ async function signPage(tok,mode){
   let root=document.getElementById('signRoot'); if(!root){root=document.createElement('div'); root.id='signRoot'; root.className='sign'; document.body.insertBefore(root,document.getElementById('printRoot'))}
   root.innerHTML='<p class="hint" style="text-align:center;padding:40px">Chargement du devis…</p>'; document.documentElement.classList.remove('clw');
   const {data,error}=await sb.rpc('ite_devis_public',{p_token:tok});
-  if(error||!data){root.innerHTML=`<div class="sign-card" style="margin-top:40px"><h1>Lien non valable</h1><p>Ce lien n'est plus actif. Contactez votre conseiller pour en recevoir un nouveau.</p></div>`;return}
+  if(error||!data){root.innerHTML=`<div class="sign-card" style="margin-top:40px"><h1>Lien non valable</h1><p>Ce lien n'est plus actif. Contactez votre expert technique pour en recevoir un nouveau.</p></div>`;return}
   CFG.defaults={entreprise:data.entreprise||{}}; SIGN={tok,data,mode:mode||(SIGN&&SIGN.mode)||'signer'}; renderSignPage();
   if(/[?&]pdf=1/.test(location.search)&&!SIGN.pdfDone){SIGN.pdfDone=1; setTimeout(signPrint,700)}
 }
@@ -2186,7 +2186,7 @@ function rdvForm(r){
   const reps=team.filter(p=>(p.actif&&p.role!=='telepro')||p.id===r.commercial);
   return `<h2>${isNew?'Nouveau rendez-vous':'Modifier le rendez-vous'}</h2><input type="hidden" id="rvId" value="${esc(r.id||'')}">
   <div class="fields">
-    ${canPick?`<label>Commercial<div class="in"><select id="rvRep">${!isNew&&!r.commercial?'<option value="">À confirmer</option>':''}${reps.map(p=>`<option value="${p.id}" ${p.id===r.commercial?'selected':''}>${esc(p.nom||p.email)}</option>`).join('')}</select></div></label>`:''}
+    ${canPick?`<label>Expert technique<div class="in"><select id="rvRep">${!isNew&&!r.commercial?'<option value="">À confirmer</option>':''}${reps.map(p=>`<option value="${p.id}" ${p.id===r.commercial?'selected':''}>${esc(p.nom||p.email)}</option>`).join('')}</select></div></label>`:''}
     <label>Date<div class="in"><input id="rvDate" type="date" value="${isoLocal(d)}"></div></label>
     <label>Heure<div class="in"><input id="rvTime" type="time" step="900" value="${hhmm(d)}"></div></label>
     <label>Durée<div class="in"><select id="rvDur">${[30,45,60,90,120,180].map(m=>`<option value="${m}" ${+r.duree===m?'selected':''}>${m<60?m+' min':(m/60+' h').replace('.',',').replace(',5 h',' h 30')}</option>`).join('')}</select></div></label>
@@ -2274,7 +2274,7 @@ function rdvPdf(r){
   const adr=[c.adresse,[c.cp,c.ville].filter(Boolean).join(' ')].filter(Boolean).join(', ')||r.adresse||'';
   document.getElementById('printRoot').innerHTML=`<div class="rp">
   <div class="rp-top"><img src="${LOGO_SRC}" alt="Les Compagnons Écologiques Français"><h1>FICHE RENDEZ-VOUS<small>Isolation thermique par l'extérieur</small></h1></div>
-  <div class="rp-band"><div><span>Commercial</span><b>${esc(repName(r.commercial))}</b></div><div><span>Date</span><b>${esc(new Date(r.debut).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).replace(/^./,m=>m.toUpperCase()))}</b></div><div><span>Heure</span><b>${hhmm(r.debut)} – ${hhmm(fin)}</b></div></div>
+  <div class="rp-band"><div><span>Expert technique</span><b>${esc(repName(r.commercial))}</b></div><div><span>Date</span><b>${esc(new Date(r.debut).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).replace(/^./,m=>m.toUpperCase()))}</b></div><div><span>Heure</span><b>${hhmm(r.debut)} – ${hhmm(fin)}</b></div></div>
   <div class="rp-client"><div><h2>${esc(fullName(c)||r.titre||'Client')}</h2><p>${esc(adr)}</p>${(t=>t&&/km/.test(t)?`<p style="color:#1d2a17">${esc(t)}</p>`:'')((document.getElementById('rvTrajet')||{}).textContent)}</div>${f?`<span class="rp-pill" style="background:${f.col}">Foyer ${f.nom}</span>`:''}</div>
   <div class="rp-grid">
     <div class="rp-sec"><h3>Coordonnées</h3>${tb([['Adresse',v(c.adresse||r.adresse)],['Code postal / ville',v([c.cp,c.ville].filter(Boolean).join(' '))],['Téléphone',v(c.tel)],['E-mail',v(c.email)],['Statut',v(STATUTS[c.statut])]])}</div>
@@ -2298,7 +2298,7 @@ function rdvDetail(r){
   ${isAdmin()?'<div style="margin-top:10px"><button class="btn small" type="button" data-rv="pdf">📄 Fiche RDV (PDF)</button></div>':''}
   ${(f=>f?`<div class="fc" style="--fc:${f.col};margin-top:10px"><b class="pill">Foyer ${f.nom}</b><span>${f.txt}</span></div>`:'')(c&&couleurFoyer(c))}
   ${r.commentaire?`<div class="ag-com"><b>Commentaire</b><p>${esc(r.commentaire).replace(/\n/g,'<br>')}</p></div>`:''}
-  ${wait&&isAdmin()?`<div class="ag-conf"><label style="flex:1;min-width:180px">Commercial qui fera le RDV<div class="in"><select id="rvConfRep"><option value="">Choisir…</option>${reps().map(p=>`<option value="${p.id}">${esc(p.nom||p.email)}</option>`).join('')}</select></div></label><button class="btn primary" type="button" data-rv="confirm">Confirmer le RDV</button><p class="hint" style="margin:0;flex-basis:100%">Le commercial choisi verra le RDV dans son agenda et la fiche client lui sera attribuée.</p></div>`:''}
+  ${wait&&isAdmin()?`<div class="ag-conf"><label style="flex:1;min-width:180px">Expert technique qui fera le RDV<div class="in"><select id="rvConfRep"><option value="">Choisir…</option>${reps().map(p=>`<option value="${p.id}">${esc(p.nom||p.email)}</option>`).join('')}</select></div></label><button class="btn primary" type="button" data-rv="confirm">Confirmer le RDV</button><p class="hint" style="margin:0;flex-basis:100%">L'expert technique choisi verra le RDV dans son agenda et la fiche client lui sera attribuée.</p></div>`:''}
   ${wait||isTp()?'<!--':''}<fieldset class="ag-res"><legend>Résultat du RDV</legend><div class="ag-resb">${Object.entries(RES).filter(([k])=>k!=='a_venir').map(([k,[l,col]])=>`<button type="button" class="${r.resultat===k?'on':''}" data-res="${k}" style="--c:${col}">${l}</button>`).join('')}</div>
     <label>Compte rendu<textarea id="rvCr" rows="4" placeholder="Ce qui a été dit, prochaine étape, date de rappel…">${esc(r.compte_rendu||'')}</textarea></label>
     <p class="hint" style="margin:0">Le statut de la fiche client suit le résultat (Vendu → Signé, Devis → Devis envoyé, Pas intéressé → Perdu) et le compte rendu est ajouté à ses notes.</p></fieldset>${wait||isTp()?'-->':''}
@@ -2452,7 +2452,7 @@ async function renderDash(){
     <div class="kpi"><span>Devis envoyés</span><b>${devisEnv}</b><small>sur la période</small></div>
     <div class="kpi"><span>À traiter</span><b>${aRel+aStat+aConf}</b><small>${aRel} à relancer · ${aStat} à statuer${MODE==='cloud'?` · ${aConf} à confirmer`:''}</small></div></div>
   ${tps.length?`<h3>Télépros</h3><div class="table-wrap"><table class="tbl"><thead><tr><th>Télépro</th><th class="num">RDV pris</th><th class="num">Confirmés</th><th class="num">Honorés</th><th class="num">Absents</th><th class="num">Vendus</th><th class="num">% vente</th><th class="num">Note moy.</th></tr></thead><tbody>${tps.map(rowTp).join('')}</tbody></table></div>`:''}
-  <h3>Commerciaux</h3><div class="table-wrap"><table class="tbl"><thead><tr><th>Commercial</th><th class="num">RDV</th><th class="num">Honorés</th><th class="num">Absents</th><th class="num">Vendus</th><th class="num">% transfo.</th><th class="num">CA TTC</th><th class="num">Panier moyen</th></tr></thead><tbody>${reps_.map(rowRep).join('')}</tbody></table></div>
+  <h3>Experts techniques</h3><div class="table-wrap"><table class="tbl"><thead><tr><th>Expert technique</th><th class="num">RDV</th><th class="num">Honorés</th><th class="num">Absents</th><th class="num">Vendus</th><th class="num">% transfo.</th><th class="num">CA TTC</th><th class="num">Panier moyen</th></tr></thead><tbody>${reps_.map(rowRep).join('')}</tbody></table></div>
   <h3>La note du télépro annonce-t-elle la vente ?</h3><div class="table-wrap"><table class="tbl"><thead><tr><th>Note</th><th class="num">RDV</th><th class="num">Honorés</th><th class="num">Vendus</th><th>% vente</th></tr></thead><tbody>
     ${notes.map(x=>{const t=x.h.length?x.v.length/x.h.length:0; return `<tr><td>${x.k?'<span class="ag-st" style="font-size:13px">'+'★'.repeat(x.k)+'</span> '+NOTE_TXT[x.k]:'Sans note'}</td><td class="num">${x.L.length}</td><td class="num">${x.h.length}</td><td class="num">${x.v.length}</td><td>${x.h.length?`<span class="bar" style="width:${Math.round(t/maxv*120)}px"></span>${Math.round(t*100)} %`:'—'}</td></tr>`}).join('')}</tbody></table></div>
   <p class="hint">Honoré = RDV qui a eu lieu (hors client absent et reporté). Le CA vient du devis de la fiche (ou du montant des travaux). L'agenda garde l'historique des 5 derniers mois.</p></div>`;
@@ -2484,7 +2484,7 @@ async function renderTour(){
     if(h&&h.lat&&h.lon){line.unshift([h.lat,h.lon]); pts.push([h.lat,h.lon]); L.marker([h.lat,h.lon],{icon:L.divIcon({className:'',html:'<span class="tour-home" title="Domicile">🏠</span>',iconSize:null})}).addTo(LMAP)}
     if(line.length>1) L.polyline(line,{color:repColor(rep==='_'?null:rep),weight:3,opacity:.75,dashArray:'6 6'}).addTo(LMAP)});
   if(pts.length) LMAP.fitBounds(pts,{padding:[30,30],maxZoom:13});
-  hint.textContent=R.length?`${R.length} RDV${miss?` · ${miss} adresse(s) non localisée(s)`:''}. Les pointillés relient les RDV de chaque commercial dans l'ordre de la journée${team.some(t=>t.lat)?', depuis son domicile 🏠':''}.`:hint.textContent;
+  hint.textContent=R.length?`${R.length} RDV${miss?` · ${miss} adresse(s) non localisée(s)`:''}. Les pointillés relient les RDV de chaque expert technique dans l'ordre de la journée${team.some(t=>t.lat)?', depuis son domicile 🏠':''}.`:hint.textContent;
 }
 document.getElementById('pane-agenda').addEventListener('click',e=>{const t=e.target.closest('[data-tday]'); if(t){tourDay=t.dataset.tday; renderTour(); return}
   const o=e.target.closest('[data-topen]'); if(o){const r=(RDV||[]).find(x=>x.id===o.dataset.topen); if(r){rvRes=null; agModal(rdvDetail(r))}}});
@@ -2497,42 +2497,42 @@ function renderAdmin(){
   const signes=id=>clients.filter(c=>c._owner===id&&known.has(c.id)&&c.statut==='signe').length;
   const f=(k,l,u,st)=>`<label>${l}<div class="in"><input id="def-${k}" data-def="${k}" type="number" step="${st}" value="${esc(d[k])}"><span class="u">${u}</span></div></label>`;
   pane.innerHTML=`<div class="grid">
-  <fieldset class="span-all"><legend>Comptes (commerciaux, télépros, admin)</legend>
+  <fieldset class="span-all"><legend>Comptes (experts techniques, télépros, admin)</legend>
     <div class="table-wrap"><table class="tbl"><thead><tr><th>Nom</th><th>E-mail</th><th>Rôle</th><th>Domicile <small style="font-weight:400">(trajet du 1er RDV)</small></th><th class="num">Clients</th><th class="num">Signés</th><th>Accès</th>${CFG.api?'<th>Mot de passe</th>':''}</tr></thead><tbody>
     ${team.map(p=>`<tr data-id="${p.id}" class="${p.actif?'':'off'}"><td><input type="text" data-act="nom" aria-label="Nom" value="${esc(p.nom)}" placeholder="Nom à saisir" style="width:150px">${p.id===me.id?' (vous)':''}</td><td>${esc(p.email)}</td>
-      <td><select data-act="role" aria-label="Rôle" ${p.id===me.id?'disabled':''}>${Object.entries({commercial:'Commercial',telepro:'Télépro',admin:'Admin'}).map(([k,l])=>`<option value="${k}" ${(p.role||'commercial')===k?'selected':''}>${l}</option>`).join('')}</select></td>
+      <td><select data-act="role" aria-label="Rôle" ${p.id===me.id?'disabled':''}>${Object.entries({commercial:'Expert technique',telepro:'Télépro',admin:'Admin'}).map(([k,l])=>`<option value="${k}" ${(p.role||'commercial')===k?'selected':''}>${l}</option>`).join('')}</select></td>
       <td>${p.role==='telepro'?'<span class="hint" style="margin:0">—</span>':`<input type="text" data-act="adresse" aria-label="Adresse du domicile" value="${esc(p.adresse||'')}" placeholder="Adresse, CP, ville" style="width:220px">${p.adresse?(p.lat&&p.lon?' <span title="Adresse localisée" style="color:#2f8f1f">✓</span>':' <span title="Adresse introuvable : vérifiez-la" style="color:#b3261e">⚠</span>'):''}`}</td>
       <td class="num">${cnt(p.id)}</td><td class="num">${signes(p.id)}</td>
       <td><label style="flex-direction:row;align-items:center;gap:6px;color:var(--fg)"><input type="checkbox" data-act="actif" ${p.actif?'checked':''} ${p.id===me.id?'disabled':''}>${p.actif?'Actif':'Désactivé'}</label></td>
       ${CFG.api?'<td class="pwd"><button class="btn small" data-act="pwd" type="button">Changer</button></td>':''}</tr>`).join('')}
     </tbody></table></div>
     ${CFG.api?`<form id="newUser" class="fields" style="margin-top:14px" novalidate>
-      <label>Nom du commercial<div class="in"><input id="nuNom" autocomplete="off"></div></label>
+      <label>Nom de l'expert technique<div class="in"><input id="nuNom" autocomplete="off"></div></label>
       <label>E-mail<div class="in"><input id="nuEmail" type="email" autocomplete="off"></div></label>
       <label>Mot de passe provisoire <small>8 caractères min.</small><div class="in"><input id="nuPass" type="text" autocomplete="off"></div></label>
-      <label>Rôle<div class="in"><select id="nuRole"><option value="commercial">Commercial</option><option value="telepro">Télépro</option><option value="admin">Admin</option></select></div></label>
+      <label>Rôle<div class="in"><select id="nuRole"><option value="commercial">Expert technique</option><option value="telepro">Télépro</option><option value="admin">Admin</option></select></div></label>
       <div class="full" style="display:flex;justify-content:flex-end"><button class="btn primary" type="submit">Créer le compte</button></div>
     </form>
-    <p class="hint">Communiquez au commercial son e-mail et son mot de passe provisoire. Il pourra le changer avec « Mot de passe oublié ». Un commercial ne voit que ses propres clients. Un télépro crée des clients et place des RDV, sans accès au financement, aux aides, aux photos ni aux devis ; vous confirmez ses RDV dans l'agenda en choisissant le commercial. Un compte désactivé ne peut plus se connecter à ses fiches.</p>`
-    :`<p class="hint"><b>Ajouter un commercial :</b> dans Supabase › Authentication › Users › Add user › Create new user, saisissez son e-mail et un mot de passe provisoire, cochez « Auto Confirm User ». Revenez ici : il apparaît dans la liste, désactivé. Saisissez son nom, cochez « Actif », puis communiquez-lui son e-mail et son mot de passe. Il pourra le changer avec « Mot de passe oublié ».<br>Un commercial ne voit que ses propres clients. Un télépro crée des clients et place des RDV, sans accès au financement, aux aides, aux photos ni aux devis ; vous confirmez ses RDV dans l'agenda en choisissant le commercial. Un compte désactivé ne peut plus se connecter à ses fiches.</p>`}
+    <p class="hint">Communiquez au commercial son e-mail et son mot de passe provisoire. Il pourra le changer avec « Mot de passe oublié ». Un expert technique ne voit que ses propres clients. Un télépro crée des clients et place des RDV, sans accès au financement, aux aides, aux photos ni aux devis ; vous confirmez ses RDV dans l'agenda en choisissant l'expert technique. Un compte désactivé ne peut plus se connecter à ses fiches.</p>`
+    :`<p class="hint"><b>Ajouter un commercial :</b> dans Supabase › Authentication › Users › Add user › Create new user, saisissez son e-mail et un mot de passe provisoire, cochez « Auto Confirm User ». Revenez ici : il apparaît dans la liste, désactivé. Saisissez son nom, cochez « Actif », puis communiquez-lui son e-mail et son mot de passe. Il pourra le changer avec « Mot de passe oublié ».<br>Un expert technique ne voit que ses propres clients. Un télépro crée des clients et place des RDV, sans accès au financement, aux aides, aux photos ni aux devis ; vous confirmez ses RDV dans l'agenda en choisissant l'expert technique. Un compte désactivé ne peut plus se connecter à ses fiches.</p>`}
   </fieldset>
   <fieldset class="span-all"><legend>Onglets visibles</legend>${(()=>{const oc=tabsOff('commercial'), ot=tabsOff('telepro');
-    return `<div style="overflow-x:auto"><table class="tabs-adm"><thead><tr><th>Onglet</th><th>Commerciaux</th><th>Télépros</th></tr></thead><tbody>${TABS_OPT.map(([k,l])=>`<tr><td>${l}</td><td><input type="checkbox" data-ong="commercial" value="${k}" ${oc.includes(k)?'':'checked'} aria-label="${l} visible pour les commerciaux"></td><td>${TABS_TP.includes(k)?`<input type="checkbox" data-ong="telepro" value="${k}" ${ot.includes(k)?'':'checked'} aria-label="${l} visible pour les télépros">`:'<span class="hint" title="Jamais visible pour les télépros">—</span>'}</td></tr>`).join('')}</tbody></table></div>
+    return `<div style="overflow-x:auto"><table class="tabs-adm"><thead><tr><th>Onglet</th><th>Experts techniques</th><th>Télépros</th></tr></thead><tbody>${TABS_OPT.map(([k,l])=>`<tr><td>${l}</td><td><input type="checkbox" data-ong="commercial" value="${k}" ${oc.includes(k)?'':'checked'} aria-label="${l} visible pour les experts techniques"></td><td>${TABS_TP.includes(k)?`<input type="checkbox" data-ong="telepro" value="${k}" ${ot.includes(k)?'':'checked'} aria-label="${l} visible pour les télépros">`:'<span class="hint" title="Jamais visible pour les télépros">—</span>'}</td></tr>`).join('')}</tbody></table></div>
     <div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="btn primary" id="saveTabs" type="button">Enregistrer les onglets</button></div>
-    <p class="hint">Décochez un onglet pour le masquer à tous les commerciaux ou à tous les télépros. La Fiche client reste toujours visible, et l'administrateur voit toujours tous les onglets. Le changement s'applique à leur prochaine connexion ou au rechargement de la page.</p>`})()}</fieldset>
+    <p class="hint">Décochez un onglet pour le masquer à tous les experts techniques ou à tous les télépros. La Fiche client reste toujours visible, et l'administrateur voit toujours tous les onglets. Le changement s'applique à leur prochaine connexion ou au rechargement de la page.</p>`})()}</fieldset>
   <fieldset class="span-all"><legend>Réglages par défaut des nouvelles fiches</legend>
     <div class="fields" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
       ${f('tauxEco','Économie due à l\'ITE','%',1)}${f('taux','Taux d\'intérêt','%',0.1)}${f('duree','Durée','mois',1)}${f('differe','Différé','mois',1)}${f('tauxAssur','Assurance facultative','%/mois',0.01)}${f('tauxPV','Plus-value','%',0.5)}${f('hausse','Hausse énergie','%/an',0.5)}
     </div>
     <div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="btn primary" id="saveDefaults" type="button">Enregistrer les réglages</button></div>
-    <p class="hint">S'appliquent aux nouvelles fiches de tous les commerciaux. Les fiches existantes gardent leurs valeurs.</p>
+    <p class="hint">S'appliquent aux nouvelles fiches de tous les experts techniques. Les fiches existantes gardent leurs valeurs.</p>
   </fieldset>
   <fieldset class="span-all"><legend>Tarifs de base du devis</legend>${(()=>{const e=ent(), tf=(k,l,o)=>fld(l,`data-tarif="${k}"`,e[k],o||{});
     return `<div class="fields" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
       ${tf('prixIsolant','Prix isolant TTC',{type:'number',step:'0.01',u:'€/m²'})}${tf('prixMO','Prix main d\'œuvre TTC',{type:'number',step:'0.01',u:'€/m²'})}${tf('tva','TVA',{type:'number',step:'0.1',u:'%'})}${tf('ceeBJ','Prime CEE foyers bleu et jaune',{type:'number',step:'0.5',u:'€/m²'})}${tf('ceeVR','Prime CEE foyers violet et rose',{type:'number',step:'0.5',u:'€/m²'})}${tf('regionM2','Aide région',{type:'number',step:'0.5',u:'€/m²'})}
       ${tf('marque','Marque de l\'isolant')}${tf('reference','Référence')}${tf('epaisseur','Épaisseur',{u:'mm'})}${tf('resistance','Résistance R',{u:'m².K/W'})}${tf('acermi','Certification ACERMI')}</div>
     <div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="btn primary" id="saveTarifs" type="button">Enregistrer les tarifs</button></div>
-    <p class="hint">Utilisés pour tous les nouveaux devis, par tous les commerciaux. Les devis déjà créés gardent leurs prix (modifiables ligne par ligne).</p>`})()}</fieldset>
+    <p class="hint">Utilisés pour tous les nouveaux devis, par tous les experts techniques. Les devis déjà créés gardent leurs prix (modifiables ligne par ligne).</p>`})()}</fieldset>
   <fieldset class="span-all"><legend>Options du devis</legend>${optAdminHtml()}</fieldset>
   <fieldset class="span-all"><legend>Documents joints au devis</legend>${annexAdminHtml()}</fieldset></div>`;
   fillAnnexAdmin();
@@ -2585,7 +2585,7 @@ async function adminCall(body){
 function renderRepFilter(){
   const w=document.getElementById('repFilterWrap'); w.hidden=!isAdmin(); if(!isAdmin()) return;
   const s=document.getElementById('repFilter');
-  s.innerHTML='<option value="all">Tous les commerciaux</option>'+team.map(p=>`<option value="${p.id}">${esc(p.nom||p.email)}</option>`).join('');
+  s.innerHTML='<option value="all">Tous les experts techniques</option>'+team.map(p=>`<option value="${p.id}">${esc(p.nom||p.email)}</option>`).join('');
   s.value=team.some(p=>p.id===repFilter)?repFilter:'all';
 }
 document.getElementById('repFilter').addEventListener('change',e=>{repFilter=e.target.value;renderList()});
@@ -2650,7 +2650,7 @@ async function enterApp(user){
   currentId=clients[0].id;
   document.getElementById('userName').innerHTML='<b>'+esc(prof.nom||prof.email)+'</b>';
   document.body.classList.toggle('tp',prof.role==='telepro');
-  const role=document.getElementById('userRole'); role.textContent=ROLES[prof.role]||'Commercial'; role.className='status'+(prof.role==='admin'?' signe':'');
+  const role=document.getElementById('userRole'); role.textContent=ROLES[prof.role]||'Expert technique'; role.className='status'+(prof.role==='admin'?' signe':'');
   document.getElementById('userBox').hidden=false;
   document.getElementById('tab-admin').hidden=!isAdmin();
   document.getElementById('tab-dash').hidden=!dashOk(); applyTabs();
