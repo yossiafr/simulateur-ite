@@ -838,6 +838,10 @@ function compute(d){
   const manuel=d.ecoForce!==''&&d.ecoForce!=null;
   if(!manuel&&te>ECO_MIN&&r.ecoGlobale>0){const k=r.ecoGlobale/te, cut=Math.min(ex,k*(te-ECO_MIN)); te-=cut/k; ex-=cut}
   if(ex>0.005&&tp>PV_MIN&&n(d.valeurBien)>0){const k=n(d.valeurBien)/100, cut=Math.min(ex,k*(tp-PV_MIN)); tp-=cut/k; ex-=cut}
+  /* Taux ronds (économie au %, plus-value au demi-%), arrondis vers le haut : le gain affiché est le vrai montant calculé,
+     un peu au-dessus du projet, et la couverture reste affichée à 100 %. */
+  if(te!==te0) te=Math.min(te0,Math.ceil(te-1e-9));
+  if(tp!==tp0) tp=Math.min(tp0,Math.ceil(tp*2-1e-9)/2);
   if(te===te0&&tp===tp0) return Object.assign(r,base);
   return Object.assign(compute0(Object.assign({},d,{tauxEco:te,tauxPV:tp})),base,{tauxEcoEff:te,tauxPVEff:tp,ajuste:true});
 }
@@ -997,7 +1001,7 @@ function sheetHtml(c){
         <span class="chip"><i class="seg-eco"></i>Économies <b class="num">${eur(r.ecoGlobale)}</b></span><span class="op">+</span>
         <span class="chip"><i class="seg-aid"></i>Aides <b class="num">${eur(r.aides)}</b></span><span class="op">+</span>
         <span class="chip"><i class="seg-pv"></i>Plus-value* <b class="num">${eur(r.pv)}</b></span><span class="op">=</span>
-        <span class="chip tot">${eur(gain)} <small>soit ${pctf(r.couvTotal)} du montant du projet</small></span>
+        <span class="chip tot">${eur(gain)} <small>${r.couv>=1?'projet couvert à 100 %':'soit '+pctf(r.couvTotal)+' du montant du projet'}</small></span>
       </div>
     </div>
 
