@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Simulateur autofinancement ITE</title>
+<script>/* Lien client (devis) : le CRM ne doit jamais apparaître, même pendant le chargement */
+if(/[?&](signer|voir)=/.test(location.search)) document.documentElement.className+=' cl clw';</script>
+<style>html.cl .wrap,html.cl #authScreen:not(.cl-ok){display:none!important}
+html.clw body::before{content:"Chargement du devis…";display:block;text-align:center;padding:60px 20px;font:16px Arial,Helvetica,sans-serif;color:#4f5c48}</style>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Inter:wght@400;500;600&display=swap">
@@ -1595,7 +1599,7 @@ let SIGN=null;
 async function signPage(tok,mode){
   MODE='cloud'; document.querySelector('.wrap').hidden=true; document.getElementById('authScreen').hidden=true;
   let root=document.getElementById('signRoot'); if(!root){root=document.createElement('div'); root.id='signRoot'; root.className='sign'; document.body.insertBefore(root,document.getElementById('printRoot'))}
-  root.innerHTML='<p class="hint" style="text-align:center;padding:40px">Chargement du devis…</p>';
+  root.innerHTML='<p class="hint" style="text-align:center;padding:40px">Chargement du devis…</p>'; document.documentElement.classList.remove('clw');
   const {data,error}=await sb.rpc('ite_devis_public',{p_token:tok});
   if(error||!data){root.innerHTML=`<div class="sign-card" style="margin-top:40px"><h1>Lien non valable</h1><p>Ce lien n'est plus actif. Contactez votre conseiller pour en recevoir un nouveau.</p></div>`;return}
   CFG.defaults={entreprise:data.entreprise||{}}; SIGN={tok,data,mode:mode||(SIGN&&SIGN.mode)||'signer'}; renderSignPage();
@@ -2699,7 +2703,7 @@ async function boot(){
       return enterApp(session.user);
     }
   }
-  if(/[?&](signer|voir)=/.test(location.search)){document.querySelector('.wrap').hidden=true; return showAuth('config','Ce lien de signature s\'ouvre uniquement sur le site en ligne.',true)}
+  if(/[?&](signer|voir)=/.test(location.search)){document.querySelector('.wrap').hidden=true; document.documentElement.classList.remove('clw'); document.getElementById('authScreen').classList.add('cl-ok'); return showAuth('config','Ce lien de signature s\'ouvre uniquement sur le site en ligne.',true)}
   /* Mode local : fiches enregistrées dans ce navigateur */
   clients=load();
   if(!clients.length){clients=[sample()];persist();}
