@@ -301,7 +301,10 @@ label small{font-weight:400}
 .sign-card label.chk{flex-direction:row;align-items:center;gap:8px;color:var(--fg)}
 .pad-wrap{display:flex;flex-direction:column;gap:6px;align-items:flex-start;font-size:12.5px;color:var(--muted)}
 .pad-wrap canvas{width:100%;max-width:520px;height:180px;background:#fff;border:2px dashed var(--line);border-radius:12px;touch-action:none;cursor:crosshair}
-.sign-paper{padding:16px}.sign-paper .zoomer{width:800px;margin:0 auto;display:flex;flex-direction:column;gap:16px;align-items:center}
+/* Empêche Chrome Android et Safari iOS de grossir certains paragraphes du devis réduit (font boosting) */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+.sign-paper{padding:16px}.sign-paper.big{overflow-x:auto;-webkit-overflow-scrolling:touch}.sign-paper.big .zoomer{margin:0}
+.sign-zoom{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 10px}.sign-zoom[hidden]{display:none}.sign-zoom .hint{margin:0;font-size:13px}.sign-paper .zoomer{width:800px;margin:0 auto;display:flex;flex-direction:column;gap:16px;align-items:center}
 .sign-paper .dv{margin:0}
 .synth-pg,.synth-print{--bg:#fff;--surface:#fff;--surface-2:#eef5e6;--fg:#1d2a17;--muted:#4f5c48;--line:#d6e3c9;--lime-soft:#e8f6c4;--lime:#c9ea6a;--green:#2f8f1f;--green-deep:#1e6312;color-scheme:light;
   width:1062px;box-sizing:border-box;background:#fff;color:#1d2a17;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -1604,12 +1607,16 @@ function renderSignPage(){
   root.innerHTML=`<header class="sign-top"><img src="${LOGO_SRC}" alt="${esc(e.nomCourt)}"><div><h1>Devis n° ${esc(c.devis.numero)}</h1><p>${esc([c.prenom,c.nom].filter(Boolean).join(' '))} · Total TTC <b>${eur2(t.ttc)}</b> · Reste à régler <b>${eur2(t.reste)}</b></p></div></header>
   <section class="sign-card sign-dl"><div><b>Télécharger le devis</b><p class="hint" style="margin:2px 0 0">Devis${synthOn(c.devis)&&c.devis.synth?', synthèse de votre projet':''}${ann.length?' et documents joints':''}, en un seul PDF. Dans la fenêtre qui s'ouvre, choisissez « Enregistrer au format PDF ».</p></div><button class="btn primary" type="button" id="sgDl">⬇ Télécharger le devis (PDF)</button></section>
   ${s?`<section class="sign-card" id="signBox">${signedHtml(s)}</section>`:SIGN.mode==='voir'?'':`<section class="sign-card"><p style="margin:0">Lisez votre devis${ann.length||synthOn(c.devis)?' et ses documents joints':''} ci-dessous, puis signez en bas de la page.</p><a class="btn primary" href="#signBox">Aller à la signature</a></section>`}
+  <div class="sign-zoom" id="sgZoomBar" hidden><button class="btn" type="button" id="sgZoom">🔍 Agrandir le texte</button><span class="hint">Sur téléphone, le devis est réduit pour tenir dans l'écran.</span></div>
   <div class="dv-paper sign-paper"><div class="zoomer">${devisDocHtml(c,s)}${synthOn(c.devis)&&c.devis.synth?synthPageHtml(synthData(c)):''}${ann.map(a=>a.pages.map(p=>`<img class="annex-page" src="${p}" alt="${esc(a.titre)}" loading="lazy">`).join('')).join('')}</div></div>
   ${s?'':SIGN.mode==='voir'?`<section class="sign-card" id="signature">${askHtml(c)}</section>`:`<section class="sign-card" id="signBox">${signFormHtml(c)}</section>`}`;
   fitSign(); if(!s&&SIGN.mode!=='voir') initPad();
   if(location.hash==='#signature'&&!s) setTimeout(()=>document.getElementById('signature')?.scrollIntoView({block:'center'}),300);
 }
-function fitSign(){const z=document.querySelector('#signRoot .zoomer'); if(!z) return; const w=z.parentElement.clientWidth-32, k=Math.min(1,w/800); z.style.zoom=k}
+function fitSign(){const z=document.querySelector('#signRoot .zoomer'); if(!z) return; const w=z.parentElement.clientWidth-32, k=Math.min(1,w/800);
+  const bar=document.getElementById('sgZoomBar'), b=document.getElementById('sgZoom'), big=!!(SIGN&&SIGN.big);
+  if(bar){bar.hidden=k>.85; b.textContent=big?'↔ Ajuster à l\'écran':'🔍 Agrandir le texte'; b.onclick=()=>{SIGN.big=!SIGN.big; fitSign()}}
+  z.parentElement.classList.toggle('big',big&&k<=.85); z.style.zoom=big&&k<=.85?1:k}
 window.addEventListener('resize',()=>{if(SIGN) fitSign()});
 const maskMail=m=>{const [u,d]=String(m||'').split('@'); return d?u.slice(0,2)+'•••@'+d:''};
 function askHtml(c){return `<h2>Ce devis vous intéresse ?</h2><p style="margin:0">Demandez la signature électronique : nous vous envoyons aussitôt par e-mail${c.email?' (à '+esc(maskMail(c.email))+')':''} le lien pour signer votre devis en ligne, sans créer de compte.</p>
