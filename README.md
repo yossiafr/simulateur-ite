@@ -11,6 +11,7 @@ Technique : page web unique (`index.html`), base et connexions Supabase, héberg
 3. **Économie globale** : économie mensuelle × (différé + durée), avec une hausse annuelle de l'énergie facultative.
 4. **Plus-value** : valeur du bien × 10 % (Notaires de France, transactions 2024), réalisable à la revente.
 5. **Projet couvert** : (économies + aides CEE et région + plus-value) ÷ montant total du projet (travaux, sans déduire l'aide région), affiché jusqu'à 100 %. La synthèse et l'e-mail de synthèse affichent le montant total du projet et l'échéance du financement (calculée, elle, sur travaux − aide région).
+   Si la couverture dépasse 100 %, l'économie due à l'ITE est baissée automatiquement (jusqu'à 23 % minimum), puis la plus-value (jusqu'à 5 % minimum), juste assez pour revenir à 100 %. La fiche garde les taux saisis et indique les taux retenus ; la synthèse et l'e-mail utilisent les taux retenus.
 
 Les valeurs par défaut se règlent dans l'onglet Administration.
 
