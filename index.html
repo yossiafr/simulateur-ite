@@ -829,8 +829,10 @@ function taegCalc(cap,m,duree,first){if(!(cap>0)||!(m>0)||!(duree>0)) return 0; 
 /* Couverture au-delà de 100 % (demande de Joseph) : on baisse d'abord l'économie due à l'ITE (jusqu'à 23 % minimum),
    puis la plus-value (jusqu'à 5 % minimum), juste ce qu'il faut pour revenir à 100 %. Les taux saisis dans la fiche ne changent pas. */
 const ECO_MIN=23, PV_MIN=5;
+/* Taux de départ : ceux saisis par l'expert (tauxEcoRef / tauxPVRef), la fiche affiche ensuite les taux retenus. */
+const tauxRef=(d,k)=>d[k+'Ref']!=null&&d[k+'Ref']!==''?n(d[k+'Ref']):n(d[k]);
 function compute(d){
-  const r=compute0(d), te0=n(d.tauxEco), tp0=n(d.tauxPV), base={tauxEcoEff:te0,tauxPVEff:tp0,ajuste:false,tauxEcoSaisi:te0,tauxPVSaisi:tp0};
+  const te0=tauxRef(d,'tauxEco'), tp0=tauxRef(d,'tauxPV'), r=compute0(Object.assign({},d,{tauxEco:te0,tauxPV:tp0})), base={tauxEcoEff:te0,tauxPVEff:tp0,ajuste:false,tauxEcoSaisi:te0,tauxPVSaisi:tp0};
   if(!(r.ok&&r.couv>1)) return Object.assign(r,base);
   let te=te0, tp=tp0, ex=r.ecoGlobale+r.aides+r.pv-r.projet;
   const manuel=d.ecoForce!==''&&d.ecoForce!=null;
@@ -839,6 +841,12 @@ function compute(d){
   if(te===te0&&tp===tp0) return Object.assign(r,base);
   return Object.assign(compute0(Object.assign({},d,{tauxEco:te,tauxPV:tp})),base,{tauxEcoEff:te,tauxPVEff:tp,ajuste:true});
 }
+/* Écrit dans la fiche les taux retenus (économie ITE, plus-value), en gardant les taux saisis comme référence. */
+function syncTaux(c){if(!c) return false; let ch=false;
+  for(const k of ['tauxEco','tauxPV']) if(c[k+'Ref']==null||c[k+'Ref']===''){c[k+'Ref']=c[k]??''}
+  const r=compute(c), v={tauxEco:Math.round(r.tauxEcoEff*100)/100, tauxPV:Math.round(r.tauxPVEff*100)/100};
+  for(const k of ['tauxEco','tauxPV']){ if(c[k+'Ref']==='') continue; if(String(c[k])!==String(v[k])){c[k]=String(v[k]); ch=true} }
+  return ch}
 function compute0(d){
   const duree=Math.max(0,Math.round(n(d.duree))), diff=Math.max(0,Math.round(n(d.differe)));
   const region=regionVal(d), travaux=n(d.coutTravaux), capital=Math.max(0,travaux-region), ti=n(d.taux)/100/12;
@@ -901,6 +909,7 @@ function renderList(){
 /* ===== Formulaire ===== */
 function fillForm(){
   const c=cur(); if(!c) return;
+  syncTaux(c);
   document.querySelectorAll('[data-k]').forEach(el=>{let v=c[el.dataset.k]??''; if(el.type==='datetime-local'&&/^\d{4}-\d{2}-\d{2}$/.test(v)) v+='T09:00'; el.value=v});
   if(isAdmin()){const s=document.getElementById('ownerSel');s.innerHTML=team.filter(p=>(p.actif&&p.role!=='telepro')||p.id===c._owner).map(p=>`<option value="${p.id}">${esc(p.nom||p.email)}${p.role==='admin'?' (admin)':p.role==='telepro'?' (télépro)':''}</option>`).join('');s.value=c._owner||me.id}
   updateHeader(); updateHint(); renderFoyer(); ceeHint(); regionHint(); travauxHint(); relHint(); const dw=document.getElementById('dblWarn'); dw.hidden=true; dw.innerHTML='';
@@ -914,19 +923,20 @@ function updateHeader(){
 function updateHint(){
   const r=compute(cur());
   document.getElementById('mensHint').textContent=r.capital>0?`Calcul auto à ${tx3(r.taux)} % sur ${eurc(r.capital)} financés${r.region?` (travaux ${eur(r.travaux)} − aide région ${eur(r.region)})`:''} : ${eurc(r.mensHA)} / mois × ${r.duree}${r.diff>1?`, 1ʳᵉ échéance ${r.diff} mois après la fin des travaux`:''} · TAEG ${tx2(r.taeg)} % · coût du crédit ${eurc(r.mensHA*r.duree-r.capital)}${r.assur?` · + assurance ${eurc(r.assur)} / mois, soit ${eurc(r.mensAuto)} / mois`:''}`:'Saisissez le montant des travaux pour calculer la mensualité';
-  document.getElementById('ecoHint').textContent=(r.ajuste?`Couverture ramenée à 100 % : économie ${ech1(r.tauxEcoEff)} % au lieu de ${ech1(r.tauxEcoSaisi)} %${r.tauxPVEff!==r.tauxPVSaisi?`, plus-value ${ech1(r.tauxPVEff)} % au lieu de ${ech1(r.tauxPVSaisi)} %`:''} (minimums ${ECO_MIN} % et ${PV_MIN} %). `:'')+`Calcul auto : ${eur(r.ecoAuto)} / mois`+(r.mens>0?` · utilisé : ${eur(r.ecoMens)} soit ${pctf(r.partMens)} de la mensualité`:'');
+  document.getElementById('ecoHint').textContent=(r.ajuste?`Taux recalculés pour une couverture de 100 % : économie ${ech1(r.tauxEcoEff)} % (saisi ${ech1(r.tauxEcoSaisi)} %)${r.tauxPVEff!==r.tauxPVSaisi?`, plus-value ${ech1(r.tauxPVEff)} % (saisi ${ech1(r.tauxPVSaisi)} %)`:''}, minimums ${ECO_MIN} % et ${PV_MIN} %. `:'')+`Calcul auto : ${eur(r.ecoAuto)} / mois`+(r.mens>0?` · utilisé : ${eur(r.ecoMens)} soit ${pctf(r.partMens)} de la mensualité`:'');
 }
 document.getElementById('pane-form').addEventListener('input',e=>{
   if(e.target.dataset.crk){const c=cur(), x=(c.credits||[])[+e.target.dataset.cr]; if(x){x[e.target.dataset.crk]=e.target.value; c.updated=Date.now(); persist(c); renderFoyer()} return}
   const k=e.target.dataset.k; if(!k) return;
-  const c=cur(), old=c[k]; c[k]=e.target.value; const auto=autoFiche(c,k,old); c.updated=Date.now(); persist(c);
+  const c=cur(), old=c[k]; c[k]=e.target.value; if(k==='tauxEco'||k==='tauxPV') c[k+'Ref']=e.target.value; const auto=autoFiche(c,k,old); const tx=syncTaux(c); c.updated=Date.now(); persist(c);
+  if(tx) for(const id of ['tauxEco','tauxPV']){const el=document.getElementById(id); if(el&&el!==e.target) el.value=c[id]}
   if(auto&&(e.target.id!=='coutTravaux'||e.target.value==='')){const ct=document.getElementById('coutTravaux'); if(ct) ct.value=c.coutTravaux??''}
   if(['surfaceMurs','coutTravaux'].includes(k)) travauxHint();
   updateHeader(); updateHint(); renderList(); if(auto||['rfr','nbPers','cp','revM','revMme','coutTravaux','taux','duree','mensForce','differe','tauxAssur'].includes(k)) renderFoyer(); if(['rfr','nbPers','cp','surfaceMurs','cee'].includes(k)) ceeHint(); if(['surfaceMurs','aideRegion'].includes(k)) regionHint(); if(['dateRappel','statut'].includes(k)){relHint(); renderFilters()}
   if(!document.getElementById('pane-sheet').hidden) renderSheet();
 });
 document.getElementById('pane-form').addEventListener('submit',e=>e.preventDefault());
-document.getElementById('pane-form').addEventListener('change',e=>{if(['tel','adresse','cp'].includes(e.target.id)) setTimeout(checkDblFiche,300)});
+document.getElementById('pane-form').addEventListener('change',e=>{if(['tauxEco','tauxPV'].includes(e.target.id)){const c=cur(); if(c) e.target.value=c[e.target.id]??''}if(['tel','adresse','cp'].includes(e.target.id)) setTimeout(checkDblFiche,300)});
 
 /* ===== Synthèse ===== */
 function renderSheet(){document.getElementById('pane-sheet').innerHTML=sheetHtml(cur())}
