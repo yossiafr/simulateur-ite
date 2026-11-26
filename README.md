@@ -28,7 +28,12 @@ Aide région calculée automatiquement : surface de murs × 40 €/m² (réglabl
 
 Envoi du devis : la synthèse du projet (autofinancement) est jointe par défaut. Elle apparaît comme une page juste après le devis, avant les autres documents joints : sur la page du lien envoyé au client et dans le PDF du devis (une page A4 paysage). L'e-mail du devis envoyé depuis le CRM contient aussi le PDF en pièce jointe (devis, synthèse, puis documents joints cochés) : le CRM prépare les pages du devis et de la synthèse, le serveur (`api/send-mail.js`, librairie `pdf-lib`) ajoute les documents et joint le fichier. Le client peut tout télécharger en un seul PDF (devis, synthèse, documents joints) : bouton « ⬇ Télécharger le devis (PDF) » dans l'e-mail (lien `?voir=…&pdf=1`, qui ouvre directement la fenêtre d'enregistrement en PDF) et en haut de la page du devis. Ses chiffres sont copiés dans le devis à chaque enregistrement de la fiche, car le lien public ne lit que le devis et les coordonnées du client. Décochez « Synthèse de votre projet » dans les documents joints du devis pour ne pas l'envoyer. Mode de paiement par défaut : Chèque, Virement, Financement.
 
-**Infos du logement depuis l'adresse** : dans la fiche, section Logement & énergie, le bouton « 🔎 Infos du logement depuis l'adresse » cherche l'adresse et le code postal dans la base officielle des DPE logements de l'ADEME (open data, gratuite, sans clé). Pour chaque DPE trouvé (depuis juillet 2021) : étiquette, année de construction, surface, énergie de chauffage, date du DPE ; « Utiliser » remplit la fiche. Si la maison n'a jamais eu de DPE, rien n'est trouvé. (Kelvin, demandé au départ, est payant et sans accès public.)
+**Infos du logement depuis l'adresse** : dans la fiche, section Logement & énergie, le bouton « 🔎 Infos du logement depuis l'adresse » cherche le DPE du client via la fonction `api/dpe.js` (bases publiques gratuites, sans clé à configurer) :
+1. l'adresse est d'abord retrouvée dans la Base Adresse Nationale (position exacte et identifiant de l'adresse) ;
+2. DPE depuis juillet 2021 (ADEME) : par identifiant d'adresse, puis autour de la maison (40 m), puis par texte ;
+3. anciens DPE d'avant juillet 2021 (ADEME), signalés « Ancien DPE » car la méthode était différente ;
+4. en dernier recours, l'étiquette **estimée** du bâtiment calculée par le CSTB (BDNB), signalée « Estimation, à confirmer » ; « Utiliser » ne reporte alors que l'étiquette.
+« Utiliser » remplit la fiche (étiquette, année, surface, énergie). Si `api/dpe.js` n'est pas encore en ligne, le bouton garde l'ancienne recherche ADEME directe. (Kelvin, demandé au départ, est payant et sans accès public.)
 
 ## Suivi commercial
 
