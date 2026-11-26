@@ -1672,7 +1672,7 @@ const DM_MSG=`Suite à notre échange, voici votre devis d'isolation thermique p
 Vous pouvez le consulter en ligne, avec la fiche produit, notre attestation RGE et notre assurance décennale.
 
 Nous restons à votre disposition pour toute question.`;
-function devisMailHtml(c,msg,link,logo,docs){
+function devisMailHtml(c,msg,link,logo,docs,pj){
   const d=c.devis, e=ent(), t=devisTotals(c);
   const nm=[d.civilite,c.nom].filter(Boolean).join(' ')||fullName(c);
   const row=(l,v,b)=>`<tr><td style="padding:6px 0;color:#4f5c48;font-size:14px">${l}</td><td style="padding:6px 0;text-align:right;font-size:14px;${b?'font-weight:bold;color:#1e6312;font-size:16px':''}">${v}</td></tr>`;
@@ -1698,6 +1698,7 @@ ${row('Total TTC',eur2(t.ttc))}${t.region?row('Aides région','- '+eur2(t.region
 <tr><td style="padding:18px 28px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #d6e3c9"><tr><td style="padding:16px 0 0;text-align:center">
 <p style="margin:0 0 10px;font-size:14px;line-height:1.5">Ce devis vous intéresse ? Demandez la signature électronique : vous recevrez aussitôt par e-mail le lien pour le signer en ligne.</p>
 <a href="${esc(link)}#signature" style="color:#1e6312;text-decoration:none;font-weight:bold;font-size:14px;padding:10px 20px;border-radius:999px;border:2px solid #2f8f1f;display:inline-block">Demander la signature électronique</a></td></tr></table></td></tr>
+${pj?`<tr><td style="padding:14px 28px 0"><p style="margin:0;font-size:13px;color:#1d2a17">📎 Votre devis${docs.length?' et ses documents':''} sont aussi en pièce jointe de cet e-mail, en un seul PDF.</p></td></tr>`:''}
 ${docs.length?`<tr><td style="padding:14px 28px 0"><p style="margin:0 0 6px;font-size:13px;font-weight:bold">Documents joints au devis</p><ul style="margin:0;padding-left:18px;font-size:13px;color:#4f5c48;line-height:1.6">${docs.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></td></tr>`:''}
 <tr><td style="padding:20px 28px 24px"><p style="margin:0;font-size:15px;line-height:1.5">Bien cordialement,<br>${sender?`<b>${esc(sender)}</b><br>`:''}${esc(SOCIETE)}</p></td></tr>
 <tr><td style="padding:14px 28px;background:#1e6312;color:#e8f6c4;font-size:11px;line-height:1.5">${esc(e.pied1)}<br>${esc(e.pied2)}</td></tr>
@@ -1729,6 +1730,48 @@ async function openDevisMail(c){
     ${CFG.mail?`<p class="hint">Envoyé depuis ${esc(from)}, sans copie dans cette boîte. Les réponses du client y arrivent.</p>`:`<p class="hint">${esc(mailOffTxt())} L'e-mail mis en page est copié : collez-le dans le message.</p>`}</div>`;
   box.hidden=false; await refreshDm(); box.scrollIntoView({behavior:'smooth',block:'start'});
 }
+/* ===== PDF joint à l'e-mail du devis : devis + synthèse en images A4 (le serveur ajoute les documents joints) ===== */
+let h2cReady=null;
+function loadH2C(){if(window.html2canvas) return Promise.resolve(); if(h2cReady) return h2cReady;
+  h2cReady=(async()=>{for(const src of ['https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js','https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js']){try{await loadScript(src); if(window.html2canvas) return}catch(e){}} h2cReady=null; throw new Error('générateur PDF introuvable (connexion internet nécessaire)')})();
+  return h2cReady}
+function offscreen(cls,html,w){const el=document.createElement('div'); el.className=cls; el.style.cssText=`position:absolute;left:-20000px;top:0;width:${w}px;display:block;background:#fff;visibility:visible`; el.innerHTML=html; document.body.appendChild(el); return el}
+async function imgsReady(el){await Promise.all([...el.querySelectorAll('img')].map(i=>i.decode?i.decode().catch(()=>{}):0))}
+async function devisPdfPages(c){
+  await loadH2C(); const e=ent(), S=2, PW=794, PH=1123, TOP=38, BOT=72, out=[];
+  const box=offscreen('pdf-render',devisDocHtml(c,c._sig||null),PW);
+  try{
+    const dv=box.querySelector('.dv'); dv.style.width=PW+'px'; dv.style.boxShadow='none'; dv.style.margin='0'; const ft=dv.querySelector(':scope > .foot'); if(ft) ft.remove();
+    await imgsReady(box);
+    /* lignes de texte et images : on ne coupe jamais au milieu */
+    const base=dv.getBoundingClientRect().top, R=[], rg=document.createRange(), tw=document.createTreeWalker(dv,NodeFilter.SHOW_TEXT);
+    while(tw.nextNode()){const t=tw.currentNode; if(!t.textContent.trim()) continue; rg.selectNodeContents(t); for(const r of rg.getClientRects()) if(r.height>0) R.push([r.top-base,r.bottom-base])}
+    dv.querySelectorAll('img').forEach(i=>{const r=i.getBoundingClientRect(); R.push([r.top-base,r.bottom-base])});
+    /* encadrés (bordure ou fond) de moins d'une demi-page : gardés entiers */
+    dv.querySelectorAll('div,table,section').forEach(el=>{const r=el.getBoundingClientRect(), cs=getComputedStyle(el); if(r.height>8&&r.height<500&&(parseFloat(cs.borderTopWidth)>0||parseFloat(cs.borderBottomWidth)>0||(cs.backgroundColor!=='rgba(0, 0, 0, 0)'&&cs.backgroundColor!=='rgb(255, 255, 255)'))) R.push([r.top-base,r.bottom-base])});
+    const H=dv.scrollHeight, cuts=[]; let y=0;
+    while(y<H-2){const avail=(cuts.length?PH-TOP-BOT:PH-BOT), lim=y+avail; if(lim>=H){cuts.push([y,H]);break}
+      const ok=v=>!R.some(([a,b])=>a<v-.5&&b>v+.5);
+      let best=null; R.forEach(([,b])=>{const v=b+2; if(v>y+120&&v<=lim&&ok(v)&&(best==null||v>best)) best=v});
+      const end=best||lim; cuts.push([y,end]); y=end}
+    /* dernier morceau sans texte (bas d'un cadre) : rattaché à la page précédente */
+    const last=cuts[cuts.length-1]; if(cuts.length>1&&last[1]-last[0]<40&&!R.some(([a])=>a>=last[0])){cuts.pop(); cuts[cuts.length-1][1]=last[1]}
+    const cv=await window.html2canvas(dv,{scale:S,backgroundColor:'#ffffff',useCORS:true,logging:false,windowWidth:1400});
+    cuts.forEach(([a,b],i)=>{const pc=document.createElement('canvas'); pc.width=PW*S; pc.height=PH*S; const g=pc.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,pc.width,pc.height);
+      const top=i?TOP:0; g.drawImage(cv,0,a*S,PW*S,(b-a)*S,0,top*S,PW*S,(b-a)*S);
+      g.fillStyle='#222'; g.textAlign='center'; g.font=`${9.3*S}px Arial,Helvetica,sans-serif`;
+      [e.pied1,e.pied2].filter(Boolean).forEach((t,k)=>g.fillText(String(t),PW*S/2,(PH-46+k*12)*S,(PW-150)*S));
+      g.textAlign='right'; g.font=`bold ${10.6*S}px Arial,Helvetica,sans-serif`; g.fillText(`${i+1}/${cuts.length}`,(PW-45)*S,(PH-40)*S);
+      out.push({img:pc.toDataURL('image/jpeg',0.8),o:'p'})});
+  }finally{box.remove()}
+  if(synthOn(c.devis)){const sv=offscreen('synth-print',sheetHtml(c),1062);
+    try{await imgsReady(sv); const cv=await window.html2canvas(sv,{scale:S,backgroundColor:'#ffffff',useCORS:true,logging:false,windowWidth:1400});
+      const LW=1123, LH=794, M=30, k=Math.min((LW-2*M)/sv.offsetWidth,(LH-2*M)/sv.offsetHeight), w=sv.offsetWidth*k, h=sv.offsetHeight*k;
+      const pc=document.createElement('canvas'); pc.width=LW*S; pc.height=LH*S; const g=pc.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,pc.width,pc.height);
+      g.drawImage(cv,(LW-w)/2*S,M*S,w*S,h*S); out.push({img:pc.toDataURL('image/jpeg',0.8),o:'l'})}
+    finally{sv.remove()}}
+  return out;
+}
 async function refreshDm(){const c=cur(), p=document.getElementById('dmPrev'); if(!p||!c) return;
   p.innerHTML=devisMailHtml(c,document.getElementById('dmMsg').value,voirUrl(c._token),await logoPng(),await dmDocs(c))}
 async function mailAction(id,c){
@@ -1745,10 +1788,15 @@ async function mailAction(id,c){
   }
   if(id==='dmSend'){
     if(!to) return toast('Renseignez l\'e-mail du client');
-    const b=document.getElementById('dmSend'); b.disabled=true; const lbl=b.textContent; b.textContent='Envoi…';
+    const b=document.getElementById('dmSend'); b.disabled=true; const lbl=b.textContent; b.textContent='Préparation du PDF…';
     try{const {data:{session}}=await sb.auth.getSession();
-      const res=await fetch('/api/send-mail',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(session?session.access_token:'')},
-        body:JSON.stringify({to,subject:sub,html:devisMailHtml(c,msg,link,'cid:logo-cef',docs),text:devisMailText(c,msg,link,docs),fromName:SOCIETE,logo:await logoPng(),copie:false})});
+      /* PDF joint : devis + synthèse (images A4) ; le serveur y ajoute les documents joints cochés */
+      let pdf=null; try{const v=c._sig?Object.assign({},c,{devis:c._sig.devis}):c;
+        pdf={nom:('Devis '+v.devis.numero+' '+[c.nom,c.prenom].filter(Boolean).join(' ')).replace(/[^\w .àâäçéèêëîïôöùûüÿ-]/gi,'').trim()+'.pdf',pages:await devisPdfPages(v),annexes:annexOn(await getAnnexes(),v.devis).map(a=>a.id)}}
+      catch(err){toast('PDF non joint : '+err.message)}
+      b.textContent='Envoi…';
+      const body=JSON.stringify({to,subject:sub,html:devisMailHtml(c,msg,link,'cid:logo-cef',docs,!!pdf),text:devisMailText(c,msg,link,docs),fromName:SOCIETE,logo:await logoPng(),copie:false,pdf});
+      const res=await fetch('/api/send-mail',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(session?session.access_token:'')},body});
       const out=await res.json().catch(()=>({})); if(!res.ok) throw new Error(out.erreur||('Erreur '+res.status));
       done(); toast('Devis envoyé à '+to); renderDevis();
     }catch(err){toast('Envoi impossible : '+err.message); b.disabled=false; b.textContent=lbl}
