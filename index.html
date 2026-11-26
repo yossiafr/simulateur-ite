@@ -7,7 +7,20 @@
 <script>/* Lien client (devis) : le CRM ne doit jamais apparaître, même pendant le chargement */
 if(/[?&](signer|voir)=/.test(location.search)) document.documentElement.className+=' cl clw';</script>
 <style>html.cl .wrap,html.cl #authScreen:not(.cl-ok){display:none!important}
-html.clw body::before{content:"Chargement du devis…";display:block;text-align:center;padding:60px 20px;font:16px Arial,Helvetica,sans-serif;color:#4f5c48}</style>
+html.clw body::before{content:"Chargement du devis…";display:block;text-align:center;padding:60px 20px;font:16px Arial,Helvetica,sans-serif;color:#4f5c48}
+/* ===== iPhone / téléphone ===== */
+.mob-only{display:none}
+@media (max-width:900px){
+  .mob-only{display:inline-flex}
+  aside.list.folded>:not(.head){display:none!important}
+  aside.list.folded{padding-block:10px}
+  aside.list .head{gap:8px}
+  .tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;box-shadow:0 4px 12px rgba(0,0,0,.08)}
+}
+@media (max-width:600px){.top .title{display:none}header.top{margin-bottom:12px}}
+/* iOS zoome sur un champ dont le texte fait moins de 16 px et ne dézoome plus : 16 px sur écran tactile */
+@media (pointer:coarse){input,select,textarea,.in input,.in select,label textarea,.sig-link input{font-size:16px}}
+</style>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Inter:wght@400;500;600&display=swap">
@@ -499,10 +512,10 @@ body.pm .sheet-head h2{font-size:30px} body.pm .ribbon{font-size:22px} body.pm .
 
   <div class="app">
     <aside class="list">
-      <div class="head"><h2>Clients</h2><button class="btn primary small" id="btnNew" type="button">+ Nouveau</button></div>
+      <div class="head"><h2>Clients</h2><button class="btn small mob-only" id="listToggle" type="button" aria-expanded="false">Changer de client ▾</button><button class="btn primary small" id="btnNew" type="button">+ Nouveau</button></div>
       <input type="search" id="search" placeholder="Rechercher nom, ville, tél…" aria-label="Rechercher un client">
       <div class="filters" id="filters"></div>
-      <div class="in" id="repFilterWrap" hidden style="margin-bottom:10px"><select id="repFilter" aria-label="Filtrer par commercial"></select></div>
+      <div class="in" id="repFilterWrap" hidden style="margin-bottom:10px"><select id="repFilter" aria-label="Filtrer par expert technique"></select></div>
       <ul class="clients" id="clientList"></ul>
       <div class="side-actions local-only no-tp">
         <button class="btn small" id="btnExportCsv" type="button">Export CSV</button>
@@ -949,7 +962,12 @@ function ico(k){
 }
 
 /* ===== Navigation ===== */
-function select(id){currentId=id; fillForm(); renderList(); if(!document.getElementById('pane-sheet').hidden) renderSheet(); if(!document.getElementById('pane-devis').hidden) renderDevis(); phSel=null; phDraft=[]; phView='photo'; if(!document.getElementById('pane-photos').hidden) renderPhotos(); if(!document.getElementById('pane-carte').hidden) renderCarte(); if(!document.getElementById('pane-dossier').hidden) renderDossier(); resetDel();}
+
+function foldList(on){const a=document.querySelector('aside.list'), b=document.getElementById('listToggle'); if(!a||!b) return;
+  const f=matchMedia('(max-width:900px)').matches&&on, was=a.classList.contains('folded'); a.classList.toggle('folded',f); b.setAttribute('aria-expanded',String(!f)); b.textContent=f?'Changer de client ▾':'Fermer la liste ▴';
+  if(f&&!was&&foldList.k) a.scrollIntoView({block:'start'}); foldList.k=1}
+document.addEventListener('click',e=>{if(e.target&&e.target.id==='listToggle'){const a=document.querySelector('aside.list'); foldList(!a.classList.contains('folded'))}});
+function select(id){currentId=id; foldList(true); fillForm(); renderList(); if(!document.getElementById('pane-sheet').hidden) renderSheet(); if(!document.getElementById('pane-devis').hidden) renderDevis(); phSel=null; phDraft=[]; phView='photo'; if(!document.getElementById('pane-photos').hidden) renderPhotos(); if(!document.getElementById('pane-carte').hidden) renderCarte(); if(!document.getElementById('pane-dossier').hidden) renderDossier(); resetDel();}
 const TABS_OPT=[['sheet','Synthèse'],['photos','Photos'],['carte','Carte'],['devis','Devis'],['dossier','Dossier'],['agenda','Agenda']];
 const TABS_TP=['carte','agenda'];
 function tabsOff(role){role=role||(profile&&profile.role); if(MODE!=='cloud'||!role||role==='admin') return []; const o=((CFG.defaults||{}).onglets)||{}; return Array.isArray(o[role])?o[role]:[]}
