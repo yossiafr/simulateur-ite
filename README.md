@@ -10,7 +10,7 @@ Technique : page web unique (`index.html`), base et connexions Supabase, héberg
 2. **Économie mensuelle** : facture de chauffage annuelle × taux d'économie (25 % par défaut) ÷ 12, ou saisie à la main.
 3. **Économie globale** : économie mensuelle × (différé + durée), avec une hausse annuelle de l'énergie facultative.
 4. **Plus-value** : valeur du bien × 10 % (Notaires de France, transactions 2024), réalisable à la revente.
-5. **Projet couvert** : (économies + prime CEE + plus-value) ÷ montant du projet (travaux − aide région), affiché jusqu'à 100 %. L'aide région n'y est pas comptée car elle est déjà déduite. La synthèse et l'e-mail de synthèse n'affichent plus la mensualité, mais le montant du projet.
+5. **Projet couvert** : (économies + aides CEE et région + plus-value) ÷ montant total du projet (travaux, sans déduire l'aide région), affiché jusqu'à 100 %. La synthèse et l'e-mail de synthèse affichent le montant total du projet et l'échéance du financement (calculée, elle, sur travaux − aide région).
 
 Les valeurs par défaut se règlent dans l'onglet Administration.
 
