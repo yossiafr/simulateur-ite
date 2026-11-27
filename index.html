@@ -459,7 +459,7 @@ body.tp .no-tp{display:none!important}
   #printRoot .dv{width:auto;padding:0;box-shadow:none}
   #printRoot .dv .foot{display:none}
 }
-@page devis{size:A4 portrait;margin:10mm 12mm 18mm}
+@page devis{size:A4 portrait;margin:12mm 14mm 18mm}
 @page rdvp{size:A4 portrait;margin:10mm 12mm 12mm}
 @media print{body.print-devis .modal-bg{display:none!important} #printRoot .rp{page:rdvp}}
 .rp{font:10pt/1.4 Arial,Helvetica,sans-serif;color:#1d2a17;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -1738,7 +1738,16 @@ function signPrint(){const {c,s}=signView(); pageCss(); document.getElementById(
 function fitSynthPrint(){document.querySelectorAll('#printRoot .synth-print').forEach(el=>{
   const m=document.createElement('div'); m.className='synth-print synth-measure'; m.innerHTML=el.innerHTML; document.body.appendChild(m);
   const h=m.scrollHeight; m.remove(); el.style.zoom=h>733?(733/h).toFixed(4):1})}
+// Marges de secours : Safari / iPhone ignorent les pages nommées (@page devis) et prenaient la page
+// par défaut (paysage, 8 mm). Pendant l'impression d'un devis, la page par défaut reçoit les mêmes marges.
+function pageSecours(on){
+  let s=document.getElementById('pageSecours');
+  if(!s){s=document.createElement('style'); s.id='pageSecours'; document.head.appendChild(s)}
+  s.textContent=on?'@media print{@page{size:A4 portrait;margin:12mm 14mm 18mm}}':'';
+}
+window.addEventListener('afterprint',()=>pageSecours(false));
 async function doPrint(title){
+  pageSecours(!!document.querySelector('#printRoot .dv'));
   fitSynthPrint(); document.body.classList.add('print-devis'); const old=document.title; document.title=title;
   await Promise.all([...document.querySelectorAll('#printRoot img')].map(i=>i.decode?i.decode().catch(()=>{}):0));
   setTimeout(()=>{window.print(); document.title=old; document.body.classList.remove('print-devis')},60);
