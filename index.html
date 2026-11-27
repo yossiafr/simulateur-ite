@@ -825,13 +825,15 @@ function compute(d){
   const taeg=taegCalc(capital,mensHA,duree,Math.max(1,diff));
   const forced=d.mensForce!==''&&d.mensForce!=null;
   const mens=forced?n(d.mensForce):mensAuto;
-  const ecoAuto=n(d.factureAn)*n(d.tauxEco)/100/12;
+  /* Fiches enregistrées pendant la baisse automatique (annulée) : le taux saisi est dans tauxEcoRef / tauxPVRef */
+  const tx=k=>d[k+'Ref']!=null&&d[k+'Ref']!==''?d[k+'Ref']:d[k];
+  const ecoAuto=n(d.factureAn)*n(tx('tauxEco'))/100/12;
   const ecoMens=d.ecoForce!==''&&d.ecoForce!=null?n(d.ecoForce):ecoAuto;
   const h=n(d.hausse)/100, mois=diff+duree;
   let ecoGlobale=0, ecoDiff=0;
   for(let m=0;m<mois;m++){const v=ecoMens*Math.pow(1+h,Math.floor(m/12));ecoGlobale+=v;if(m<diff)ecoDiff+=v;}
   const cee=ceeVal(d), aides=cee+region; /* l'aide région reste déduite du montant financé, mais compte dans les aides de la synthèse */
-  const pv=n(d.valeurBien)*n(d.tauxPV)/100;
+  const pv=n(d.valeurBien)*n(tx('tauxPV'))/100;
   const total=mens*duree;
   const ech=x=>mens>0?x/mens:0;
   const projet=travaux; /* montant total du projet, sans déduire l'aide région : base de la couverture */
@@ -874,6 +876,7 @@ function renderList(){
 /* ===== Formulaire ===== */
 function fillForm(){
   const c=cur(); if(!c) return;
+  for(const k of ['tauxEco','tauxPV']) if(c[k+'Ref']!=null){ if(c[k+'Ref']!=='') c[k]=c[k+'Ref']; delete c[k+'Ref'] }
   document.querySelectorAll('[data-k]').forEach(el=>{let v=c[el.dataset.k]??''; if(el.type==='datetime-local'&&/^\d{4}-\d{2}-\d{2}$/.test(v)) v+='T09:00'; el.value=v});
   if(isAdmin()){const s=document.getElementById('ownerSel');s.innerHTML=team.filter(p=>(p.actif&&p.role!=='telepro')||p.id===c._owner).map(p=>`<option value="${p.id}">${esc(p.nom||p.email)}${p.role==='admin'?' (admin)':p.role==='telepro'?' (télépro)':''}</option>`).join('');s.value=c._owner||me.id}
   updateHeader(); updateHint(); renderFoyer(); ceeHint(); regionHint(); travauxHint(); relHint(); const dw=document.getElementById('dblWarn'); dw.hidden=true; dw.innerHTML='';
