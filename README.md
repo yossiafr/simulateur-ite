@@ -39,6 +39,8 @@ Envoi du devis : la synthèse du projet (autofinancement) est jointe par défaut
 4. en dernier recours, l'étiquette **estimée** du bâtiment calculée par le CSTB (BDNB), signalée « Estimation, à confirmer » ; « Utiliser » ne reporte alors que l'étiquette.
 « Utiliser » remplit la fiche (étiquette, année, surface, énergie). Si `api/dpe.js` n'est pas encore en ligne, le bouton garde l'ancienne recherche ADEME directe. (Kelvin, demandé au départ, est payant et sans accès public.)
 
+**Simulateur de primes** (outil interne) : bouton « 🧮 Simulateur de primes » en haut de la fiche client (caché aux télépros). Questionnaire en 5 étapes (logement et ancienneté, code postal, surface habitable et niveaux ou surface de murs connue, personnes du foyer, revenu fiscal exact ou tranche) puis estimation prime CEE + aide région avec les tarifs de l'Administration. « Enregistrer dans la fiche » reporte les réponses (type, CP, surfaces, foyer, revenu fiscal ; sans revenu exact, la prime CEE calculée).
+
 ## Simulation DPE et déperditions (onglet DPE)
 
 Onglet « DPE » de chaque fiche (experts techniques et admin, masquable dans Administration › Onglets visibles). Il estime l'étiquette DPE avant et après l'ITE et la part des pertes de chaleur par zone : toiture, murs, plancher bas, fenêtres et portes, ponts thermiques, renouvellement d'air.
