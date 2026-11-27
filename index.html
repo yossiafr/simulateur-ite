@@ -1765,32 +1765,41 @@ function fitSynthPrint(){document.querySelectorAll('#printRoot .synth-print').fo
   const m=document.createElement('div'); m.className='synth-print synth-measure'; m.innerHTML=el.innerHTML; document.body.appendChild(m);
   const h=m.scrollHeight; m.remove(); el.style.zoom=h>733?(733/h).toFixed(4):1})}
 /* ===== Attestation éco-PTZ (espace admin) =====
-   Formulaire officiel vierge : ptz/annexe-2.1-vierge.pdf. Le tampon et la signature ne sont PAS dans le dépôt
-   (public) : l'admin les enregistre une fois, ils sont stockés dans la table Supabase ite_admin_docs, lisible
-   par les seuls administrateurs (voir ptz-tampon.sql). */
+   Formulaire officiel vierge : ptz/annexe-2.1-vierge.pdf ; tampon et signature : ptz/tampon-signature.png.
+   Facultatif : une autre image peut remplacer le tampon, stockée dans la table ite_admin_docs (ptz-tampon.sql). */
 const PTZ_PDF='ptz/annexe-2.1-vierge.pdf';
 let pdfLibReady=null;
 function loadPdfLib(){
   if(window.PDFLib) return Promise.resolve();
   return pdfLibReady||(pdfLibReady=(async()=>{for(const src of ['https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js','https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js']){try{await loadScript(src); if(window.PDFLib) return}catch(e){}} pdfLibReady=null; throw new Error('générateur PDF introuvable (connexion internet nécessaire)')})());
 }
-let PTZ_TAMPON; // undefined = pas encore lu, '' = aucun, sinon data:image/png
-async function ptzTamponGet(){
+let PTZ_TAMPON, PTZ_DEFAUT; // undefined = pas encore lu ; null = table absente ; '' = aucun ; sinon data:image
+const PTZ_TAMPON_FICHIER='ptz/tampon-signature.png'; // tampon intégré à l'appli (choix de Joseph, 27/11/2026)
+async function ptzTamponDb(){
   if(PTZ_TAMPON!==undefined) return PTZ_TAMPON;
+  if(MODE!=='cloud') return PTZ_TAMPON=null;
   const {data,error}=await sb.from('ite_admin_docs').select('data').eq('id','tampon').maybeSingle();
-  if(error){ if(/ite_admin_docs|relation|schema cache/i.test(error.message||'')) return null; throw error }
+  if(error){ if(/ite_admin_docs|relation|schema cache/i.test(error.message||'')) return PTZ_TAMPON=null; throw error }
   return PTZ_TAMPON=(data&&data.data)||'';
 }
+async function ptzTamponDefaut(){
+  if(PTZ_DEFAUT!==undefined) return PTZ_DEFAUT;
+  try{const r=await fetch(PTZ_TAMPON_FICHIER); if(!r.ok) throw 0; const b=await r.blob();
+    return PTZ_DEFAUT=await new Promise((ok,ko)=>{const f=new FileReader(); f.onload=()=>ok(f.result); f.onerror=ko; f.readAsDataURL(b)})}
+  catch(e){return PTZ_DEFAUT=''}
+}
+// Image enregistrée par l'admin si elle existe, sinon le tampon intégré.
+async function ptzTamponGet(){let t=''; try{t=await ptzTamponDb()}catch(e){} return t||await ptzTamponDefaut()}
 async function ptzTamponSet(url){
   const {error}=await sb.from('ite_admin_docs').upsert({id:'tampon',data:url,updated_at:new Date().toISOString()});
   if(error) throw error; PTZ_TAMPON=url;
 }
 async function ptzTamponUi(){
   const box=document.getElementById('ptzTampon'); box.innerHTML='Tampon et signature : lecture…';
-  let t; try{t=await ptzTamponGet()}catch(e){box.textContent='Tampon et signature indisponibles : '+e.message; return}
-  if(t===null){box.innerHTML='<span>Pour enregistrer le tampon et la signature, exécutez une fois le fichier <b>ptz-tampon.sql</b> dans Supabase (SQL Editor), puis rechargez la page. Le PDF peut être généré sans.</span>'; return}
-  box.innerHTML=(t?`<img src="${t}" alt="Tampon et signature"><span>Tampon et signature enregistrés</span>`:'<span><b>Aucun tampon enregistré.</b> Ajoutez l\'image (PNG ou JPG) du tampon avec la signature.</span>')+
-    `<label class="btn" style="cursor:pointer">${t?'Remplacer':'Ajouter l\'image'}<input id="ptzFile" type="file" accept="image/png,image/jpeg" hidden></label>`;
+  let db=null; try{db=await ptzTamponDb()}catch(e){}
+  const t=db||await ptzTamponDefaut();
+  box.innerHTML=(t?`<img src="${t}" alt="Tampon et signature"><span>${db?'Tampon et signature enregistrés':'Tampon et signature de C.E.F.'}</span>`:'<span><b>Aucun tampon disponible.</b></span>')+
+    (db!==null?`<label class="btn" style="cursor:pointer">${t?'Remplacer':'Ajouter l\'image'}<input id="ptzFile" type="file" accept="image/png,image/jpeg" hidden></label>`:'');
 }
 document.addEventListener('change',async e=>{
   if(e.target.id!=='ptzFile') return; const f=e.target.files&&e.target.files[0]; if(!f) return;
@@ -1850,7 +1859,7 @@ document.addEventListener('click',async e=>{
     const nom=('PTZ_'+[c.nom,c.prenom].filter(Boolean).join('_')).normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9_-]+/g,'_').toUpperCase()+'.pdf';
     const url=URL.createObjectURL(new Blob([out],{type:'application/pdf'})), a=document.createElement('a');
     a.href=url; a.download=nom; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),60000);
-    if(!tampon){msg.textContent='PDF généré sans tampon ni signature (aucune image enregistrée).'; msg.hidden=false} else toast('PDF éco-PTZ généré');
+    if(!tampon){msg.textContent='PDF généré sans tampon ni signature (image introuvable).'; msg.hidden=false} else toast('PDF éco-PTZ généré');
   }catch(err){msg.textContent='Génération impossible : '+err.message; msg.hidden=false}
   t.disabled=false; t.textContent='Générer le PDF';
 });
