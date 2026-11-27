@@ -39,6 +39,19 @@ Envoi du devis : la synthèse du projet (autofinancement) est jointe par défaut
 4. en dernier recours, l'étiquette **estimée** du bâtiment calculée par le CSTB (BDNB), signalée « Estimation, à confirmer » ; « Utiliser » ne reporte alors que l'étiquette.
 « Utiliser » remplit la fiche (étiquette, année, surface, énergie). Si `api/dpe.js` n'est pas encore en ligne, le bouton garde l'ancienne recherche ADEME directe. (Kelvin, demandé au départ, est payant et sans accès public.)
 
+## Simulation DPE et déperditions (onglet DPE)
+
+Onglet « DPE » de chaque fiche (experts techniques et admin, masquable dans Administration › Onglets visibles). Il estime l'étiquette DPE avant et après l'ITE et la part des pertes de chaleur par zone : toiture, murs, plancher bas, fenêtres et portes, ponts thermiques, renouvellement d'air.
+
+- Reprend la fiche : surface habitable, année, code postal (zone climatique), énergie, surface de murs à isoler.
+- Champs en plus, tous facultatifs (vide = valeur par défaut selon l'année) : niveaux, surface totale des murs, surface des fenêtres, état des murs, de la toiture et du plancher bas, menuiseries, ventilation, eau chaude, rendement (ou COP), résistance R de l'isolant ITE (3,7 par défaut).
+- Calcul simplifié inspiré de la méthode 3CL : déperditions U × surface par paroi, ponts thermiques, air ; besoin de chauffage selon les degrés-jours de la zone ; énergie primaire (électricité × 1,9 en 2026, × 1,7 à partir du 1er janvier 2027, bascule automatique) et CO₂ ; étiquette au double seuil énergie / climat.
+- Si le DPE noté dans la fiche diffère de l'estimation avant travaux, un message invite à ajuster les réglages.
+- « Utiliser X % comme Économie due à l'ITE » reporte la baisse des pertes calculée dans le taux d'économie de la fiche (l'économie mensuelle forcée reste prioritaire).
+- « Imprimer / PDF » : une page A4 avec les deux étiquettes, la répartition des pertes et les hypothèses.
+
+Estimation indicative, sans valeur réglementaire : elle ne remplace pas un DPE réalisé par un diagnostiqueur certifié (mention imprimée sur la page).
+
 ## Suivi commercial
 
 - **Tableau de bord** (onglet réservé à l'admin) : RDV, RDV honorés, ventes, taux de transformation, CA signé, panier moyen ; un tableau par télépro (RDV pris, confirmés, honorés, vendus, note moyenne), un par expert technique, et la comparaison note du télépro / vente. Période : semaine, mois, mois dernier, 3 mois, tout.
