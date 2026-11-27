@@ -655,7 +655,7 @@ body.pm .sheet-head h2{font-size:30px} body.pm .ribbon{font-size:22px} body.pm .
       <label>N° SIRET<div class="in"><input id="ptzSiret"></div></label>
       <label>Fait à<div class="in"><input id="ptzLieu"></div></label>
       <label>Le<div class="in"><input id="ptzDate" type="date"></div></label>
-      <label>Montant TTC pour le logement<div class="in"><input id="ptzMontant" inputmode="decimal"><span class="u">€</span></div></label>
+      <label>Montant pour le logement <small>(reste à charge)</small><div class="in"><input id="ptzMontant" inputmode="decimal"><span class="u">€</span></div></label>
     </div>
     <div class="ptz-tampon" id="ptzTampon"></div>
     <p class="hint" id="ptzMsg" hidden></p>
@@ -1814,7 +1814,7 @@ function ptzOpen(){
   v('ptzCp').value=c.cp||''; v('ptzVille').value=c.ville||'';
   v('ptzEnt').value=e.nomCourt||''; v('ptzSiret').value=String(e.siret||'').replace(/\s/g,'').replace(/^(\d{3})(\d{3})(\d{3})(\d{5})$/,'$1 $2 $3 $4');
   v('ptzLieu').value=e.villeSignature||''; v('ptzDate').value=new Date().toISOString().slice(0,10);
-  const mt=c.devis?devisTotals(c).ttc:n(c.coutTravaux); v('ptzMontant').value=mt?String(Math.round(mt*100)/100).replace('.',','):'';
+  const mt=c.devis?devisTotals(c).reste:n(c.coutTravaux); /* montant PTZ = reste à charge du devis */ v('ptzMontant').value=mt?String(Math.round(mt*100)/100).replace('.',','):'';
   v('ptzMsg').hidden=true; v('ptzModal').hidden=false; ptzTamponUi();
 }
 async function ptzPdf(f,tampon){
