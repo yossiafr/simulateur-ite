@@ -812,32 +812,7 @@ const n=v=>{const x=parseFloat(String(v).replace(',','.'));return isFinite(x)?x:
 /* TAEG (hors assurance facultative) : taux annuel i tel que capital = Σ mensualité / (1+i)^(t/12), t = mois de chaque échéance */
 function taegCalc(cap,m,duree,first){if(!(cap>0)||!(m>0)||!(duree>0)) return 0; const pv=i=>{let s=0; for(let k=0;k<duree;k++) s+=m/Math.pow(1+i,(first+k)/12); return s};
   let a=0,b=1; if(pv(a)<cap) return 0; for(let k=0;k<80;k++){const x=(a+b)/2; if(pv(x)>cap) a=x; else b=x} return (a+b)/2*100}
-/* Couverture au-delà de 100 % (demande de Joseph) : on baisse d'abord l'économie due à l'ITE (jusqu'à 23 % minimum),
-   puis la plus-value (jusqu'à 5 % minimum), juste ce qu'il faut pour revenir à 100 %. Les taux saisis dans la fiche ne changent pas. */
-const ECO_MIN=23, PV_MIN=5;
-/* Taux de départ : ceux saisis par l'expert (tauxEcoRef / tauxPVRef), la fiche affiche ensuite les taux retenus. */
-const tauxRef=(d,k)=>d[k+'Ref']!=null&&d[k+'Ref']!==''?n(d[k+'Ref']):n(d[k]);
 function compute(d){
-  const te0=tauxRef(d,'tauxEco'), tp0=tauxRef(d,'tauxPV'), r=compute0(Object.assign({},d,{tauxEco:te0,tauxPV:tp0})), base={tauxEcoEff:te0,tauxPVEff:tp0,ajuste:false,tauxEcoSaisi:te0,tauxPVSaisi:tp0};
-  if(!(r.ok&&r.couv>1)) return Object.assign(r,base);
-  let te=te0, tp=tp0, ex=r.ecoGlobale+r.aides+r.pv-r.projet;
-  const manuel=d.ecoForce!==''&&d.ecoForce!=null;
-  if(!manuel&&te>ECO_MIN&&r.ecoGlobale>0){const k=r.ecoGlobale/te, cut=Math.min(ex,k*(te-ECO_MIN)); te-=cut/k; ex-=cut}
-  if(ex>0.005&&tp>PV_MIN&&n(d.valeurBien)>0){const k=n(d.valeurBien)/100, cut=Math.min(ex,k*(tp-PV_MIN)); tp-=cut/k; ex-=cut}
-  /* Taux ronds (économie au %, plus-value au demi-%), arrondis vers le haut : le gain affiché est le vrai montant calculé,
-     un peu au-dessus du projet, et la couverture reste affichée à 100 %. */
-  if(te!==te0) te=Math.min(te0,Math.ceil(te-1e-9));
-  if(tp!==tp0) tp=Math.min(tp0,Math.ceil(tp*2-1e-9)/2);
-  if(te===te0&&tp===tp0) return Object.assign(r,base);
-  return Object.assign(compute0(Object.assign({},d,{tauxEco:te,tauxPV:tp})),base,{tauxEcoEff:te,tauxPVEff:tp,ajuste:true});
-}
-/* Écrit dans la fiche les taux retenus (économie ITE, plus-value), en gardant les taux saisis comme référence. */
-function syncTaux(c){if(!c) return false; let ch=false;
-  for(const k of ['tauxEco','tauxPV']) if(c[k+'Ref']==null||c[k+'Ref']===''){c[k+'Ref']=c[k]??''}
-  const r=compute(c), v={tauxEco:Math.round(r.tauxEcoEff*100)/100, tauxPV:Math.round(r.tauxPVEff*100)/100};
-  for(const k of ['tauxEco','tauxPV']){ if(c[k+'Ref']==='') continue; if(String(c[k])!==String(v[k])){c[k]=String(v[k]); ch=true} }
-  return ch}
-function compute0(d){
   const duree=Math.max(0,Math.round(n(d.duree))), diff=Math.max(0,Math.round(n(d.differe)));
   const region=regionVal(d), travaux=n(d.coutTravaux), capital=Math.max(0,travaux-region), ti=n(d.taux)/100/12;
   /* Méthode du prêteur (simulation Sofinco) : 1re échéance « diff » mois après le déblocage ; les intérêts courus au-delà
@@ -850,13 +825,15 @@ function compute0(d){
   const taeg=taegCalc(capital,mensHA,duree,Math.max(1,diff));
   const forced=d.mensForce!==''&&d.mensForce!=null;
   const mens=forced?n(d.mensForce):mensAuto;
-  const ecoAuto=n(d.factureAn)*n(d.tauxEco)/100/12;
+  /* Fiches enregistrées pendant la baisse automatique (annulée) : le taux saisi est dans tauxEcoRef / tauxPVRef */
+  const tx=k=>d[k+'Ref']!=null&&d[k+'Ref']!==''?d[k+'Ref']:d[k];
+  const ecoAuto=n(d.factureAn)*n(tx('tauxEco'))/100/12;
   const ecoMens=d.ecoForce!==''&&d.ecoForce!=null?n(d.ecoForce):ecoAuto;
   const h=n(d.hausse)/100, mois=diff+duree;
   let ecoGlobale=0, ecoDiff=0;
   for(let m=0;m<mois;m++){const v=ecoMens*Math.pow(1+h,Math.floor(m/12));ecoGlobale+=v;if(m<diff)ecoDiff+=v;}
   const cee=ceeVal(d), aides=cee+region; /* l'aide région reste déduite du montant financé, mais compte dans les aides de la synthèse */
-  const pv=n(d.valeurBien)*n(d.tauxPV)/100;
+  const pv=n(d.valeurBien)*n(tx('tauxPV'))/100;
   const total=mens*duree;
   const ech=x=>mens>0?x/mens:0;
   const projet=travaux; /* montant total du projet, sans déduire l'aide région : base de la couverture */
@@ -899,7 +876,7 @@ function renderList(){
 /* ===== Formulaire ===== */
 function fillForm(){
   const c=cur(); if(!c) return;
-  syncTaux(c);
+  for(const k of ['tauxEco','tauxPV']) if(c[k+'Ref']!=null){ if(c[k+'Ref']!=='') c[k]=c[k+'Ref']; delete c[k+'Ref'] }
   document.querySelectorAll('[data-k]').forEach(el=>{let v=c[el.dataset.k]??''; if(el.type==='datetime-local'&&/^\d{4}-\d{2}-\d{2}$/.test(v)) v+='T09:00'; el.value=v});
   if(isAdmin()){const s=document.getElementById('ownerSel');s.innerHTML=team.filter(p=>(p.actif&&p.role!=='telepro')||p.id===c._owner).map(p=>`<option value="${p.id}">${esc(p.nom||p.email)}${p.role==='admin'?' (admin)':p.role==='telepro'?' (télépro)':''}</option>`).join('');s.value=c._owner||me.id}
   updateHeader(); updateHint(); renderFoyer(); ceeHint(); regionHint(); travauxHint(); relHint(); const dw=document.getElementById('dblWarn'); dw.hidden=true; dw.innerHTML='';
@@ -913,20 +890,19 @@ function updateHeader(){
 function updateHint(){
   const r=compute(cur());
   document.getElementById('mensHint').textContent=r.capital>0?`Calcul auto à ${tx3(r.taux)} % sur ${eurc(r.capital)} financés${r.region?` (travaux ${eur(r.travaux)} − aide région ${eur(r.region)})`:''} : ${eurc(r.mensHA)} / mois × ${r.duree}${r.diff>1?`, 1ʳᵉ échéance ${r.diff} mois après la fin des travaux`:''} · TAEG ${tx2(r.taeg)} % · coût du crédit ${eurc(r.mensHA*r.duree-r.capital)}${r.assur?` · + assurance ${eurc(r.assur)} / mois, soit ${eurc(r.mensAuto)} / mois`:''}`:'Saisissez le montant des travaux pour calculer la mensualité';
-  document.getElementById('ecoHint').textContent=(r.ajuste?`Taux recalculés pour une couverture de 100 % : économie ${ech1(r.tauxEcoEff)} % (saisi ${ech1(r.tauxEcoSaisi)} %)${r.tauxPVEff!==r.tauxPVSaisi?`, plus-value ${ech1(r.tauxPVEff)} % (saisi ${ech1(r.tauxPVSaisi)} %)`:''}, minimums ${ECO_MIN} % et ${PV_MIN} %. `:'')+`Calcul auto : ${eur(r.ecoAuto)} / mois`+(r.mens>0?` · utilisé : ${eur(r.ecoMens)} soit ${pctf(r.partMens)} de la mensualité`:'');
+  document.getElementById('ecoHint').textContent=`Calcul auto : ${eur(r.ecoAuto)} / mois`+(r.mens>0?` · utilisé : ${eur(r.ecoMens)} soit ${pctf(r.partMens)} de la mensualité`:'');
 }
 document.getElementById('pane-form').addEventListener('input',e=>{
   if(e.target.dataset.crk){const c=cur(), x=(c.credits||[])[+e.target.dataset.cr]; if(x){x[e.target.dataset.crk]=e.target.value; c.updated=Date.now(); persist(c); renderFoyer()} return}
   const k=e.target.dataset.k; if(!k) return;
-  const c=cur(), old=c[k]; c[k]=e.target.value; if(k==='tauxEco'||k==='tauxPV') c[k+'Ref']=e.target.value; const auto=autoFiche(c,k,old); const tx=syncTaux(c); c.updated=Date.now(); persist(c);
-  if(tx) for(const id of ['tauxEco','tauxPV']){const el=document.getElementById(id); if(el&&el!==e.target) el.value=c[id]}
+  const c=cur(), old=c[k]; c[k]=e.target.value; const auto=autoFiche(c,k,old); c.updated=Date.now(); persist(c);
   if(auto&&(e.target.id!=='coutTravaux'||e.target.value==='')){const ct=document.getElementById('coutTravaux'); if(ct) ct.value=c.coutTravaux??''}
   if(['surfaceMurs','coutTravaux'].includes(k)) travauxHint();
   updateHeader(); updateHint(); renderList(); if(auto||['rfr','nbPers','cp','revM','revMme','coutTravaux','taux','duree','mensForce','differe','tauxAssur'].includes(k)) renderFoyer(); if(['rfr','nbPers','cp','surfaceMurs','cee'].includes(k)) ceeHint(); if(['surfaceMurs','aideRegion'].includes(k)) regionHint(); if(['dateRappel','statut'].includes(k)){relHint(); renderFilters()}
   if(!document.getElementById('pane-sheet').hidden) renderSheet();
 });
 document.getElementById('pane-form').addEventListener('submit',e=>e.preventDefault());
-document.getElementById('pane-form').addEventListener('change',e=>{if(['tauxEco','tauxPV'].includes(e.target.id)){const c=cur(); if(c) e.target.value=c[e.target.id]??''}if(['tel','adresse','cp'].includes(e.target.id)) setTimeout(checkDblFiche,300)});
+document.getElementById('pane-form').addEventListener('change',e=>{if(['tel','adresse','cp'].includes(e.target.id)) setTimeout(checkDblFiche,300)});
 
 /* ===== Synthèse ===== */
 function renderSheet(){document.getElementById('pane-sheet').innerHTML=sheetHtml(cur())}
@@ -967,7 +943,7 @@ function sheetHtml(c){
       </div>
       <div class="box">
         <h3>${ico('house')}Plus-value immobilière estimée</h3>
-        <div class="row"><span class="pv-badge num">+${ech1(r.tauxPVEff)} %</span><span style="font-size:12px;color:var(--muted)">en moyenne<br>(après ITE)*</span></div>
+        <div class="row"><span class="pv-badge num">+${ech1(n(c.tauxPV))} %</span><span style="font-size:12px;color:var(--muted)">en moyenne<br>(après ITE)*</span></div>
         <div class="row"><span>Sur un bien de ${eur(n(c.valeurBien))}</span><span class="val num">${eur(r.pv)}</span></div>
         <div class="cover"><span>Équivalent à</span><b class="num">${pctf(r.pPv)}</b><span>du projet</span></div>
       </div>
@@ -987,7 +963,7 @@ function sheetHtml(c){
         <span class="chip"><i class="seg-eco"></i>Économies <b class="num">${eur(r.ecoGlobale)}</b></span><span class="op">+</span>
         <span class="chip"><i class="seg-aid"></i>Aides <b class="num">${eur(r.aides)}</b></span><span class="op">+</span>
         <span class="chip"><i class="seg-pv"></i>Plus-value* <b class="num">${eur(r.pv)}</b></span><span class="op">=</span>
-        <span class="chip tot">${eur(gain)} <small>${r.couv>=1?'projet couvert à 100 %':'soit '+pctf(r.couvTotal)+' du montant du projet'}</small></span>
+        <span class="chip tot">${eur(gain)} <small>soit ${pctf(r.couvTotal)} du montant du projet</small></span>
       </div>
     </div>
 
@@ -995,7 +971,7 @@ function sheetHtml(c){
       ${r.region?`<div class="kv"><span>Montant financé (aide région déduite)</span><b class="num">${eur(r.capital)}</b></div>`:''}
       <div class="kv"><span>Échéance du financement</span><b class="num">${eurc(r.mens)} / mois × ${r.duree}</b></div>
       <div class="kv"><span>Facture chauffage actuelle</span><b class="num">${eur(n(c.factureAn))}/an</b></div>
-      <div class="kv"><span>Économie retenue</span><b class="num">${c.ecoForce!==''&&c.ecoForce!=null?'saisie manuelle':ech1(r.tauxEcoEff)+' %'}</b></div>
+      <div class="kv"><span>Économie retenue</span><b class="num">${c.ecoForce!==''&&c.ecoForce!=null?'saisie manuelle':ech1(n(c.tauxEco))+' %'}</b></div>
     </div>
     <p class="note">Simulation indicative et non contractuelle. Économies estimées à partir de la facture de chauffage déclarée${n(c.hausse)?` et d'une hausse de l'énergie de ${ech1(n(c.hausse))} %/an`:', à prix de l\'énergie constant'}. Montant des aides sous réserve d'éligibilité.</p>
   </div>`;
@@ -1152,7 +1128,7 @@ function mailHtml(c,r,sig){
   ${sect('Votre projet',row('Montant total de votre projet',eur(r.projet),true)+(r.region?row('Montant financé (aide région déduite)',eur(r.capital)):'')+row('Échéance du financement',eurc(r.mens)+' / mois sur '+r.duree+' mois',true)+row('Différé avant la 1<sup>re</sup> échéance',r.diff+' mois'))}
   ${sect('Économies de chauffage',row('Économie mensuelle estimée',eur(r.ecoMens),true)+row('Économie globale sur '+ech1((r.diff+r.duree)/12)+' ans',eur(r.ecoGlobale)),`Couvre environ <b>${pctf(r.pEco)}</b> du projet`)}
   ${sect('Aides (CEE + région)',row('Prime CEE',eur(r.cee))+(r.region?row('Aide région',eur(r.region)):''),`Couvre environ <b>${pctf(r.pAid)}</b> du projet`)}
-  ${sect('Plus-value immobilière estimée (+'+ech1(r.tauxPVEff)+' %)*',row('Sur un bien de '+eur(n(c.valeurBien)),eur(r.pv),true),`Équivalent à <b>${pctf(r.pPv)}</b> du projet, réalisable à la revente`)}
+  ${sect('Plus-value immobilière estimée (+'+ech1(n(c.tauxPV))+' %)*',row('Sur un bien de '+eur(n(c.valeurBien)),eur(r.pv),true),`Équivalent à <b>${pctf(r.pPv)}</b> du projet, réalisable à la revente`)}
   <tr><td style="padding:12px 0 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${D};border-radius:12px"><tr>
     <td style="${F}padding:16px 18px;color:#ffffff;font-size:14px">Votre projet est couvert à<div style="font-size:40px;font-weight:bold;color:#c9ea6a;line-height:1.1">${pctf(r.couvAff)}</div>
     ${pctf(r.couvCash)} par les économies d'énergie et les aides (${eur(r.ecoGlobale+r.aides)}), complété par la valorisation de votre patrimoine (${eur(r.pv)}*), pour un projet de ${eur(r.projet)}.</td></tr></table></td></tr>
