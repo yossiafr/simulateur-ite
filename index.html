@@ -38,6 +38,33 @@ html.clw body::before{content:"Chargement du devis…";display:block;text-align:
 .pz-res{background:linear-gradient(160deg,var(--green),var(--green-deep));color:#fff;border-radius:14px;padding:16px 18px}
 .pz-res .big{font:800 40px/1.05 var(--display);color:var(--lime)}
 .pz-res .ln{display:flex;justify-content:space-between;gap:10px;border-top:1px solid rgba(255,255,255,.25);padding-top:7px;margin-top:7px}
+/* Onglet DPE : simulation de l'étiquette et des déperditions par zone */
+.dpe-pane{display:flex;flex-direction:column;gap:14px}
+.dpe-res{border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.dpe-res h3{margin:0;font-size:15px}
+.dpe-two{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:12px;align-items:center}
+.dpe-arrow{font-size:28px;color:var(--green);font-weight:900}
+@media (max-width:640px){.dpe-two{grid-template-columns:minmax(0,1fr)}.dpe-arrow{transform:rotate(90deg);justify-self:center}}
+.dpe-eti{display:flex;flex-direction:column;gap:3px;min-width:0}
+.dpe-eti-h{font-weight:800;font-size:13px;margin-bottom:4px}
+.dpe-bar{width:var(--w);background:var(--c);color:var(--t,#fff);height:22px;display:flex;align-items:center;gap:8px;padding:0 16px 0 8px;clip-path:polygon(0 0,calc(100% - 9px) 0,100% 50%,calc(100% - 9px) 100%,0 100%);font-size:12px;opacity:.4;white-space:nowrap;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.dpe-bar.on{opacity:1;height:30px;min-width:max-content;font-size:12.5px;font-weight:700}
+.dpe-bar b{font-size:14px;min-width:12px}
+.dpe-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.dpe-kpis div{background:var(--surface-2);border-radius:12px;padding:10px 12px}.dpe-kpis span{display:block;font-size:12px;color:var(--muted)}.dpe-kpis b{font-size:16px}
+.dpe-stack{display:grid;grid-template-columns:90px minmax(0,1fr) 70px;gap:6px 10px;align-items:center;font-size:12.5px}
+.dpe-stack .tr{display:flex;height:24px;border-radius:6px;overflow:hidden;background:var(--surface-2);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.dpe-stack .tr span{height:100%}
+.dpe-tab{width:100%;border-collapse:collapse;font-size:13px}
+.dpe-tab th{text-align:left;font-size:12px;color:var(--muted);font-weight:600;padding:4px 6px;border-bottom:1px solid var(--line)}
+.dpe-tab td{padding:6px;border-bottom:1px dotted var(--line);vertical-align:middle}
+.dpe-tab td i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.dpe-cell{display:flex;align-items:center;gap:8px}.dpe-cell .pb{flex:1;height:8px;background:var(--surface-2);border-radius:4px;overflow:hidden;min-width:40px}.dpe-cell .pb span{display:block;height:100%;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.dpe-cell b{min-width:44px;text-align:right}
+.dpe-act{display:flex;flex-wrap:wrap;gap:8px}
+.dpe-res details{font-size:12.5px;color:var(--muted)}.dpe-res ul{margin:6px 0 0;padding-left:18px}
+.dpe-warn{background:#fff4e0;color:#7a4b00;border-radius:10px;padding:8px 10px;font-size:12.5px;margin:0}
+.dpe-rp .dpe-res{border:0;padding:0;gap:10px;margin-top:6px}.dpe-rp .dpe-kpis{grid-template-columns:repeat(4,1fr);gap:8px}.dpe-rp .dpe-kpis div{background:#eef5e6;padding:8px 10px}.dpe-rp .dpe-kpis b{font-size:12.5px}.dpe-rp .dpe-tab td{padding:4px 6px}.dpe-rp .dpe-res,.dpe-rp .dpe-res details{font-size:9pt}
 </style>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -557,6 +584,7 @@ body.pm .sheet-head h2{font-size:30px} body.pm .ribbon{font-size:22px} body.pm .
       <div class="tabs" role="tablist">
         <button role="tab" id="tab-form" aria-selected="true" aria-controls="pane-form" type="button">Fiche client</button>
         <button role="tab" class="no-tp" id="tab-sheet" aria-selected="false" aria-controls="pane-sheet" type="button">Synthèse</button>
+        <button role="tab" class="no-tp" id="tab-dpe" aria-selected="false" aria-controls="pane-dpe" type="button">DPE</button>
         <button role="tab" class="no-tp" id="tab-photos" aria-selected="false" aria-controls="pane-photos" type="button">Photos</button>
         <button role="tab" id="tab-carte" aria-selected="false" aria-controls="pane-carte" type="button">Carte</button>
         <button role="tab" class="no-tp" id="tab-devis" aria-selected="false" aria-controls="pane-devis" type="button">Devis</button>
@@ -646,6 +674,7 @@ body.pm .sheet-head h2{font-size:30px} body.pm .ribbon{font-size:22px} body.pm .
       </form>
 
       <section id="pane-sheet" hidden></section>
+      <section id="pane-dpe" hidden></section>
       <section id="pane-photos" hidden></section>
       <section id="pane-carte" hidden></section>
       <section id="pane-devis" hidden></section>
@@ -1027,6 +1056,147 @@ function ico(k){
   return `<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">${p}</svg>`;
 }
 
+/* ===== Simulation DPE et déperditions (onglet DPE) =====
+   Estimation indicative inspirée de la méthode 3CL-DPE 2021, simplifiée. Ce n'est pas un DPE réglementaire.
+   1. Déperditions par zone (W/K) : U × surface pour chaque paroi, ponts thermiques (ψ × longueur), air (0,34 × débit).
+   2. Besoin de chauffage = déperditions × degrés-jours de la zone climatique × 24 h × 0,8 (apports gratuits, intermittence).
+   3. Consommation = besoin ÷ rendement, + eau chaude + éclairage et auxiliaires, en énergie primaire et en CO₂.
+   4. Étiquette A à G : la plus mauvaise des classes énergie et climat (double seuil). */
+const DPE_ZONES={H1a:'02 14 27 59 60 61 62 75 76 77 78 80 91 92 93 95',H1b:'08 10 45 51 52 54 55 57 58 67 68 70 88 89 90',H1c:'01 03 05 15 19 21 23 25 38 39 42 43 63 69 71 73 74 87',
+  H2a:'22 29 35 50 56',H2b:'16 17 18 28 36 37 41 44 49 53 72 79 85 86',H2c:'09 12 24 31 32 33 40 46 47 64 65 81 82',H2d:'04 07 26 48 84',H3:'06 11 13 20 30 34 66 83'};
+const DPE_DJU={H1a:2450,H1b:2750,H1c:2600,H2a:2200,H2b:2250,H2c:2000,H2d:2150,H3:1600}; /* degrés-jours de chauffage moyens par zone */
+function dpeZone(cp){const d=String(cp||'').trim().slice(0,2); for(const z in DPE_ZONES) if(DPE_ZONES[z].split(' ').includes(d)) return z; return ''}
+/* Valeurs U par défaut (W/m²·K) selon la période de construction, quand l'état de la paroi n'est pas précisé */
+const DPE_PER=[1974,1977,1982,1988,2000,2005,2012,99999];
+const DPE_U={murs:[2.2,1,.8,.7,.5,.4,.36,.25],toit:[2.5,.5,.4,.3,.25,.23,.2,.14],pb:[1.6,.9,.8,.7,.45,.4,.36,.27]};
+const dpePer=a=>{a=n(a); return a>1700?DPE_PER.findIndex(p=>a<=p):0};
+const DPE_OPT={
+  dpeMurs:[['auto','Selon l\'année de construction'],['non','Non isolés',2.2],['iti_anc','Isolation intérieure ancienne (avant 2000)',.8],['iti','Isolation intérieure récente',.4],['ite','Déjà isolés par l\'extérieur',.3]],
+  dpeToit:[['auto','Selon l\'année de construction'],['non','Combles ou toiture non isolés',2.5],['faible','Isolation faible (moins de 10 cm)',.5],['moyen','Isolation de 10 à 20 cm',.3],['bon','Isolation récente (plus de 25 cm)',.15],['chauffe','Logement chauffé au-dessus',0]],
+  dpePb:[['auto','Selon l\'année de construction'],['vs','Vide sanitaire ou sous-sol non chauffé, non isolé',1.6],['tp','Terre-plein non isolé',.8],['iso','Plancher isolé',.35],['chauffe','Logement chauffé en dessous',0]],
+  dpeVitr:[['auto','Selon l\'année de construction'],['simple','Simple vitrage',4.5],['dv_anc','Double vitrage ancien (avant 2000)',2.9],['dv','Double vitrage récent',1.6],['tv','Triple vitrage',1]],
+  dpeVent:[['auto','Selon l\'année de construction'],['nat','Pas de VMC (aération naturelle)',.75],['vmc','VMC simple flux autoréglable',.55],['hygro','VMC hygroréglable',.4],['df','VMC double flux',.25]],
+  dpeEcs:[['auto','Selon le chauffage'],['chaud','Chaudière (même énergie que le chauffage)'],['elec','Ballon électrique'],['thermo','Chauffe-eau thermodynamique']]};
+const DPE_REND={'Gaz':.8,'Fioul':.75,'Propane':.8,'Électricité':.95,'Pompe à chaleur':2.6,'Bois / granulés':.7};
+const DPE_GES={'Gaz':.227,'Fioul':.324,'Propane':.272,'Bois / granulés':.03}; /* kg CO₂ par kWh consommé */
+const dpeElec=e=>e==='Électricité'||e==='Pompe à chaleur';
+/* Électricité en énergie primaire : 1,9 depuis le 1er janvier 2026, 1,7 à partir du 1er janvier 2027 */
+const cepElec=(d=new Date())=>d>=new Date(2027,0,1)?1.7:1.9;
+const DPE_CL=[['A',70,6],['B',110,11],['C',180,30],['D',250,50],['E',330,70],['F',420,100],['G',Infinity,Infinity]];
+const GES_COL={A:'#a4dbf8',B:'#8cb4d3',C:'#7792b1',D:'#606f8f',E:'#4d5271',F:'#393551',G:'#281b35'};
+function dpeClasse(ep,ges){const i=DPE_CL.findIndex(x=>ep<=x[1]), j=DPE_CL.findIndex(x=>ges<=x[2]); return {e:DPE_CL[i][0],g:DPE_CL[j][0],cl:DPE_CL[Math.max(i,j)][0]}}
+const DPE_POSTES=[['toit','Toiture / combles','#d35400'],['murs','Murs extérieurs','#2f8f1f'],['pb','Plancher bas','#8e6e53'],['fen','Fenêtres et portes','#2e86c1'],['pt','Ponts thermiques','#8e44ad'],['air','Renouvellement d\'air','#7f8c8d']];
+const dpeOpt=(c,k)=>DPE_OPT[k].find(x=>x[0]===(c[k]||'auto'))||DPE_OPT[k][0];
+const dpeNivAuto=c=>c.typeLogement==='Appartement'?1:(n(c.surface)>=120?2:1);
+function dpeSim(c){
+  const S=c?n(c.surface):0; if(!(S>0)) return null;
+  const per=dpePer(c.annee), an=n(c.annee), uOf=(k,t)=>{const o=dpeOpt(c,k); return o[0]==='auto'?DPE_U[t][per]:o[2]};
+  const niv=Math.max(1,Math.round(n(c.dpeNiv))||dpeNivAuto(c)), Hm=2.6*niv, emp=S/niv;
+  const sf=n(c.dpeSFen)>0?n(c.dpeSFen):Math.round(S*.15);
+  const sm=n(c.dpeSMurs)>0?n(c.dpeSMurs):n(c.surfaceMurs)>0?n(c.surfaceMurs):Math.round(Math.max(0,4*Math.sqrt(emp)*Hm*(c.typeLogement==='Maison mitoyenne'?.75:1)-sf));
+  const isoM=n(c.surfaceMurs)>0?Math.min(sm,n(c.surfaceMurs)):sm, part=sm>0?isoM/sm:0;
+  const Um=uOf('dpeMurs','murs'), Ut=uOf('dpeToit','toit'), Up=uOf('dpePb','pb');
+  const vit=c.dpeVitr&&c.dpeVitr!=='auto'?c.dpeVitr:(an>=2000?'dv':'dv_anc'), Uw=DPE_OPT.dpeVitr.find(x=>x[0]===vit)[2];
+  const ven=c.dpeVent&&c.dpeVent!=='auto'?c.dpeVent:(an>=1983?'vmc':'nat'), nv=DPE_OPT.dpeVent.find(x=>x[0]===ven)[2];
+  const R=n(c.dpeR)>0?n(c.dpeR):3.7, UmI=Um>0?1/(1/Um+R):0;
+  /* Ponts thermiques : liaisons murs / planchers (périmètre × nombre de planchers) et tour des menuiseries.
+     ψ ≈ 0,4 W/m·K murs non isolés, 0,6 avec isolation intérieure, 0,1 avec isolation extérieure (l'ITE les supprime presque). */
+  const mo=dpeOpt(c,'dpeMurs')[0], psi=mo==='ite'?.1:(mo==='iti'||mo==='iti_anc'||(mo==='auto'&&per>0))?.6:.4;
+  const lin=(Hm>0?(sm+sf)/Hm:0)*(niv+1), ptFen=.15*3*sf;
+  const base={toit:Ut*emp,pb:Up*emp,fen:Uw*sf,air:.34*nv*S*2.5};
+  const hAv=Object.assign({murs:Um*sm,pt:psi*lin+ptFen},base);
+  const hAp=Object.assign({murs:UmI*isoM+Um*(sm-isoM),pt:(psi*(1-part)+.1*part)*lin+ptFen},base);
+  const z=dpeZone(c.cp)||'H2b', dju=DPE_DJU[z], cep=cepElec();
+  let rd=n(c.dpeRend)>0?n(c.dpeRend):(DPE_REND[c.energie]||.8); if(rd>10) rd/=100; /* 80 saisi = 80 % */
+  const en=c.energie||'Gaz', el=dpeElec(en);
+  /* Eau chaude : besoin conventionnel selon la surface (nombre d'adultes équivalents) */
+  const nmax=S<30?1:S<70?1.75-.01875*(70-S):.025*S, nadeq=nmax<1.75?nmax:1.75+.3*(nmax-1.75), becs=951*nadeq;
+  let ecs=dpeOpt(c,'dpeEcs')[0]; if(ecs==='auto') ecs=['Gaz','Fioul','Propane'].includes(en)?'chaud':'elec';
+  const ecsRd={chaud:.7,elec:.85,thermo:2.2}[ecs], ecsEl=ecs!=='chaud', ecsEF=becs/ecsRd;
+  const ecsEP=ecsEF*(ecsEl?cep:1), ecsGES=ecsEF*(ecsEl?.065:(DPE_GES[en]||.227));
+  const auxEF=3*S; /* éclairage et auxiliaires (pompes, ventilation) */
+  const bilan=h=>{const tot=Object.values(h).reduce((a,b)=>a+b,0), bch=tot*dju*.024*.8, chEF=bch/rd;
+    const ep=(chEF*(el?cep:1)+ecsEP+auxEF*cep)/S, ges=(chEF*(el?.079:(DPE_GES[en]||.227))+ecsGES+auxEF*.064)/S;
+    return {h,tot,bch,chEF,ep,ges,cls:dpeClasse(ep,ges)}};
+  const avant=bilan(hAv), apres=bilan(hAp);
+  return {avant,apres,gain:avant.tot>0?1-apres.tot/avant.tot:0,S,niv,emp,sf,sm,isoM,Um,UmI,Ut,Up,Uw,nv,vit,ven,R,z,dju,cep,rd,en,ecs,zoneAuto:!dpeZone(c.cp)};
+}
+const nf0=v=>Math.round(v||0).toLocaleString('fr-FR');
+function dpeEtiq(x,tit){
+  return `<div class="dpe-eti"><div class="dpe-eti-h">${tit}</div>${DPE_CL.map(([l],i)=>{const on=l===x.cls.cl;
+    return `<div class="dpe-bar${on?' on':''}" style="--w:${30+i*9}%;--c:${DPE_COL[l]};--t:${'CDE'.includes(l)?'#1d2a17':'#fff'}"><b>${l}</b>${on?`<span class="num">${nf0(x.ep)} kWh/m²/an · ${nf0(x.ges)} kg CO₂/m²/an</span>`:''}</div>`}).join('')}</div>`}
+function dpeBody(s,c,print){
+  const av=s.avant, ap=s.apres, rows=DPE_POSTES.slice().sort((a,b)=>av.h[b[0]]-av.h[a[0]]);
+  const w=v=>(av.tot>0?Math.max(0,v)/av.tot*100:0).toFixed(2)+'%';
+  const stack=x=>`<div class="tr">${rows.map(([k,l,col])=>x.h[k]>0?`<span style="width:${w(x.h[k])};background:${col}" title="${esc(l)}"></span>`:'').join('')}</div>`;
+  const pc=(v,t)=>t>0?pctf(v/t):'0 %';
+  const g=Math.round(s.gain*100);
+  return `<div class="dpe-res">
+    <div class="dpe-two">${dpeEtiq(av,'Avant travaux (estimation)')}<div class="dpe-arrow" aria-hidden="true">→</div>${dpeEtiq(ap,'Après isolation par l\'extérieur (estimation)')}</div>
+    <div class="dpe-kpis">
+      <div><span>Pertes de chaleur</span><b class="num">− ${g} %</b></div>
+      <div><span>Énergie primaire</span><b class="num">${nf0(av.ep)} → ${nf0(ap.ep)} kWh/m²/an</b></div>
+      <div><span>Émissions</span><b class="num">${nf0(av.ges)} → ${nf0(ap.ges)} kg CO₂/m²/an</b></div>
+      <div><span>Chauffage consommé</span><b class="num">${nf0(av.chEF)} → ${nf0(ap.chEF)} kWh/an</b></div>
+    </div>
+    <h3>Où part la chaleur ?</h3>
+    <div class="dpe-stack"><span>Avant</span>${stack(av)}<b class="num">100 %</b><span>Après ITE</span>${stack(ap)}<b class="num">${pc(ap.tot,av.tot)}</b></div>
+    <table class="dpe-tab"><thead><tr><th>Zone de la maison</th><th>Avant travaux</th><th>Après ITE</th></tr></thead><tbody>
+      ${rows.map(([k,l,col])=>`<tr><td><i style="background:${col}"></i>${esc(l)}</td>
+        <td><div class="dpe-cell"><div class="pb"><span style="width:${w(av.h[k])};background:${col}"></span></div><b class="num">${pc(av.h[k],av.tot)}</b></div></td>
+        <td><div class="dpe-cell"><div class="pb"><span style="width:${w(ap.h[k])};background:${col}"></span></div><b class="num">${pc(ap.h[k],ap.tot)}</b></div></td></tr>`).join('')}
+    </tbody></table>
+    <p class="hint" style="margin:0">Pourcentages : part de chaque zone dans les pertes de chaleur du logement, avant puis après travaux. Les barres sont à la même échelle : la baisse de la barre « Après ITE » montre les pertes évitées.</p>
+    ${print?'':`<div class="dpe-act"><button class="btn primary small" type="button" data-dpe="eco">Utiliser ${g} % comme « Économie due à l'ITE »</button><button class="btn small" type="button" data-dpe="print">Imprimer / PDF</button></div>`}
+    <details ${print?'open':''}><summary>Hypothèses du calcul</summary><ul>
+      <li>Zone climatique ${s.z}${s.zoneAuto?' (par défaut : code postal absent ou hors métropole)':` (code postal ${esc(c.cp)})`}, ${nf0(s.dju)} degrés-jours de chauffage.</li>
+      <li>Murs : U ${tx2(s.Um)} → ${tx2(s.UmI)} W/m²·K, isolant R = ${ech1(s.R)} m²·K/W sur ${nf0(s.isoM)} m² (${nf0(s.sm)} m² de murs au total).</li>
+      <li>Toiture U ${tx2(s.Ut)}, plancher bas U ${tx2(s.Up)} sur ${nf0(s.emp)} m² chacun · menuiseries U ${tx2(s.Uw)} sur ${nf0(s.sf)} m² · ${s.niv} niveau${s.niv>1?'x':''}.</li>
+      <li>Ventilation et infiltrations : ${ech1(s.nv)} volume par heure.</li>
+      <li>Chauffage : ${esc(s.en)}, ${s.en==='Pompe à chaleur'?'COP '+ech1(s.rd):'rendement '+pctf(s.rd)} · eau chaude : ${esc((DPE_OPT.dpeEcs.find(x=>x[0]===s.ecs)||[])[1]||'')} · éclairage et auxiliaires : 3 kWh/m²/an.</li>
+      <li>Électricité comptée ${ech1(s.cep)} fois en énergie primaire (${s.cep===1.9?'valeur en vigueur en 2026, elle passe à 1,7 le 1er janvier 2027':'valeur en vigueur depuis le 1er janvier 2027'}).</li>
+      <li>Étiquette : la plus mauvaise des classes énergie (${av.cls.e} → ${ap.cls.e}) et climat (${av.cls.g} → ${ap.cls.g}).</li></ul></details>
+    <p class="note" style="margin:0;font-size:12px;color:var(--muted)">Estimation indicative et non contractuelle, établie par une méthode simplifiée inspirée du DPE (méthode 3CL). Elle ne remplace pas un DPE réalisé par un diagnostiqueur certifié et n'a pas de valeur réglementaire.</p>
+  </div>`}
+function renderDpe(){const c=cur(), pane=document.getElementById('pane-dpe'); if(!c||!pane) return;
+  const sel=(k,l)=>`<label>${l}<div class="in"><select data-dk="${k}">${DPE_OPT[k].map(([v,t])=>`<option value="${v}" ${(c[k]||'auto')===v?'selected':''}>${esc(t)}</option>`).join('')}</select></div></label>`;
+  const num=(k,l,u,st)=>`<label>${l}<div class="in"><input data-dk="${k}" type="number" min="0" step="${st||1}" value="${esc(c[k]??'')}" placeholder="auto">${u?`<span class="u">${u}</span>`:''}</div></label>`;
+  pane.innerHTML=`<div class="dpe-pane"><fieldset><legend>Simulation DPE et déperditions</legend>
+    <p class="hint" style="margin:0 0 10px">Reprend la fiche client (surface habitable, année, code postal, énergie, murs à isoler). Un champ vide prend une valeur par défaut selon l'année de construction : ajustez avec ce que vous constatez sur place.</p>
+    <div id="dpeFiche" style="margin:0 0 10px"></div>
+    <div class="fields">
+      ${num('dpeNiv','Niveaux chauffés','',1)}${num('dpeSMurs','Surface totale des murs extérieurs <small>hors fenêtres</small>','m²')}
+      ${num('dpeSFen','Surface des fenêtres et portes','m²')}${sel('dpeVitr','Menuiseries')}
+      ${sel('dpeMurs','Murs avant travaux')}${sel('dpeToit','Toiture / combles')}
+      ${sel('dpePb','Plancher bas')}${sel('dpeVent','Ventilation')}
+      ${sel('dpeEcs','Eau chaude sanitaire')}${num('dpeRend','Rendement du chauffage <small>% ou COP d\'une PAC</small>','',0.05)}
+      ${num('dpeR','Isolant posé en ITE <small>résistance thermique R</small>','m²·K/W',0.05)}
+    </div></fieldset><div id="dpeOut"></div></div>`;
+  dpeOut()}
+function dpeOut(){const c=cur(), out=document.getElementById('dpeOut'); if(!c||!out) return; const s=dpeSim(c);
+  const fiche=document.getElementById('dpeFiche');
+  if(fiche) fiche.innerHTML=`<p class="hint" style="margin:0">Fiche : ${esc([n(c.surface)>0?c.surface+' m²':'surface habitable à saisir',c.annee?'construit en '+c.annee:'année inconnue',c.cp?c.cp+(s?' (zone '+s.z+')':''):'code postal à saisir',c.energie,n(c.surfaceMurs)>0?c.surfaceMurs+' m² de murs à isoler':''].filter(Boolean).join(' · '))}</p>`
+    +(s&&c.dpe&&c.dpe!==s.avant.cls.cl?`<p class="dpe-warn" style="margin-top:6px">Le DPE actuel noté dans la fiche est ${esc(c.dpe)}, l'estimation donne ${s.avant.cls.cl} : ajustez l'état des parois, la ventilation ou le rendement pour vous en rapprocher.</p>`:'')
+    +(s&&s.S<40?'<p class="dpe-warn" style="margin-top:6px">Logement de moins de 40 m² : le DPE officiel applique des seuils adaptés, non repris ici.</p>':'');
+  if(s){const ph={dpeNiv:s.niv,dpeSMurs:s.sm,dpeSFen:s.sf,dpeRend:s.en==='Pompe à chaleur'?s.rd:Math.round(s.rd*100),dpeR:s.R};
+    document.querySelectorAll('#pane-dpe input[data-dk]').forEach(el=>{const v=ph[el.dataset.dk]; if(v!=null) el.placeholder='auto : '+String(v).replace('.',',')})}
+  out.innerHTML=s?dpeBody(s,c,false):'<div class="dpe-res"><p class="hint" style="margin:0">Saisissez la surface habitable dans la fiche client pour lancer la simulation.</p></div>'}
+function dpePrint(c){const s=dpeSim(c); if(!s){toast('Saisissez la surface habitable dans la fiche'); return}
+  const adr=[c.adresse,[c.cp,c.ville].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+  const lg=[c.typeLogement,n(c.surface)>0?c.surface+' m²':'',c.annee?'construit en '+c.annee:'',c.energie].filter(Boolean).join(' · ');
+  document.getElementById('printRoot').innerHTML=`<div class="rp dpe-rp">
+    <div class="rp-top"><img src="${LOGO_SRC}" alt=""><h1>SIMULATION DPE<small>Déperditions de chaleur avant et après isolation par l'extérieur</small></h1></div>
+    <div class="rp-client"><div><h2>${esc(fullName(c))}</h2><p>${esc(adr)}</p><p>${esc(lg)}</p></div></div>
+    ${dpeBody(s,c,true)}
+    <div class="rp-foot">Étude du ${new Date().toLocaleDateString('fr-FR')}</div></div>`;
+  doPrint('Simulation DPE '+fullName(c))}
+document.getElementById('pane-dpe').addEventListener('input',e=>{const k=e.target.dataset.dk; if(!k) return; const c=cur(); if(!c) return;
+  c[k]=e.target.value; c.updated=Date.now(); persist(c); updateHeader(); dpeOut()});
+document.getElementById('pane-dpe').addEventListener('click',e=>{const b=e.target.closest('[data-dpe]'); if(!b) return; const c=cur(), s=dpeSim(c); if(!s) return;
+  if(b.dataset.dpe==='print') return dpePrint(c);
+  if(b.dataset.dpe==='eco'){const v=Math.round(s.gain*100); c.tauxEco=String(v); c.updated=Date.now(); persist(c); updateHeader(); renderList();
+    toast(`Économie due à l'ITE réglée à ${v} % dans la fiche`+(c.ecoForce!==''&&c.ecoForce!=null?' (l\'économie mensuelle forcée reste prioritaire)':''))}});
+
 /* ===== Navigation ===== */
 
 
@@ -1118,8 +1288,8 @@ function foldList(on){const a=document.querySelector('aside.list'), b=document.g
   const f=matchMedia('(max-width:900px)').matches&&on, was=a.classList.contains('folded'); a.classList.toggle('folded',f); b.setAttribute('aria-expanded',String(!f)); b.textContent=f?'Changer de client ▾':'Fermer la liste ▴';
   if(f&&!was&&foldList.k) a.scrollIntoView({block:'start'}); foldList.k=1}
 document.addEventListener('click',e=>{if(e.target&&e.target.id==='listToggle'){const a=document.querySelector('aside.list'); foldList(!a.classList.contains('folded'))}});
-function select(id){currentId=id; foldList(true); fillForm(); renderList(); if(!document.getElementById('pane-sheet').hidden) renderSheet(); if(!document.getElementById('pane-devis').hidden) renderDevis(); phSel=null; phDraft=[]; phView='photo'; if(!document.getElementById('pane-photos').hidden) renderPhotos(); if(!document.getElementById('pane-carte').hidden) renderCarte(); if(!document.getElementById('pane-dossier').hidden) renderDossier(); resetDel();}
-const TABS_OPT=[['sheet','Synthèse'],['photos','Photos'],['carte','Carte'],['devis','Devis'],['dossier','Dossier'],['agenda','Agenda']];
+function select(id){currentId=id; foldList(true); fillForm(); renderList(); if(!document.getElementById('pane-sheet').hidden) renderSheet(); if(!document.getElementById('pane-dpe').hidden) renderDpe(); if(!document.getElementById('pane-devis').hidden) renderDevis(); phSel=null; phDraft=[]; phView='photo'; if(!document.getElementById('pane-photos').hidden) renderPhotos(); if(!document.getElementById('pane-carte').hidden) renderCarte(); if(!document.getElementById('pane-dossier').hidden) renderDossier(); resetDel();}
+const TABS_OPT=[['sheet','Synthèse'],['dpe','DPE'],['photos','Photos'],['carte','Carte'],['devis','Devis'],['dossier','Dossier'],['agenda','Agenda']];
 const TABS_TP=['carte','agenda'];
 function tabsOff(role){role=role||(profile&&profile.role); if(MODE!=='cloud'||!role||role==='admin') return []; const o=((CFG.defaults||{}).onglets)||{}; return Array.isArray(o[role])?o[role]:[]}
 function applyTabs(){const off=tabsOff(); TABS_OPT.forEach(([k])=>document.getElementById('tab-'+k).classList.toggle('tab-off',off.includes(k)));
@@ -1127,10 +1297,11 @@ function applyTabs(){const off=tabsOff(); TABS_OPT.forEach(([k])=>document.getEl
   const on=document.querySelector('.tabs [role=tab][aria-selected=true]'); if(on&&off.includes(on.id.slice(4))) setTab('form')}
 function setTab(t){
   if(tabsOff().includes(t)) t='form';
-  if(isTp()&&['sheet','photos','devis','admin','dossier','dash'].includes(t)) t='form';
+  if(isTp()&&['sheet','dpe','photos','devis','admin','dossier','dash'].includes(t)) t='form';
   if(t==='dash'&&!dashOk()) t='form';
-  ['form','sheet','photos','carte','devis','dossier','agenda','dash','admin'].forEach(k=>{document.getElementById('tab-'+k).setAttribute('aria-selected',k===t);document.getElementById('pane-'+k).hidden=k!==t});
+  ['form','sheet','dpe','photos','carte','devis','dossier','agenda','dash','admin'].forEach(k=>{document.getElementById('tab-'+k).setAttribute('aria-selected',k===t);document.getElementById('pane-'+k).hidden=k!==t});
   if(t==='sheet') renderSheet();
+  if(t==='dpe') renderDpe();
   if(t==='admin') renderAdmin();
   if(t==='devis') renderDevis();
   if(t==='photos') renderPhotos();
@@ -1149,6 +1320,7 @@ document.getElementById('tab-dash').onclick=()=>setTab('dash');
 document.getElementById('tab-admin').onclick=()=>setTab('admin');
 document.getElementById('tab-form').onclick=()=>setTab('form');
 document.getElementById('tab-sheet').onclick=()=>setTab('sheet');
+document.getElementById('tab-dpe').onclick=()=>setTab('dpe');
 document.getElementById('clientList').addEventListener('click',e=>{const b=e.target.closest('[data-id]'); if(b) select(b.dataset.id)});
 document.getElementById('filters').addEventListener('click',e=>{const b=e.target.closest('[data-f]'); if(!b) return; filter=b.dataset.f; renderFilters(); renderList()});
 document.getElementById('search').addEventListener('input',renderList);
