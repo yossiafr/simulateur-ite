@@ -451,6 +451,8 @@ body.tp .no-tp{display:none!important}
 .ag-resb{display:flex;flex-wrap:wrap;gap:6px}.ag-resb button{border:2px solid color-mix(in srgb,var(--c) 40%,transparent);background:var(--surface);color:var(--c);border-radius:999px;padding:7px 12px;font-weight:700;cursor:pointer}
 .ag-resb button.on{background:var(--c);color:#fff;border-color:var(--c)}
 .modal textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--bg);color:var(--fg);font:inherit;resize:vertical}
+.ptz-tampon{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:10px 0;padding:10px 12px;border:1px dashed var(--line);border-radius:10px}
+.ptz-tampon img{max-height:64px;max-width:200px;background:#fff;border-radius:6px}
 #printRoot{display:none}
 @media print{
   body.print-devis .wrap, body.print-devis .toast{display:none!important}
@@ -638,6 +640,29 @@ body.pm .sheet-head h2{font-size:30px} body.pm .ribbon{font-size:22px} body.pm .
       <section id="pane-dash" hidden></section>
       <section id="pane-admin" hidden></section>
     </main>
+  </div>
+</div>
+<div class="modal-bg" id="ptzModal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="ptzTitle">
+    <h2 id="ptzTitle">Attestation éco-PTZ (formulaire type entreprise)</h2>
+    <p class="hint">Remplit la page « Action b) Isolation thermique des murs » du formulaire officiel (Annexe 2.1, applicable au 1er juillet 2025), avec le tampon et la signature de l'entreprise. Les autres pages restent vierges.</p>
+    <div class="fields">
+      <label>N°<div class="in"><input id="ptzNum"></div></label>
+      <label>Voie<div class="in"><input id="ptzVoie"></div></label>
+      <label>Code postal<div class="in"><input id="ptzCp" inputmode="numeric"></div></label>
+      <label>Ville<div class="in"><input id="ptzVille"></div></label>
+      <label>Nom de l'entreprise<div class="in"><input id="ptzEnt"></div></label>
+      <label>N° SIRET<div class="in"><input id="ptzSiret"></div></label>
+      <label>Fait à<div class="in"><input id="ptzLieu"></div></label>
+      <label>Le<div class="in"><input id="ptzDate" type="date"></div></label>
+      <label>Montant TTC pour le logement<div class="in"><input id="ptzMontant" inputmode="decimal"><span class="u">€</span></div></label>
+    </div>
+    <div class="ptz-tampon" id="ptzTampon"></div>
+    <p class="hint" id="ptzMsg" hidden></p>
+    <div class="acts">
+      <button class="btn" id="ptzClose" type="button">Fermer</button>
+      <button class="btn primary" id="ptzGo" type="button">Générer le PDF</button>
+    </div>
   </div>
 </div>
 <div class="modal-bg" id="mailModal" hidden>
@@ -1261,7 +1286,7 @@ Les raccordements et finitions en tête d'ITE seront réalisés avec une épaiss
 
 En cas d'indisponibilité d'un matériau ou produit prévu au devis, celui-ci pourra être remplacé par un produit équivalent, présentant des caractéristiques techniques, performances et qualités similaires ou supérieures.`;
 const ENT_DEFAULT={
-  nomCourt:'C.E.F.', representant:'LE GOFF SAVY', siret:'88484037200020', rge:'E-E184755', rgeDebut:'01/01/2021', rgeFin:'19/11/2027',
+  nomCourt:'C.E.F.', villeSignature:'Saint-Mandé', representant:'LE GOFF SAVY', siret:'88484037200020', rge:'E-E184755', rgeDebut:'01/01/2021', rgeFin:'19/11/2027',
   prefixeClient:'CEF', prochainNumero:1,
   marque:'HIRSCH ISOLATION', reference:'GRAPHIPAN ITETH 32 120MM', epaisseur:'120', resistance:'3,85', acermi:'12/081/795',
   prixIsolant:145, prixMO:100, ceeBJ:14, ceeVR:12, regionM2:40, tva:5.5, modePaiement:'Chèque, Virement, Financement',
@@ -1270,7 +1295,7 @@ const ENT_DEFAULT={
   pied1:'C.E.F. – 14 Avenue du Général de Gaulle, 94160 SAINT MANDE – contact@compagnons-ecologiques.fr – 01 43 68 76 01 S.A.S au capital de 51 000,00 €',
   pied2:'SIRET 884 840 372 000 20 – APE 4329A – TVA FR19 884 840 372 Assurance Décennale Axa France n°10699861904 – RGE E184755'
 };
-const ENT_FIELDS=[['nomCourt','Nom court (C.E.F.)'],['representant','Représentant'],['siret','SIRET (bloc opération)'],['rge','N° certificat RGE'],['rgeDebut','RGE attribué le'],['rgeFin','RGE valable jusqu\'au'],
+const ENT_FIELDS=[['nomCourt','Nom court (C.E.F.)'],['villeSignature','Ville de signature (« Fait à »)'],['representant','Représentant'],['siret','SIRET (bloc opération)'],['rge','N° certificat RGE'],['rgeDebut','RGE attribué le'],['rgeFin','RGE valable jusqu\'au'],
   ['prefixeClient','Préfixe n° client'],['prochainNumero','Prochain n° de devis'],['marque','Marque isolant'],['reference','Référence isolant'],['epaisseur','Épaisseur (mm)'],['resistance','Résistance R (m².K/W)'],['acermi','Certification ACERMI'],
   ['prixIsolant','Prix isolant TTC / m²'],['prixMO','Prix main d\'œuvre TTC / m²'],['tva','TVA (%)'],['modePaiement','Mode de paiement'],['mentionAides','Mention aides locales'],['termesCee','Termes CEE ({prime} = montant)'],['pied1','Pied de page, ligne 1'],['pied2','Pied de page, ligne 2']];
 function ent(){const e=MODE==='cloud'?(CFG.defaults.entreprise||{}):(getSet().entreprise||{});const r=Object.assign({},ENT_DEFAULT,e);if(/^\s*ch[eè]que\s*,\s*virement\s*$/i.test(r.modePaiement||''))r.modePaiement=ENT_DEFAULT.modePaiement;if(e.regionM2==null||e.regionM2==='')r.regionM2=ENT_DEFAULT.regionM2;return r}
@@ -1384,6 +1409,7 @@ function renderDevis(){
   pane.innerHTML=`<div class="dv-edit">
    <div class="dv-actions"><button class="btn primary local-only" id="dvPrint" type="button">Imprimer / PDF du devis</button>
      <button class="btn" id="dvSync" type="button">Reprendre les coordonnées de la fiche</button>
+     ${isAdmin()?'<button class="btn" id="dvPtz" type="button">Attestation éco-PTZ</button>':''}
      <span class="sp" id="dvDelWrap"><button class="btn danger" id="dvDel" type="button">Supprimer le devis</button></span></div>
    <fieldset class="sig-box"><legend>Signature électronique du client</legend>${sigBlockHtml(c)}</fieldset>
    <div class="grid">
@@ -1738,6 +1764,98 @@ function signPrint(){const {c,s}=signView(); pageCss(); document.getElementById(
 function fitSynthPrint(){document.querySelectorAll('#printRoot .synth-print').forEach(el=>{
   const m=document.createElement('div'); m.className='synth-print synth-measure'; m.innerHTML=el.innerHTML; document.body.appendChild(m);
   const h=m.scrollHeight; m.remove(); el.style.zoom=h>733?(733/h).toFixed(4):1})}
+/* ===== Attestation éco-PTZ (espace admin) =====
+   Formulaire officiel vierge : ptz/annexe-2.1-vierge.pdf. Le tampon et la signature ne sont PAS dans le dépôt
+   (public) : l'admin les enregistre une fois, ils sont stockés dans la table Supabase ite_admin_docs, lisible
+   par les seuls administrateurs (voir ptz-tampon.sql). */
+const PTZ_PDF='ptz/annexe-2.1-vierge.pdf';
+let pdfLibReady=null;
+function loadPdfLib(){
+  if(window.PDFLib) return Promise.resolve();
+  return pdfLibReady||(pdfLibReady=(async()=>{for(const src of ['https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js','https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js']){try{await loadScript(src); if(window.PDFLib) return}catch(e){}} pdfLibReady=null; throw new Error('générateur PDF introuvable (connexion internet nécessaire)')})());
+}
+let PTZ_TAMPON; // undefined = pas encore lu, '' = aucun, sinon data:image/png
+async function ptzTamponGet(){
+  if(PTZ_TAMPON!==undefined) return PTZ_TAMPON;
+  const {data,error}=await sb.from('ite_admin_docs').select('data').eq('id','tampon').maybeSingle();
+  if(error){ if(/ite_admin_docs|relation|schema cache/i.test(error.message||'')) return null; throw error }
+  return PTZ_TAMPON=(data&&data.data)||'';
+}
+async function ptzTamponSet(url){
+  const {error}=await sb.from('ite_admin_docs').upsert({id:'tampon',data:url,updated_at:new Date().toISOString()});
+  if(error) throw error; PTZ_TAMPON=url;
+}
+async function ptzTamponUi(){
+  const box=document.getElementById('ptzTampon'); box.innerHTML='Tampon et signature : lecture…';
+  let t; try{t=await ptzTamponGet()}catch(e){box.textContent='Tampon et signature indisponibles : '+e.message; return}
+  if(t===null){box.innerHTML='<span>Pour enregistrer le tampon et la signature, exécutez une fois le fichier <b>ptz-tampon.sql</b> dans Supabase (SQL Editor), puis rechargez la page. Le PDF peut être généré sans.</span>'; return}
+  box.innerHTML=(t?`<img src="${t}" alt="Tampon et signature"><span>Tampon et signature enregistrés</span>`:'<span><b>Aucun tampon enregistré.</b> Ajoutez l\'image (PNG ou JPG) du tampon avec la signature.</span>')+
+    `<label class="btn" style="cursor:pointer">${t?'Remplacer':'Ajouter l\'image'}<input id="ptzFile" type="file" accept="image/png,image/jpeg" hidden></label>`;
+}
+document.addEventListener('change',async e=>{
+  if(e.target.id!=='ptzFile') return; const f=e.target.files&&e.target.files[0]; if(!f) return;
+  if(f.size>1.5e6) return toast('Image trop lourde (1,5 Mo maximum)');
+  const url=await new Promise((ok,ko)=>{const r=new FileReader(); r.onload=()=>ok(r.result); r.onerror=ko; r.readAsDataURL(f)});
+  try{await ptzTamponSet(url); toast('Tampon et signature enregistrés'); ptzTamponUi()}catch(err){toast('Enregistrement impossible : '+err.message)}
+});
+function ptzOpen(){
+  const c=cur(); if(!c||!isAdmin()) return; const e=ent(), v=id=>document.getElementById(id);
+  const m=String(c.adresse||'').trim().match(/^(\d+\s*(?:bis|ter|[a-d])?\b)\s*,?\s*(.*)$/i);
+  v('ptzNum').value=m?m[1].replace(/\s+/g,' '):''; v('ptzVoie').value=m?m[2]:(c.adresse||'');
+  v('ptzCp').value=c.cp||''; v('ptzVille').value=c.ville||'';
+  v('ptzEnt').value=e.nomCourt||''; v('ptzSiret').value=String(e.siret||'').replace(/\s/g,'').replace(/^(\d{3})(\d{3})(\d{3})(\d{5})$/,'$1 $2 $3 $4');
+  v('ptzLieu').value=e.villeSignature||''; v('ptzDate').value=new Date().toISOString().slice(0,10);
+  const mt=c.devis?devisTotals(c).ttc:n(c.coutTravaux); v('ptzMontant').value=mt?String(Math.round(mt*100)/100).replace('.',','):'';
+  v('ptzMsg').hidden=true; v('ptzModal').hidden=false; ptzTamponUi();
+}
+async function ptzPdf(f,tampon){
+  await loadPdfLib(); const {PDFDocument,StandardFonts,rgb}=window.PDFLib;
+  const r=await fetch(PTZ_PDF); if(!r.ok) throw new Error('formulaire vierge introuvable ('+r.status+')');
+  const bytes=await r.arrayBuffer(), src=await PDFDocument.load(bytes), doc=await PDFDocument.create();
+  // Même ordre que le modèle : l'action b) (murs) en premier, puis c) à g), travaux additionnels, et a) à la fin.
+  const np=src.getPageCount(), ordre=[...Array(np).keys()].slice(1).concat(0);
+  (await doc.copyPages(src,ordre)).forEach(p=>doc.addPage(p));
+  const pg=doc.getPage(0), H=pg.getHeight(), font=await doc.embedFont(StandardFonts.Helvetica), bold=await doc.embedFont(StandardFonts.HelveticaBold);
+  const ink=rgb(.05,.12,.35);
+  const txt=(s,x,yTop,o={})=>{s=String(s||'').replace(/[\u00a0\u2009\u202f]/g,' ').replace(/[\u2018\u2019]/g,"'").replace(/[^\x20-\x7e\u00a0-\u00ff€œŒ–—]/g,'').trim(); if(!s) return; const fn=o.bold?bold:font; let sz=o.size||10;
+    while(o.max&&sz>6&&fn.widthOfTextAtSize(s,sz)>o.max) sz-=.5;
+    const w=fn.widthOfTextAtSize(s,sz); pg.drawText(s,{x:o.right?x-w:x,y:H-yTop,size:sz,font:fn,color:ink})};
+  txt(f.num,107,357,{max:50}); txt(f.voie,186,357,{max:160});
+  txt(f.cp,106,382,{max:52}); txt(f.ville,186,382,{max:160});
+  txt('X',44.6,514,{bold:1,size:10});                       // case « Isolation des murs donnant sur l'extérieur »
+  txt(f.ent,45,566,{max:205,size:11}); txt(f.siret,45,604,{max:205,size:11});
+  txt(f.lieu,78,624,{max:148}); txt(f.date,60,642,{max:166});
+  txt(f.montant,436,592,{bold:1,size:11,right:1,max:58});   // montant pour le logement (Eco-PTZ individuel)
+  if(tampon){
+    const png=/^data:image\/png/.test(tampon), img=png?await doc.embedPng(tampon):await doc.embedJpg(tampon);
+    const w=Math.min(140,img.width*72/200), h=w*img.height/img.width;
+    pg.drawImage(img,{x:150-w/2,y:H-664-h,width:w,height:h});
+  }
+  doc.setTitle('Formulaire éco-PTZ – Isolation des murs'); doc.setProducer(ent().nomCourt||'');
+  return doc.save();
+}
+document.addEventListener('click',async e=>{
+  const t=e.target;
+  if(t.closest('#dvPtz')) return ptzOpen();
+  if(t.id==='ptzClose'||t.id==='ptzModal') return void(document.getElementById('ptzModal').hidden=true);
+  if(t.id!=='ptzGo') return;
+  const c=cur(), v=id=>document.getElementById(id).value.trim(), msg=document.getElementById('ptzMsg');
+  const mt=n(v('ptzMontant').replace(/\s/g,'').replace(',','.'));
+  const f={num:v('ptzNum'),voie:v('ptzVoie'),cp:v('ptzCp'),ville:v('ptzVille'),ent:v('ptzEnt'),siret:v('ptzSiret'),lieu:v('ptzLieu'),
+    date:frDate(v('ptzDate')),montant:mt?new Intl.NumberFormat('fr-FR',{minimumFractionDigits:mt%1?2:0,maximumFractionDigits:2}).format(mt):''};
+  t.disabled=true; t.textContent='Génération…'; msg.hidden=true;
+  try{
+    let tampon=''; try{tampon=await ptzTamponGet()||''}catch(x){}
+    const out=await ptzPdf(f,tampon);
+    const nom=('PTZ_'+[c.nom,c.prenom].filter(Boolean).join('_')).normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9_-]+/g,'_').toUpperCase()+'.pdf';
+    const url=URL.createObjectURL(new Blob([out],{type:'application/pdf'})), a=document.createElement('a');
+    a.href=url; a.download=nom; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),60000);
+    if(!tampon){msg.textContent='PDF généré sans tampon ni signature (aucune image enregistrée).'; msg.hidden=false} else toast('PDF éco-PTZ généré');
+  }catch(err){msg.textContent='Génération impossible : '+err.message; msg.hidden=false}
+  t.disabled=false; t.textContent='Générer le PDF';
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape') document.getElementById('ptzModal').hidden=true});
+
 // Marges de secours : Safari / iPhone ignorent les pages nommées (@page devis) et prenaient la page
 // par défaut (paysage, 8 mm). Pendant l'impression d'un devis, la page par défaut reçoit les mêmes marges.
 function pageSecours(on){
